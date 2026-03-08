@@ -844,6 +844,231 @@ export type Database = {
           },
         ]
       }
+      trip_day_items: {
+        Row: {
+          category: string
+          created_at: string
+          currency: string
+          custom_description: string | null
+          custom_title: string | null
+          duration_minutes: number | null
+          id: string
+          library_item_id: string | null
+          metadata: Json | null
+          notes: string | null
+          quantity: number
+          sort_order: number
+          start_time: string | null
+          total_price: number | null
+          trip_day_id: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          total_price?: number | null
+          trip_day_id: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          total_price?: number | null
+          trip_day_id?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_day_items_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_day_items_trip_day_id_fkey"
+            columns: ["trip_day_id"]
+            isOneToOne: false
+            referencedRelation: "trip_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trip_days: {
+        Row: {
+          city: string | null
+          created_at: string
+          date: string | null
+          day_number: number
+          description: string | null
+          id: string
+          title: string | null
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          day_number: number
+          description?: string | null
+          id?: string
+          title?: string | null
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          day_number?: number
+          description?: string | null
+          id?: string
+          title?: string | null
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_days_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          adults: number
+          assigned_to: string | null
+          children: number
+          company_id: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          deleted_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          internal_notes: string | null
+          lead_id: string | null
+          profit_margin: number | null
+          selling_price: number | null
+          share_token: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["trip_status"]
+          title: string
+          total_cost: number | null
+          total_days: number
+          trip_number: string
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          assigned_to?: string | null
+          children?: number
+          company_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          profit_margin?: number | null
+          selling_price?: number | null
+          share_token?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"]
+          title: string
+          total_cost?: number | null
+          total_days?: number
+          trip_number: string
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          assigned_to?: string | null
+          children?: number
+          company_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          profit_margin?: number | null
+          selling_price?: number | null
+          share_token?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["trip_status"]
+          title?: string
+          total_cost?: number | null
+          total_days?: number
+          trip_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -915,6 +1140,13 @@ export type Database = {
         | "meal"
         | "guide"
         | "template"
+      trip_status:
+        | "draft"
+        | "under_review"
+        | "awaiting_approval"
+        | "approved"
+        | "converted"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1076,6 +1308,14 @@ export const Constants = {
         "meal",
         "guide",
         "template",
+      ],
+      trip_status: [
+        "draft",
+        "under_review",
+        "awaiting_approval",
+        "approved",
+        "converted",
+        "cancelled",
       ],
     },
   },
