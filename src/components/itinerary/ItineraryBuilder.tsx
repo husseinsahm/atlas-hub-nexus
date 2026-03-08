@@ -268,20 +268,40 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         </div>
         <div className="flex items-center gap-2">
           {itineraryDays.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-[11px] gap-1.5 h-8 border-accent/30 text-accent hover:bg-accent/10"
-              onClick={generateItinerary}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5" />
-              )}
-              {isGenerating ? (isArabic ? "جاري التوليد..." : "Generating...") : (isArabic ? "توليد بالذكاء الاصطناعي" : "AI Enhance")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-[11px] gap-1.5 h-8 border-accent/30 text-accent hover:bg-accent/10"
+                  disabled={isGenerating || !!generatingDayId}
+                >
+                  {(isGenerating || generatingDayId) ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isArabic ? "اقتراحات الذكاء" : "AI Enhance"}
+                  <ChevronDown className="w-3 h-3 ml-0.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={generateItinerary} className="gap-2 text-xs">
+                  <ListChecks className="w-3.5 h-3.5 text-accent" />
+                  <div>
+                    <p className="font-medium">{isArabic ? "كل الأيام" : "All Days"}</p>
+                    <p className="text-[10px] text-muted-foreground">{isArabic ? "توليد اقتراحات لكل الأيام" : `Generate suggestions for all ${itineraryDays.length} days`}</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="gap-2 text-xs opacity-60 pointer-events-none">
+                  <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{isArabic ? "يوم محدد" : "Specific Day"}</p>
+                    <p className="text-[10px] text-muted-foreground">{isArabic ? "استخدم زر ✨ على كل يوم" : "Use the ✨ button on each day card"}</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button
             size="sm"
