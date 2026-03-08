@@ -82,7 +82,7 @@ function AppRoutes() {
         <Route path="companies" element={<CompaniesPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
-        <Route path="analytics" element={<PlaceholderPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="trips" element={<TripsPage />} />
         <Route path="trips/:id" element={<TripBuilderPage />} />
         <Route path="bookings" element={<BookingsPage />} />
