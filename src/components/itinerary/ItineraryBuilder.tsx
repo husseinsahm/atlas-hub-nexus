@@ -49,11 +49,39 @@ interface ItineraryBuilderProps {
   isArabic: boolean;
 }
 
+const GUIDE_LANGUAGES = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "de", label: "German", flag: "🇩🇪" },
+  { code: "ja", label: "Japanese", flag: "🇯🇵" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "es", label: "Spanish", flag: "🇪🇸" },
+  { code: "it", label: "Italian", flag: "🇮🇹" },
+  { code: "ar", label: "Arabic", flag: "🇸🇦" },
+  { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  { code: "ru", label: "Russian", flag: "🇷🇺" },
+  { code: "pt", label: "Portuguese", flag: "🇵🇹" },
+  { code: "ko", label: "Korean", flag: "🇰🇷" },
+];
+
+const DEFAULT_TITLES: Record<string, string> = {
+  activity: "Sightseeing tour & local experience",
+  hotel: "Accommodation in 5-star hotel",
+  transfer: "Private airport/city transfer",
+  guide: "English-speaking tour guide",
+};
+
+const DEFAULT_TITLES_AR: Record<string, string> = {
+  activity: "جولة سياحية وتجربة محلية",
+  hotel: "إقامة في فندق 5 نجوم",
+  transfer: "نقل خاص من/إلى المطار أو المدينة",
+  guide: "مرشد سياحي يتحدث الإنجليزية",
+};
+
 const QUICK_ACTIONS = [
   { type: "activity", label: "Activity", labelAr: "نشاط", icon: Activity, color: "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100", desc: "Tour, excursion, experience", descAr: "جولة، رحلة، تجربة" },
   { type: "hotel", label: "Hotel", labelAr: "فندق", icon: Hotel, color: "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100", desc: "Accommodation & stay", descAr: "إقامة وسكن" },
   { type: "transfer", label: "Transfer", labelAr: "نقل", icon: Car, color: "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100", desc: "Airport, city transport", descAr: "مطار، نقل داخلي" },
-  { type: "guide", label: "Guide", labelAr: "مرشد", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100", desc: "Tour guide service", descAr: "خدمة مرشد سياحي" },
+  { type: "guide", label: "Guide", labelAr: "مرشد", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100", desc: "Select language & add guide", descAr: "اختر اللغة وأضف مرشد" },
 ];
 
 export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking, isArabic }: ItineraryBuilderProps) {
