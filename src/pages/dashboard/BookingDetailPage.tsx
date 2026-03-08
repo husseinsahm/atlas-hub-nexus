@@ -50,6 +50,18 @@ const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: s
 };
 
 const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"];
+const GENDERS = ["male", "female", "other"];
+
+const emptyTraveler = (): Traveler => ({
+  id: crypto.randomUUID(),
+  full_name: "",
+  gender: "",
+  date_of_birth: "",
+  nationality: "",
+  passport_number: "",
+  passport_expiry: "",
+  room_notes: "",
+});
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
