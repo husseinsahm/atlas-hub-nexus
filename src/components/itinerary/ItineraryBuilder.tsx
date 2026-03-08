@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
   Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
   Sparkles, Navigation, FileText, Activity, User, Calendar,
-  Wand2,
+  Wand2, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
