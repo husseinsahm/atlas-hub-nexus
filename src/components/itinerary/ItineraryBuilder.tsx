@@ -328,7 +328,9 @@ function DayCard({
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
-  const [localCity, setLocalCity] = useState(day.city || "");
+  const [localCities, setLocalCities] = useState<string[]>(
+    day.city ? day.city.split(",").map(c => c.trim()).filter(Boolean) : []
+  );
   const [localPickup, setLocalPickup] = useState(day.pickup_location || "");
   const [localDropoff, setLocalDropoff] = useState(day.dropoff_location || "");
   const [localPickupTime, setLocalPickupTime] = useState(day.pickup_time || "");
@@ -336,6 +338,7 @@ function DayCard({
   const [localEndTime, setLocalEndTime] = useState(day.end_time || "");
   const [localNotes, setLocalNotes] = useState(day.internal_notes || "");
   const [editingTitle, setEditingTitle] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
 
   const items = (day.booking_day_items || []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const itemsTotal = items.reduce((sum: number, i: any) => sum + Number(i.total_price || 0), 0);
