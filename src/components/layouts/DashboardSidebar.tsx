@@ -15,6 +15,7 @@ import {
   DollarSign,
   Cog,
   Heart,
+  BookOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
