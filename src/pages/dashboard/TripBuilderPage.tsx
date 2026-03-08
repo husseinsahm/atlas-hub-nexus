@@ -16,6 +16,7 @@ import {
   Eye, EyeOff, Percent, Tag, Receipt,
   MessageCircle, CheckCircle, RefreshCw,
   History, RotateCcw, GitCommitHorizontal,
+  BookOpen, UserPlus, Phone, Mail, Globe, Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -217,6 +218,175 @@ export default function TripBuilderPage() {
     },
     enabled: !!id,
   });
+
+  // Lead + lead activities (for unified timeline)
+  const { data: linkedLead } = useQuery({
+    queryKey: ["trip-linked-lead", trip?.lead_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, full_name, status, source, created_at, assigned_to")
+        .eq("id", trip!.lead_id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!trip?.lead_id,
+  });
+
+  const { data: leadActivities = [] } = useQuery({
+    queryKey: ["trip-lead-activities", trip?.lead_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_activities")
+        .select("*")
+        .eq("lead_id", trip!.lead_id!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!trip?.lead_id,
+  });
+
+  // Profiles lookup for user names
+  const { data: memberProfiles = [] } = useQuery({
+    queryKey: ["company-profiles", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data: memberships } = await supabase
+        .from("company_memberships")
+        .select("user_id")
+        .eq("company_id", companyId)
+        .eq("is_active", true);
+      if (!memberships || memberships.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", memberships.map(m => m.user_id));
+      return profiles || [];
+    },
+    enabled: !!companyId,
+  });
+
+  const getProfileName = useCallback((userId: string | null) => {
+    if (!userId) return "System";
+    const p = memberProfiles.find(p => p.id === userId);
+    return p?.full_name || "Team member";
+  }, [memberProfiles]);
+
+  // Build unified timeline
+  const unifiedTimeline = useMemo(() => {
+    type TimelineEvent = {
+      id: string;
+      timestamp: string;
+      type: "lead_created" | "lead_activity" | "trip_created" | "revision" | "feedback" | "status_change";
+      icon: React.ElementType;
+      iconColor: string;
+      title: string;
+      description?: string;
+      actor?: string;
+      badge?: { label: string; color: string };
+    };
+
+    const events: TimelineEvent[] = [];
+
+    // 1. Lead created
+    if (linkedLead) {
+      events.push({
+        id: `lead-created-${linkedLead.id}`,
+        timestamp: linkedLead.created_at,
+        type: "lead_created",
+        icon: UserPlus,
+        iconColor: "bg-primary/15 text-primary",
+        title: `Lead created: ${linkedLead.full_name}`,
+        description: `Source: ${linkedLead.source}`,
+        badge: { label: "Lead", color: "bg-primary/10 text-primary border-primary/20" },
+      });
+    }
+
+    // 2. Lead activities
+    leadActivities.forEach(la => {
+      const actIcons: Record<string, React.ElementType> = {
+        call: Phone, email: Mail, meeting: Users, note: StickyNote, status_change: RefreshCw,
+      };
+      events.push({
+        id: `la-${la.id}`,
+        timestamp: la.created_at,
+        type: "lead_activity",
+        icon: actIcons[la.activity_type] || FileText,
+        iconColor: "bg-muted text-muted-foreground",
+        title: la.description,
+        actor: getProfileName(la.user_id),
+        badge: { label: la.activity_type.replace("_", " "), color: "bg-muted text-muted-foreground border-border" },
+      });
+    });
+
+    // 3. Trip created
+    if (trip) {
+      events.push({
+        id: `trip-created-${trip.id}`,
+        timestamp: trip.created_at,
+        type: "trip_created",
+        icon: Briefcase,
+        iconColor: "bg-accent/15 text-accent",
+        title: `Trip created: ${trip.title}`,
+        description: `${trip.total_days} days · ${trip.trip_number}`,
+        actor: getProfileName(trip.created_by),
+        badge: { label: "Trip", color: "bg-accent/10 text-accent border-accent/20" },
+      });
+    }
+
+    // 4. Revisions
+    tripRevisions.forEach(rev => {
+      const revIcons: Record<string, { icon: React.ElementType; color: string }> = {
+        status_change: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
+        pricing: { icon: DollarSign, color: "bg-blue-100 text-blue-600" },
+        day_added: { icon: Plus, color: "bg-accent/20 text-accent" },
+        day_removed: { icon: Trash2, color: "bg-destructive/10 text-destructive" },
+        day_duplicated: { icon: CopyPlus, color: "bg-purple-100 text-purple-600" },
+        item_added: { icon: Sparkles, color: "bg-amber-100 text-amber-600" },
+        note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
+        update: { icon: Pencil, color: "bg-accent/10 text-accent" },
+      };
+      const cfg = revIcons[rev.action] || revIcons.update;
+      events.push({
+        id: `rev-${rev.id}`,
+        timestamp: rev.created_at,
+        type: rev.action === "status_change" ? "status_change" : "revision",
+        icon: cfg.icon,
+        iconColor: cfg.color,
+        title: rev.summary,
+        description: rev.note || undefined,
+        actor: getProfileName(rev.user_id),
+        badge: rev.snapshot?.status ? { label: STATUS_CONFIG[rev.snapshot.status as TripStatus]?.label || rev.snapshot.status, color: `${STATUS_CONFIG[rev.snapshot.status as TripStatus]?.bg || "bg-muted"} ${STATUS_CONFIG[rev.snapshot.status as TripStatus]?.color || "text-muted-foreground"}` } : undefined,
+      });
+    });
+
+    // 5. Client feedback
+    tripFeedback.forEach(fb => {
+      const fbIcons: Record<string, { icon: React.ElementType; color: string }> = {
+        approval: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
+        change_request: { icon: RefreshCw, color: "bg-amber-100 text-amber-600" },
+        comment: { icon: MessageCircle, color: "bg-blue-100 text-blue-600" },
+      };
+      const cfg = fbIcons[fb.feedback_type] || fbIcons.comment;
+      events.push({
+        id: `fb-${fb.id}`,
+        timestamp: fb.created_at,
+        type: "feedback",
+        icon: cfg.icon,
+        iconColor: cfg.color,
+        title: fb.feedback_type === "approval" ? "Client approved the itinerary" : fb.feedback_type === "change_request" ? "Client requested changes" : "Client left a comment",
+        description: fb.message || undefined,
+        actor: fb.client_name,
+        badge: { label: fb.feedback_type === "approval" ? "Approved" : fb.feedback_type === "change_request" ? "Changes" : "Comment", color: cfg.color },
+      });
+    });
+
+    // Sort chronologically (oldest first for timeline)
+    events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    return events;
+  }, [linkedLead, leadActivities, trip, tripRevisions, tripFeedback, getProfileName]);
 
   const [revisionNote, setRevisionNote] = useState("");
 
@@ -1342,105 +1512,117 @@ export default function TripBuilderPage() {
                 )}
               </div>
             ) : pricingView === "history" ? (
-              /* ===== HISTORY VIEW ===== */
+              /* ===== UNIFIED BOOKING FILE TIMELINE ===== */
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <History className="w-3 h-3" /> Revision History
+                    <BookOpen className="w-3 h-3" /> Booking File
                   </h3>
-                  <Badge variant="outline" className="text-[10px]">
-                    {tripRevisions.length} {tripRevisions.length === 1 ? "revision" : "revisions"}
+                  <Badge variant="outline" className="text-[10px] font-mono">
+                    {unifiedTimeline.length} events
                   </Badge>
                 </div>
 
                 {/* Add revision note */}
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      value={revisionNote}
-                      onChange={e => setRevisionNote(e.target.value)}
-                      placeholder="Add a revision note..."
-                      className="text-xs h-8 flex-1"
-                    />
-                    <Button
-                      size="sm"
-                      className="h-8 text-xs"
-                      disabled={!revisionNote.trim()}
-                      onClick={() => {
+                <div className="flex gap-2">
+                  <Input
+                    value={revisionNote}
+                    onChange={e => setRevisionNote(e.target.value)}
+                    placeholder="Add a note..."
+                    className="text-xs h-8 flex-1"
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && revisionNote.trim()) {
                         trackRevision("note", revisionNote.trim(), {}, revisionNote.trim());
                         setRevisionNote("");
-                      }}
-                    >
-                      <GitCommitHorizontal className="w-3 h-3 mr-1" /> Save
-                    </Button>
-                  </div>
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs shrink-0"
+                    disabled={!revisionNote.trim()}
+                    onClick={() => {
+                      trackRevision("note", revisionNote.trim(), {}, revisionNote.trim());
+                      setRevisionNote("");
+                    }}
+                  >
+                    <GitCommitHorizontal className="w-3 h-3" />
+                  </Button>
                 </div>
 
                 <Separator />
 
-                {tripRevisions.length === 0 ? (
+                {unifiedTimeline.length === 0 ? (
                   <div className="text-center py-8">
-                    <History className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No revisions yet</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">Changes will be tracked automatically</p>
+                    <BookOpen className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No events recorded yet</p>
                   </div>
                 ) : (
                   <div className="relative">
-                    {/* Timeline line */}
-                    <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
+                    {/* Timeline vertical line */}
+                    <div className="absolute left-[11px] top-3 bottom-3 w-px bg-border" />
                     
-                    <div className="space-y-4">
-                      {tripRevisions.map((rev, idx) => {
-                        const actionConfig: Record<string, { icon: React.ElementType; color: string }> = {
-                          status_change: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
-                          pricing: { icon: DollarSign, color: "bg-blue-100 text-blue-600" },
-                          day_added: { icon: Plus, color: "bg-accent/20 text-accent" },
-                          day_removed: { icon: Trash2, color: "bg-destructive/10 text-destructive" },
-                          day_duplicated: { icon: CopyPlus, color: "bg-purple-100 text-purple-600" },
-                          item_added: { icon: Sparkles, color: "bg-amber-100 text-amber-600" },
-                          note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
-                          update: { icon: Pencil, color: "bg-accent/10 text-accent" },
-                        };
-                        const config = actionConfig[rev.action] || actionConfig.update;
-                        const Icon = config.icon;
-                        
+                    <div className="space-y-0">
+                      {unifiedTimeline.map((evt, idx) => {
+                        const Icon = evt.icon;
+                        const isFirst = idx === 0;
+                        const isLast = idx === unifiedTimeline.length - 1;
+                        // Date separator logic
+                        const evtDate = format(new Date(evt.timestamp), "MMM d, yyyy");
+                        const prevDate = idx > 0 ? format(new Date(unifiedTimeline[idx - 1].timestamp), "MMM d, yyyy") : null;
+                        const showDateSep = evtDate !== prevDate;
+
                         return (
-                          <motion.div
-                            key={rev.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.03 }}
-                            className="relative pl-8"
-                          >
-                            {/* Timeline dot */}
-                            <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10", config.color)}>
-                              <Icon className="w-3 h-3" />
-                            </div>
-                            
-                            <div className="space-y-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="text-xs font-medium text-foreground leading-snug">{rev.summary}</p>
-                                <Badge variant="outline" className="text-[9px] shrink-0 font-mono">
-                                  v{rev.revision_number}
-                                </Badge>
+                          <div key={evt.id}>
+                            {showDateSep && (
+                              <div className="relative pl-8 py-2">
+                                <div className="absolute left-[7px] w-[9px] h-[9px] rounded-full bg-border border-2 border-card z-10" />
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                  {evtDate}
+                                </span>
+                              </div>
+                            )}
+                            <motion.div
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.02, duration: 0.25 }}
+                              className="relative pl-8 py-2 group hover:bg-muted/30 rounded-r-lg transition-colors"
+                            >
+                              {/* Timeline dot */}
+                              <div className={cn(
+                                "absolute left-0 top-2.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-card transition-transform group-hover:scale-110",
+                                evt.iconColor
+                              )}>
+                                <Icon className="w-3 h-3" />
                               </div>
                               
-                              {rev.note && (
-                                <p className="text-[10px] text-muted-foreground italic leading-relaxed bg-muted/30 rounded px-2 py-1">
-                                  "{rev.note}"
-                                </p>
-                              )}
-                              
-                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                <span>{format(new Date(rev.created_at), "MMM d, h:mm a")}</span>
-                                {rev.snapshot && rev.snapshot.status && (
-                                  <Badge variant="outline" className="text-[8px] h-4">
-                                    {STATUS_CONFIG[rev.snapshot.status as TripStatus]?.label || rev.snapshot.status}
-                                  </Badge>
+                              <div className="space-y-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground leading-snug">{evt.title}</p>
+                                
+                                {evt.description && (
+                                  <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2 bg-muted/40 rounded px-2 py-1 italic">
+                                    {evt.description}
+                                  </p>
                                 )}
+                                
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {format(new Date(evt.timestamp), "h:mm a")}
+                                  </span>
+                                  {evt.actor && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                      · <UserCheck className="w-2.5 h-2.5" /> {evt.actor}
+                                    </span>
+                                  )}
+                                  {evt.badge && (
+                                    <Badge variant="outline" className={cn("text-[8px] h-4 border", evt.badge.color)}>
+                                      {evt.badge.label}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </motion.div>
+                            </motion.div>
+                          </div>
                         );
                       })}
                     </div>
