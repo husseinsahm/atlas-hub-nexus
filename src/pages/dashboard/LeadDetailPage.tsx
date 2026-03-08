@@ -52,7 +52,11 @@ interface LeadDetail {
   full_name: string;
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   nationality: string | null;
+  preferred_language: string | null;
+  trip_type: string | null;
+  urgency: string | null;
   travel_date: string | null;
   adults: number;
   children: number;
