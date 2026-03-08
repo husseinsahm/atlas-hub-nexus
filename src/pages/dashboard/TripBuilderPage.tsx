@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
+import { createNotification } from "@/hooks/useNotifications";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
