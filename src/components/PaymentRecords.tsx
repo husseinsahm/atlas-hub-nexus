@@ -311,7 +311,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="start" className="text-[10px]">Delete payment</TooltipContent>
+                    <TooltipContent side="left" className="text-[10px]">Delete payment</TooltipContent>
                   </Tooltip>
                 </motion.div>
               );
