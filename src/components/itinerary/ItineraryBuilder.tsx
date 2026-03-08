@@ -191,24 +191,42 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
     try {
       for (const day of aiSuggestions) {
         const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
+        const updatePayload = {
+          title: day.title || null,
+          short_description: day.short_description || null,
+          city: day.city || null,
+          pickup_location: day.pickup_location || null,
+          dropoff_location: day.dropoff_location || null,
+          pickup_time: day.pickup_time || null,
+        };
+
         if (existingDay) {
-          await supabase.from("booking_days").update({
-            title: day.title || existingDay.title,
-            short_description: day.short_description || null,
-            city: day.city || existingDay.city,
-            pickup_location: day.pickup_location || null,
-            dropoff_location: day.dropoff_location || null,
-            pickup_time: day.pickup_time || null,
-          }).eq("id", existingDay.id);
+          await supabase.from("booking_days").update(updatePayload).eq("id", existingDay.id);
+        } else {
+          // Calculate date for this day based on arrival date
+          let dayDate: string | null = null;
+          if (booking?.arrival_date || booking?.start_date) {
+            const startDate = new Date(booking.arrival_date || booking.start_date);
+            startDate.setDate(startDate.getDate() + (day.day_number - 1));
+            dayDate = startDate.toISOString().split("T")[0];
+          }
+
+          await supabase.from("booking_days").insert({
+            booking_id: bookingId,
+            day_number: day.day_number,
+            date: dayDate,
+            ...updatePayload,
+          });
         }
       }
       queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
       toast({ title: isArabic ? "تم تطبيق اقتراحات الذكاء الاصطناعي" : "AI suggestions applied" });
       setAiSuggestions(null);
     } catch (err: any) {
+      console.error("Error applying suggestions:", err);
       toast({ title: "Error applying suggestions", description: err?.message, variant: "destructive" });
     }
-  }, [aiSuggestions, itineraryDays, bookingId, queryClient, toast, isArabic]);
+  }, [aiSuggestions, itineraryDays, bookingId, booking, queryClient, toast, isArabic]);
 
   const generateSingleDay = useCallback(async (day: ItineraryDay) => {
     setGeneratingDayId(day.id);
