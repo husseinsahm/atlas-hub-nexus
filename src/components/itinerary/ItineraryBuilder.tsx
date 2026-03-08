@@ -352,6 +352,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
             </AnimatePresence>
           </div>
         </div>
+        </>
       )}
     </div>
   );
