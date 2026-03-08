@@ -297,22 +297,11 @@ export default function BookingsPage() {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Briefcase className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-foreground">
-            {isArabic ? "لا توجد حجوزات" : "No booking files yet"}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-            {isArabic 
-              ? "اضغط على 'حجز جديد' لإنشاء ملف حجز جديد"
-              : "Click 'New Booking' to create your first booking file"
-            }
-          </p>
-          <Button onClick={() => setShowNewDialog(true)} variant="outline" className="mt-4 gap-2">
-            <Plus className="w-4 h-4" />
-            {isArabic ? "إنشاء حجز" : "Create Booking"}
-          </Button>
-        </div>
+        search.trim() ? (
+          <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} />
+        ) : (
+          <NoBookingsEmptyState onAction={() => setShowNewDialog(true)} />
+        )
       ) : (
         <div className="space-y-2">
           {filtered.map((booking: any, idx: number) => {
