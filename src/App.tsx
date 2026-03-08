@@ -75,7 +75,7 @@ function AppRoutes() {
         <Route path="clients" element={<PlaceholderPage />} />
         <Route path="staff" element={<PlaceholderPage />} />
         <Route path="invoices" element={<PlaceholderPage />} />
-        <Route path="settings" element={<PlaceholderPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
