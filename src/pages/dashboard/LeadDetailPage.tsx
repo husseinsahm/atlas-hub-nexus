@@ -20,6 +20,7 @@ import {
   FileText, ArrowRight,
 } from "lucide-react";
 import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
+import { InternalComments } from "@/components/InternalComments";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
