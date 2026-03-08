@@ -331,8 +331,22 @@ export default function TripBuilderPage() {
     mutationFn: async (updates: Record<string, any>) => {
       const { error } = await supabase.from("trips").update(updates).eq("id", id!);
       if (error) throw error;
+      return updates;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trip", id] }),
+    onSuccess: (updates) => {
+      queryClient.invalidateQueries({ queryKey: ["trip", id] });
+      // Auto-track significant changes
+      const keys = Object.keys(updates);
+      if (keys.includes("status")) {
+        trackRevision("status_change", `Status changed to ${STATUS_CONFIG[updates.status as TripStatus]?.label || updates.status}`, updates);
+      } else if (keys.includes("selling_price")) {
+        trackRevision("pricing", `Selling price updated to ${updates.selling_price}`, updates);
+      } else if (keys.includes("markup_value") || keys.includes("discount_value")) {
+        trackRevision("pricing", "Pricing adjustments updated", updates);
+      } else if (keys.includes("title")) {
+        trackRevision("update", `Trip renamed to "${updates.title}"`, updates);
+      }
+    },
   });
 
   const updateDay = useMutation({
