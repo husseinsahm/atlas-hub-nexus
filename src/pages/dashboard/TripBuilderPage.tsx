@@ -15,6 +15,7 @@ import {
   MoveUp, MoveDown, CopyPlus, MessageSquare,
   Eye, EyeOff, Percent, Tag, Receipt,
   MessageCircle, CheckCircle, RefreshCw,
+  History, RotateCcw, GitCommitHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
