@@ -207,6 +207,47 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
     }
   }, [aiSuggestions, itineraryDays, bookingId, queryClient, toast, isArabic]);
 
+  const generateSingleDay = useCallback(async (day: ItineraryDay) => {
+    setGeneratingDayId(day.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-itinerary", {
+        body: {
+          bookingId,
+          title: booking?.title,
+          totalDays: 1,
+          arrivalDate: day.date || booking?.arrival_date || booking?.start_date,
+          departureDate: day.date || booking?.departure_date || booking?.end_date,
+          adults: booking?.adults,
+          children: booking?.children,
+          existingDays: [{
+            id: day.id,
+            day_number: day.day_number,
+            city: day.city,
+            title: day.title,
+            date: day.date,
+          }],
+          singleDay: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.days?.[0]) {
+        setAiSuggestions([data.days[0]]);
+        toast({ title: isArabic ? "اقتراح جاهز - راجع وأكّد" : `AI suggestion for Day ${day.day_number} ready — review & confirm` });
+      }
+    } catch (err: any) {
+      console.error("AI single day error:", err);
+      toast({
+        title: isArabic ? "فشل التوليد" : "Generation failed",
+        description: err?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingDayId(null);
+    }
+  }, [bookingId, booking, toast, isArabic]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
