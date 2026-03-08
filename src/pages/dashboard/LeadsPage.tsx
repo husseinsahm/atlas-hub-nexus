@@ -716,6 +716,22 @@ export default function LeadsPage() {
         editingId={editingId}
         agents={agents}
       />
+
+      {/* Duplicate Lead Detector */}
+      <DuplicateLeadDetector
+        open={duplicateOpen}
+        onOpenChange={setDuplicateOpen}
+        duplicates={duplicates}
+        onContinue={() => {
+          if (pendingSavePayload) {
+            executeSave(pendingSavePayload);
+            setPendingSavePayload(null);
+          }
+        }}
+        onMerge={handleMerge}
+        newLeadName={form.full_name}
+        agentMap={agentNameMap}
+      />
     </div>
   );
 }
