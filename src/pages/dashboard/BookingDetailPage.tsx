@@ -1261,7 +1261,7 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   );
 }
 
-function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: any) {
+function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, bookingAdults, bookingChildren }: any) {
   const [form, setForm] = useState({ ...service });
 
   const typeConfig: Record<string, {
