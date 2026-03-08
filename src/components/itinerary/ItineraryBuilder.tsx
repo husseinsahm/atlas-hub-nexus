@@ -431,22 +431,41 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   </Button>
                 </div>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {aiSuggestions.map((s: any) => (
-                  <div key={s.day_number} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background border border-border text-xs">
-                    <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-[11px] shrink-0">
-                      {s.day_number}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-0.5">
-                      <p className="font-semibold text-foreground truncate">{s.title}</p>
-                      {s.short_description && <p className="text-muted-foreground line-clamp-1">{s.short_description}</p>}
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                        {s.city && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{s.city}</span>}
-                        {s.pickup_location && <span className="flex items-center gap-0.5"><Navigation className="w-2.5 h-2.5" />{s.pickup_location}</span>}
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {aiSuggestions.map((s: any) => {
+                  const svcCount = s.services?.length || 0;
+                  return (
+                    <div key={s.day_number} className="p-2.5 rounded-lg bg-background border border-border text-xs space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-[11px] shrink-0">
+                          {s.day_number}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <p className="font-semibold text-foreground truncate">{s.title}</p>
+                          {s.short_description && <p className="text-muted-foreground line-clamp-1">{s.short_description}</p>}
+                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                            {s.city && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{s.city}</span>}
+                            {s.pickup_location && <span className="flex items-center gap-0.5"><Navigation className="w-2.5 h-2.5" />{s.pickup_location}</span>}
+                            {svcCount > 0 && <Badge variant="secondary" className="text-[8px] px-1.5 py-0">{svcCount} {isArabic ? "خدمة" : "services"}</Badge>}
+                          </div>
+                        </div>
                       </div>
+                      {s.services?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 ps-9">
+                          {s.services.map((svc: any, i: number) => {
+                            const catIcon = svc.category === "hotel" ? "🏨" : svc.category === "transfer" ? "🚗" : svc.category === "guide" ? "🧑‍🏫" : svc.category === "meal" ? "🍽️" : "🎯";
+                            return (
+                              <span key={i} className="inline-flex items-center gap-1 text-[10px] bg-muted/50 border border-border rounded-md px-1.5 py-0.5 text-muted-foreground">
+                                <span>{catIcon}</span>
+                                <span className="truncate max-w-[140px]">{svc.title}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
