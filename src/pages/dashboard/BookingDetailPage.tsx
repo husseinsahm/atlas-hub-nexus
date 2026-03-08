@@ -562,46 +562,77 @@ export default function BookingDetailPage() {
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-5">
+            {/* Booking Details Card */}
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                    <Briefcase className="w-3.5 h-3.5 text-accent" />
+                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                    <Briefcase className="w-3.5 h-3.5 text-accent-foreground" />
                   </div>
                   {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "رقم الحجز" : "Booking #"}</Label>
-                    <p className="text-sm font-mono font-medium text-foreground">{booking.booking_number}</p>
+              <CardContent className="p-5 space-y-5">
+                {/* Booking Number & Status highlight */}
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/50">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Hash className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "رقم الحجز" : "Booking Number"}</p>
+                    <p className="text-base font-bold font-mono text-foreground">{booking.booking_number}</p>
+                  </div>
+                  <Badge className={cn("border-0 text-xs font-semibold px-3 py-1", sc.bg, sc.color)}>
+                    {isArabic ? sc.labelAr : sc.label}
+                  </Badge>
+                </div>
+
+                {/* Date range visual */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                        <Plane className="w-3 h-3 text-emerald-600 dark:text-emerald-400 rotate-[-45deg]" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
+                    </div>
                     <Input
                       type="date"
-                      className="h-8 text-xs mt-1"
+                      className="h-9 text-xs border-border/60 bg-transparent"
                       defaultValue={(booking as any).arrival_date || booking.start_date || ""}
                       onBlur={e => updateBooking.mutate({ arrival_date: e.target.value || null, start_date: e.target.value || null })}
                     />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
+                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                        <Plane className="w-3 h-3 text-rose-600 dark:text-rose-400 rotate-45" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
+                    </div>
                     <Input
                       type="date"
-                      className="h-8 text-xs mt-1"
+                      className="h-9 text-xs border-border/60 bg-transparent"
                       defaultValue={(booking as any).departure_date || booking.end_date || ""}
                       onBlur={e => updateBooking.mutate({ departure_date: e.target.value || null, end_date: e.target.value || null })}
                     />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المصدر" : "Source"}</Label>
+                </div>
+
+                {/* Source & Agent */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                        <Globe className="w-3 h-3 text-violet-600 dark:text-violet-400" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "المصدر" : "Source"}</Label>
+                    </div>
                     <Select 
                       value={(booking as any).source || "email"} 
                       onValueChange={v => updateBooking.mutate({ source: v })}
                     >
-                      <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -611,13 +642,18 @@ export default function BookingDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
+                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                        <UserCheck className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
+                    </div>
                     <Select 
                       value={booking.assigned_to || ""} 
                       onValueChange={v => updateBooking.mutate({ assigned_to: v })}
                     >
-                      <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
                         <SelectValue placeholder={isArabic ? "اختر..." : "Select..."} />
                       </SelectTrigger>
                       <SelectContent>
