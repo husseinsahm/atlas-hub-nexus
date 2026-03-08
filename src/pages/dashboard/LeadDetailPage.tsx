@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
+import { FileAttachments } from "@/components/FileAttachments";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
@@ -555,6 +556,9 @@ export default function LeadDetailPage() {
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-destructive" />
                     )}
                   </TabsTrigger>
+                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Attachments
+                  </TabsTrigger>
                   <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
                     All Activity ({activities.length})
                   </TabsTrigger>
@@ -640,6 +644,15 @@ export default function LeadDetailPage() {
                       })}
                     </div>
                   )}
+                </TabsContent>
+
+                {/* Attachments Tab */}
+                <TabsContent value="attachments" className="mt-0">
+                  <FileAttachments
+                    entityType="lead"
+                    entityId={lead.id}
+                    companyId={companyId || ""}
+                  />
                 </TabsContent>
 
                 {/* All Activity Timeline */}

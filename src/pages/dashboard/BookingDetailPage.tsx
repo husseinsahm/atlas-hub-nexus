@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
+import { FileAttachments } from "@/components/FileAttachments";
 
 interface Traveler {
   id: string;
@@ -618,6 +619,17 @@ export default function BookingDetailPage() {
             <Card>
               <CardContent className="p-4">
                 <InternalComments
+                  entityType="booking"
+                  entityId={booking.id}
+                  companyId={booking.company_id}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Attachments */}
+            <Card>
+              <CardContent className="p-4">
+                <FileAttachments
                   entityType="booking"
                   entityId={booking.id}
                   companyId={booking.company_id}
