@@ -1223,6 +1223,72 @@ export default function TripBuilderPage() {
                   />
                 </div>
               </div>
+            ) : (
+              /* ===== FEEDBACK VIEW ===== */
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client Feedback</h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    {tripFeedback.length} {tripFeedback.length === 1 ? "response" : "responses"}
+                  </Badge>
+                </div>
+
+                {tripFeedback.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No feedback yet</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">Share the trip link with your client to get feedback</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tripFeedback.map(fb => {
+                      const isApproval = fb.feedback_type === "approval";
+                      const isChange = fb.feedback_type === "change_request";
+                      return (
+                        <div key={fb.id} className={cn(
+                          "rounded-lg border p-3 space-y-2",
+                          isApproval ? "border-emerald-200 bg-emerald-50/30" :
+                          isChange ? "border-amber-200 bg-amber-50/30" :
+                          "border-border bg-background"
+                        )}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className={cn(
+                                "w-6 h-6 rounded flex items-center justify-center",
+                                isApproval ? "bg-emerald-100" : isChange ? "bg-amber-100" : "bg-blue-100"
+                              )}>
+                                {isApproval ? <CheckCircle className="w-3 h-3 text-emerald-600" /> :
+                                 isChange ? <RefreshCw className="w-3 h-3 text-amber-600" /> :
+                                 <MessageCircle className="w-3 h-3 text-blue-600" />}
+                              </div>
+                              <span className="text-xs font-semibold text-foreground">{fb.client_name}</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {format(new Date(fb.created_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={cn(
+                              "text-[9px]",
+                              isApproval ? "text-emerald-600 border-emerald-200" :
+                              isChange ? "text-amber-600 border-amber-200" :
+                              "text-blue-600 border-blue-200"
+                            )}>
+                              {isApproval ? "Approved" : isChange ? "Change Request" : "Comment"}
+                            </Badge>
+                            {fb.client_email && (
+                              <span className="text-[10px] text-muted-foreground truncate">{fb.client_email}</span>
+                            )}
+                          </div>
+                          {fb.message && (
+                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{fb.message}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             )}
           </ScrollArea>
         </div>
