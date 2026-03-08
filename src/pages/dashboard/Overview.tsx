@@ -379,7 +379,7 @@ function SuperAdminDashboard() {
     allMemberships.forEach((m: any) => { countMap[m.company_id] = (countMap[m.company_id] || 0) + 1; });
 
     setCompanies(allCompanies.map((c: any) => ({
-      ...c, subscription: subMap.get(c.id) || null, memberCount: countMap.get(c.id) || 0,
+      ...c, subscription: subMap[c.id] || null, memberCount: countMap[c.id] || 0,
     })));
     setAuditLogs(allLogs as AuditLogRow[]);
     setLoading(false);
