@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Plus, Calendar, Users, DollarSign, MapPin, Clock,
+  ArrowLeft, Plus, Calendar, Users, DollarSign, MapPin, Clock, Search,
   Loader2, Save, Share2, Sparkles, ChevronDown, ChevronRight,
   Plane, Sun, Moon, Sunset, Trash2, GripVertical, MoreHorizontal,
   Landmark, Hotel, Bike, Car, UtensilsCrossed, UserCheck,
