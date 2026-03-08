@@ -969,6 +969,16 @@ export default function TripBuilderPage() {
               </TooltipTrigger>
               <TooltipContent>Copy share link</TooltipContent>
             </Tooltip>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => createQuotation.mutate()}
+              disabled={createQuotation.isPending}
+              className="text-xs gap-1.5"
+            >
+              {createQuotation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+              Quotation
+            </Button>
             {(trip.status === "approved" || trip.status === "converted") && trip.status !== "converted" && (
               <Button
                 size="sm"
