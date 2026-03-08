@@ -392,37 +392,45 @@ export default function CustomersPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden max-h-[95vh] sm:max-h-[90vh]">
           {/* Premium header */}
-          <div className="relative px-6 pt-6 pb-4 navy-gradient">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative px-5 sm:px-6 pt-5 pb-4 bg-gradient-to-br from-card via-background to-secondary/30 border-b border-border">
+            <div className="absolute top-0 left-0 right-0 h-1 gold-gradient" />
+            <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.06] bg-[radial-gradient(circle,hsl(var(--gold)),transparent_70%)]" />
             <div className="relative flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <div className="w-11 h-11 rounded-xl gold-gradient flex items-center justify-center shadow-lg ring-4 ring-background shrink-0">
                 <UserPlus className="w-5 h-5 text-accent-foreground" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-white font-display">
+                <h2 className="text-base font-bold text-foreground font-display">
                   {editingId ? "Edit Customer" : "New Customer"}
                 </h2>
-                <p className="text-[11px] text-white/60">
+                <p className="text-[11px] text-muted-foreground">
                   {editingId ? "Update customer profile" : "Add a new customer to your database"}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="px-6 py-5 space-y-5 max-h-[65vh] overflow-y-auto">
+          <div className="px-5 sm:px-6 py-5 space-y-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(95vh - 140px)' }}>
             {/* ─── Personal Info ─── */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Users className="w-3 h-3" /> Personal Information
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-foreground">Personal Information</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
                   <Label className="text-xs">Full Name <span className="text-destructive">*</span></Label>
                   <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" maxLength={200} className="h-11" autoFocus />
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-xs">Date of Birth</Label>
+                  <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className="h-11" />
+                </div>
+                <div className="sm:col-span-2 space-y-1.5">
                   <Label className="text-xs">Nationality</Label>
                   <NationalitySelect
                     value={form.nationality}
@@ -431,17 +439,22 @@ export default function CustomersPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Date of Birth</Label>
-                  <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className="h-11" />
+                  <Label className="text-xs">Passport Number</Label>
+                  <Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} placeholder="Optional" maxLength={30} className="h-11 font-mono" />
                 </div>
               </div>
-            </div>
+            </section>
+
+            <div className="border-t border-border/50" />
 
             {/* ─── Contact ─── */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Phone className="w-3 h-3" /> Contact Details
-              </p>
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                  <Phone className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-foreground">Contact Details</p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
                   <Label className="text-xs">Email</Label>
@@ -459,17 +472,30 @@ export default function CustomersPage() {
                   <PhoneInput value={form.secondary_phone} onValueChange={(v) => setForm({ ...form, secondary_phone: v })} defaultCountry="AE" placeholder="Optional" />
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* ─── Travel Profile ─── */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Globe className="w-3 h-3" /> Travel Profile
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="border-t border-border/50" />
+
+            {/* ─── Address ─── */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                  <MapPin className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <p className="text-xs font-semibold text-foreground">Address</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-3 space-y-1.5">
+                  <Label className="text-xs">Street Address</Label>
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address" maxLength={300} className="h-11" />
+                </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Passport Number</Label>
-                  <Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} placeholder="Optional" maxLength={30} className="h-11" />
+                  <Label className="text-xs">Country</Label>
+                  <CountrySelect value={form.country} onValueChange={(v) => setForm({ ...form, country: v })} placeholder="Select country" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">City</Label>
+                  <CityAutocomplete value={form.city} onValueChange={(v) => setForm({ ...form, city: v })} filterByCountry={form.country} placeholder="Select city" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Source</Label>
@@ -486,35 +512,19 @@ export default function CustomersPage() {
                   </Select>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* ─── Address ─── */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <MapPin className="w-3 h-3" /> Address
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="sm:col-span-2 space-y-1.5">
-                  <Label className="text-xs">Street Address</Label>
-                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address" maxLength={300} className="h-11" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Country</Label>
-                  <CountrySelect value={form.country} onValueChange={(v) => setForm({ ...form, country: v })} placeholder="Select country" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">City</Label>
-                  <CityAutocomplete value={form.city} onValueChange={(v) => setForm({ ...form, city: v })} filterByCountry={form.country} placeholder="Select city" />
-                </div>
-              </div>
-            </div>
+            <div className="border-t border-border/50" />
 
             {/* ─── Preferences ─── */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Tag className="w-3 h-3" /> Preferences & Tags
-              </p>
-              <div className="flex flex-wrap gap-2">
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                  <Tag className="w-3.5 h-3.5 text-accent" />
+                </div>
+                <p className="text-xs font-semibold text-foreground">Preferences & Tags</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 {PREFERENCE_OPTIONS.map((pref) => {
                   const selected = form.selectedPrefs.includes(pref);
                   return (
@@ -523,7 +533,7 @@ export default function CustomersPage() {
                       type="button"
                       onClick={() => togglePref(pref)}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                        "px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all",
                         selected
                           ? `${getTagColor(pref)} ring-1 ring-accent/30 shadow-sm`
                           : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
@@ -535,23 +545,23 @@ export default function CustomersPage() {
                   );
                 })}
               </div>
-            </div>
+            </section>
 
             {/* ─── Notes ─── */}
             <div className="space-y-1.5">
               <Label className="text-xs">Notes</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this customer..." rows={3} maxLength={2000} className="resize-none" />
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this customer..." rows={2} maxLength={2000} className="resize-none" />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+          <div className="px-5 sm:px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between shrink-0">
             <Button variant="ghost" size="sm" onClick={() => setFormOpen(false)} className="text-xs">Cancel</Button>
             <Button
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
+              className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6 shadow-md"
             >
               {saving && <div className="w-3.5 h-3.5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />}
               {saving ? "Saving..." : editingId ? "Update Customer" : "Create Customer"}
