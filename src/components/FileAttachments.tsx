@@ -431,20 +431,58 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
         </Button>
       </div>
 
+      {/* Upload progress */}
+      {uploading && uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Uploading files...</span>
+            <span>{Math.round(uploadProgress)}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
+      )}
+
       {/* Drag and drop zone */}
       <div
-        className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+        className={cn(
+          "border-2 border-dashed border-border rounded-lg p-4 text-center transition-colors",
+          uploading 
+            ? "cursor-not-allowed opacity-50" 
+            : "cursor-pointer hover:border-accent/50 hover:bg-accent/5",
+          !user && "cursor-not-allowed opacity-50"
+        )}
+        onClick={() => !uploading && user && fileInputRef.current?.click()}
+        onDragOver={e => { 
+          if (!uploading && user) {
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.currentTarget.classList.add('border-accent', 'bg-accent/10');
+          }
+        }}
+        onDragLeave={e => {
+          e.currentTarget.classList.remove('border-accent', 'bg-accent/10');
+        }}
         onDrop={e => {
           e.preventDefault();
           e.stopPropagation();
-          handleUpload(e.dataTransfer.files);
+          e.currentTarget.classList.remove('border-accent', 'bg-accent/10');
+          if (!uploading && user) {
+            handleUpload(e.dataTransfer.files);
+          }
         }}
       >
-        <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-        <p className="text-[10px] text-muted-foreground">Drag & drop files here or click to browse</p>
-        <p className="text-[9px] text-muted-foreground mt-0.5">Max 10MB per file · Images, PDF, Documents</p>
+        {!user ? (
+          <>
+            <AlertCircle className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Please log in to upload files</p>
+          </>
+        ) : (
+          <>
+            <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Drag & drop files here or click to browse</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Max 10MB per file · Images, PDF, Documents</p>
+          </>
+        )}
       </div>
 
       {/* Files list grouped by category */}
