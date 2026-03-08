@@ -814,7 +814,7 @@ export default function BookingDetailPage() {
               </div>
             </div>
             <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
-              setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: 1, unit_price: 0, status: "pending" });
+              setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: booking.adults || 1, child_quantity: booking.children || 0, unit_price: 0, child_unit_price: 0, status: "pending" });
               setShowServiceDialog(true);
             }}>
               <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة خدمة" : "Add Service"}
