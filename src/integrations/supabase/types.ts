@@ -1234,6 +1234,87 @@ export type Database = {
           },
         ]
       }
+      lead_followups: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expected_outcome: string | null
+          followup_type: string
+          id: string
+          is_completed: boolean
+          is_recurring: boolean
+          lead_id: string
+          metadata: Json | null
+          priority: string
+          recurrence_pattern: string | null
+          scheduled_date: string
+          scheduled_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expected_outcome?: string | null
+          followup_type?: string
+          id?: string
+          is_completed?: boolean
+          is_recurring?: boolean
+          lead_id: string
+          metadata?: Json | null
+          priority?: string
+          recurrence_pattern?: string | null
+          scheduled_date: string
+          scheduled_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expected_outcome?: string | null
+          followup_type?: string
+          id?: string
+          is_completed?: boolean
+          is_recurring?: boolean
+          lead_id?: string
+          metadata?: Json | null
+          priority?: string
+          recurrence_pattern?: string | null
+          scheduled_date?: string
+          scheduled_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_followups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_followups_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           adults: number
