@@ -141,13 +141,13 @@ export default function CustomersPage() {
       full_name: c.full_name,
       email: c.email || "",
       phone: c.phone || "",
-      secondary_phone: "",
+      secondary_phone: c.secondary_phone || "",
       nationality: c.nationality || "",
-      date_of_birth: "",
-      passport_number: "",
-      address: "",
-      city: "",
-      country: "",
+      date_of_birth: c.date_of_birth || "",
+      passport_number: c.passport_number || "",
+      address: c.address || "",
+      city: c.city || "",
+      country: c.country || "",
       source: c.source || "direct",
       notes: c.notes || "",
       selectedPrefs: c.preferences,
@@ -164,20 +164,41 @@ export default function CustomersPage() {
     }));
   }
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  function validateForm(): boolean {
+    const errors: Record<string, string> = {};
+
+    if (!form.full_name.trim()) {
+      errors.full_name = "Full name is required";
+    } else if (form.full_name.trim().length > 200) {
+      errors.full_name = "Name must be less than 200 characters";
+    }
+
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (form.phone && form.phone.replace(/[\s\-\(\)]/g, "").length < 7) {
+      errors.phone = "Phone number is too short";
+    }
+
+    if (form.passport_number && form.passport_number.trim().length > 30) {
+      errors.passport_number = "Passport number is too long";
+    }
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0];
+      toast({ title: "Validation Error", description: firstError, variant: "destructive" });
+      return false;
+    }
+    return true;
+  }
+
   async function handleSave() {
     if (!companyId || !user) return;
-    if (!form.full_name.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
-      return;
-    }
-    if (form.full_name.trim().length > 200) {
-      toast({ title: "Name too long", variant: "destructive" });
-      return;
-    }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      toast({ title: "Invalid email", variant: "destructive" });
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
     const payload = {
@@ -209,9 +230,10 @@ export default function CustomersPage() {
         toast({ title: "Customer created" });
       }
       setFormOpen(false);
+      setFormErrors({});
       fetchCustomers();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error saving customer", description: err.message || "Please check your connection and try again", variant: "destructive" });
     } finally {
       setSaving(false);
     }
