@@ -166,21 +166,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
       if (error) throw error;
 
       if (data?.days) {
-        for (const day of data.days) {
-          const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
-          if (existingDay) {
-            await supabase.from("booking_days").update({
-              title: day.title || existingDay.title,
-              short_description: day.short_description || null,
-              city: day.city || existingDay.city,
-              pickup_location: day.pickup_location || null,
-              dropoff_location: day.dropoff_location || null,
-              pickup_time: day.pickup_time || null,
-            }).eq("id", existingDay.id);
-          }
-        }
-        queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
-        toast({ title: isArabic ? "تم تحديث البرنامج بالذكاء الاصطناعي" : "Itinerary enhanced with AI" });
+        setAiSuggestions(data.days);
+        toast({ title: isArabic ? "تم توليد الاقتراحات - راجع وأكّد" : "AI suggestions ready — review & confirm below" });
       }
     } catch (err: any) {
       console.error("AI generation error:", err);
@@ -193,6 +180,30 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
       setIsGenerating(false);
     }
   }, [bookingId, booking, itineraryDays, queryClient, toast, isArabic]);
+
+  const applyAiSuggestions = useCallback(async () => {
+    if (!aiSuggestions) return;
+    try {
+      for (const day of aiSuggestions) {
+        const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
+        if (existingDay) {
+          await supabase.from("booking_days").update({
+            title: day.title || existingDay.title,
+            short_description: day.short_description || null,
+            city: day.city || existingDay.city,
+            pickup_location: day.pickup_location || null,
+            dropoff_location: day.dropoff_location || null,
+            pickup_time: day.pickup_time || null,
+          }).eq("id", existingDay.id);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      toast({ title: isArabic ? "تم تطبيق اقتراحات الذكاء الاصطناعي" : "AI suggestions applied" });
+      setAiSuggestions(null);
+    } catch (err: any) {
+      toast({ title: "Error applying suggestions", description: err?.message, variant: "destructive" });
+    }
+  }, [aiSuggestions, itineraryDays, bookingId, queryClient, toast, isArabic]);
 
   return (
     <div className="space-y-4">
