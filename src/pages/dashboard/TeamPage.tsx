@@ -13,8 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Users, UserPlus, Mail, Shield, MoreHorizontal, Search,
   CheckCircle2, XCircle, Clock, Send, Edit2, UserCog, Activity,
+  Trash2, Eye, EyeOff, Lock, KeyRound,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
@@ -72,11 +77,14 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  // Invite dialog
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<CompanyRole>("agent");
-  const [inviting, setInviting] = useState(false);
+  // Create member dialog
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createRole, setCreateRole] = useState<CompanyRole>("agent");
+  const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -84,16 +92,21 @@ export default function TeamPage() {
   const [editRole, setEditRole] = useState<CompanyRole>("agent");
   const [saving, setSaving] = useState(false);
 
+  // Delete dialog
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteMember, setDeleteMember] = useState<TeamMember | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // Plan limits
   const { limits, refetch: refetchLimits } = usePlanLimits();
   const [limitDialogOpen, setLimitDialogOpen] = useState(false);
 
-  const handleInviteClick = () => {
+  const handleCreateClick = () => {
     if (!limits.canAddUser) {
       setLimitDialogOpen(true);
       return;
     }
-    setInviteOpen(true);
+    setCreateOpen(true);
   };
 
   useEffect(() => {
@@ -104,7 +117,6 @@ export default function TeamPage() {
     if (!companyId) return;
     setLoading(true);
     try {
-      // Fetch memberships with profiles
       const { data: membershipsData, error: mErr } = await supabase
         .from("company_memberships")
         .select("id, user_id, role, is_active, created_at")
@@ -112,7 +124,6 @@ export default function TeamPage() {
 
       if (mErr) throw mErr;
 
-      // Fetch profiles for all member user_ids
       const userIds = (membershipsData || []).map((m) => m.user_id);
       let profilesMap: Record<string, any> = {};
       if (userIds.length > 0) {
@@ -126,7 +137,7 @@ export default function TeamPage() {
       const mapped: TeamMember[] = (membershipsData || []).map((m) => ({
         membershipId: m.id,
         userId: m.user_id,
-        email: "", // We'll try to show name instead
+        email: "",
         fullName: profilesMap[m.user_id]?.full_name || "Unknown",
         avatarUrl: profilesMap[m.user_id]?.avatar_url,
         role: m.role as CompanyRole,
@@ -136,7 +147,6 @@ export default function TeamPage() {
 
       setMembers(mapped);
 
-      // Fetch invitations
       const { data: invData } = await supabase
         .from("invitations")
         .select("id, email, role, created_at, expires_at, accepted_at, invited_by")
@@ -161,26 +171,38 @@ export default function TeamPage() {
     }
   }
 
-  async function handleInvite() {
+  async function handleCreateMember() {
     if (!companyId || !user) return;
-    setInviting(true);
+    setCreating(true);
     try {
-      const { error } = await supabase.from("invitations").insert({
-        company_id: companyId,
-        email: inviteEmail.toLowerCase().trim(),
-        role: inviteRole,
-        invited_by: user.id,
+      const { data, error } = await supabase.functions.invoke("create-team-member", {
+        body: {
+          email: createEmail.toLowerCase().trim(),
+          password: createPassword,
+          fullName: createName.trim(),
+          role: createRole,
+          companyId,
+        },
       });
-      if (error) throw error;
-      toast({ title: "Invitation sent", description: `Invited ${inviteEmail} as ${inviteRole}` });
-      setInviteOpen(false);
-      setInviteEmail("");
-      setInviteRole("agent");
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Team member created ✓",
+        description: `${createName} can now log in with their email and password`,
+      });
+      setCreateOpen(false);
+      setCreateEmail("");
+      setCreatePassword("");
+      setCreateName("");
+      setCreateRole("agent");
+      setShowPassword(false);
       fetchTeam();
+      refetchLimits();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
-      setInviting(false);
+      setCreating(false);
     }
   }
 
@@ -217,6 +239,32 @@ export default function TeamPage() {
     }
   }
 
+  async function handleDeleteMember() {
+    if (!deleteMember || !companyId) return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-team-member", {
+        body: {
+          membershipId: deleteMember.membershipId,
+          companyId,
+          deleteUser: true,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      toast({ title: "Member removed", description: `${deleteMember.fullName} has been removed from the team` });
+      setDeleteOpen(false);
+      setDeleteMember(null);
+      fetchTeam();
+      refetchLimits();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function cancelInvitation(id: string) {
     try {
       const { error } = await supabase.from("invitations").delete().eq("id", id);
@@ -247,7 +295,7 @@ export default function TeamPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground font-display">Team Management</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -260,13 +308,12 @@ export default function TeamPage() {
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={handleInviteClick} className="gold-gradient text-accent-foreground gap-2 shadow-md">
-            <UserPlus className="w-4 h-4" /> Invite Member
+          <Button onClick={handleCreateClick} className="gold-gradient text-accent-foreground gap-2 shadow-md">
+            <UserPlus className="w-4 h-4" /> Create Member
           </Button>
         )}
       </div>
 
-      {/* Plan limit warning */}
       <UpgradeBanner type="users" />
 
       {/* Stats */}
@@ -327,62 +374,82 @@ export default function TeamPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((m) => (
-                  <TableRow key={m.membershipId}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
-                          {m.fullName.charAt(0).toUpperCase()}
+                {filteredMembers.map((m) => {
+                  const isSelf = m.userId === user?.id;
+                  return (
+                    <TableRow key={m.membershipId}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-sm font-semibold text-foreground shrink-0">
+                            {m.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground text-sm">
+                              {m.fullName}
+                              {isSelf && <span className="text-xs text-muted-foreground ms-1.5">(You)</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{m.userId.slice(0, 8)}...</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">{m.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{m.userId.slice(0, 8)}...</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getRoleBadge(m.role)}</TableCell>
-                    <TableCell>
-                      {m.isActive ? (
-                        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>
-                      ) : (
-                        <Badge className="bg-red-50 text-red-600 border border-red-200">Inactive</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(m.joinedAt), "MMM d, yyyy")}
-                    </TableCell>
-                    {isAdmin && (
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditMember(m);
-                                setEditRole(m.role);
-                                setEditOpen(true);
-                              }}
-                            >
-                              <Edit2 className="w-4 h-4 mr-2" /> Change Role
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => toggleActive(m)}>
-                              {m.isActive ? (
-                                <><XCircle className="w-4 h-4 mr-2" /> Deactivate</>
-                              ) : (
-                                <><CheckCircle2 className="w-4 h-4 mr-2" /> Activate</>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                      <TableCell>{getRoleBadge(m.role)}</TableCell>
+                      <TableCell>
+                        {m.isActive ? (
+                          <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200">Active</Badge>
+                        ) : (
+                          <Badge className="bg-red-50 text-red-600 border border-red-200">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(m.joinedAt), "MMM d, yyyy")}
+                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditMember(m);
+                                  setEditRole(m.role);
+                                  setEditOpen(true);
+                                }}
+                              >
+                                <Edit2 className="w-4 h-4 mr-2" /> Change Role
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => toggleActive(m)}>
+                                {m.isActive ? (
+                                  <><XCircle className="w-4 h-4 mr-2" /> Deactivate</>
+                                ) : (
+                                  <><CheckCircle2 className="w-4 h-4 mr-2" /> Activate</>
+                                )}
+                              </DropdownMenuItem>
+                              {!isSelf && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      setDeleteMember(m);
+                                      setDeleteOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" /> Delete Member
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
@@ -456,26 +523,68 @@ export default function TeamPage() {
         </CardContent>
       </Card>
 
-      {/* Invite Dialog */}
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+      {/* Create Member Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">Invite Team Member</DialogTitle>
-            <DialogDescription>Send an invitation email to join your company</DialogDescription>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <UserPlus className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="font-display">Create Team Member</DialogTitle>
+                <DialogDescription>Create a new account with login credentials</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Email Address</Label>
+              <Label>Full Name</Label>
               <Input
-                type="email"
-                placeholder="colleague@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="e.g. Ahmed Hassan"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
+              <Label>Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="colleague@example.com"
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Min 6 characters"
+                  value={createPassword}
+                  onChange={(e) => setCreatePassword(e.target.value)}
+                  className="pl-9 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Share these credentials with the team member. They can change their password later from Settings.
+              </p>
+            </div>
+            <div className="space-y-2">
               <Label>Role</Label>
-              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as CompanyRole)}>
+              <Select value={createRole} onValueChange={(v) => setCreateRole(v as CompanyRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -494,22 +603,22 @@ export default function TeamPage() {
             <div className="rounded-lg bg-muted p-3">
               <h4 className="text-xs font-semibold text-foreground mb-1.5">Role Permissions</h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {inviteRole === "company_admin" && "Full access to company settings, team management, and all modules."}
-                {inviteRole === "agent" && "Can manage trips, clients, and itineraries. Cannot access billing or team settings."}
-                {inviteRole === "operations" && "Can manage trip operations, logistics, and supplier coordination."}
-                {inviteRole === "finance" && "Access to invoices, payments, and financial reports."}
-                {inviteRole === "viewer" && "Read-only access to dashboards and reports. Cannot create or modify data."}
+                {createRole === "company_admin" && "Full access to company settings, team management, and all modules."}
+                {createRole === "agent" && "Can manage trips, clients, and itineraries. Cannot access billing or team settings."}
+                {createRole === "operations" && "Can manage trip operations, logistics, and supplier coordination."}
+                {createRole === "finance" && "Access to invoices, payments, and financial reports."}
+                {createRole === "viewer" && "Read-only access to dashboards and reports. Cannot create or modify data."}
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button
-              onClick={handleInvite}
-              disabled={!inviteEmail || inviting}
+              onClick={handleCreateMember}
+              disabled={!createEmail || !createPassword || !createName || createPassword.length < 6 || creating}
               className="gold-gradient text-accent-foreground gap-2"
             >
-              {inviting ? "Sending..." : <><Send className="w-4 h-4" /> Send Invitation</>}
+              {creating ? "Creating..." : <><UserPlus className="w-4 h-4" /> Create Member</>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -553,6 +662,36 @@ export default function TeamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Member Confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-5 h-5" /> Delete Team Member
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to permanently remove{" "}
+                <span className="font-semibold text-foreground">{deleteMember?.fullName}</span> from the team?
+              </p>
+              <p className="text-xs text-destructive/80">
+                This will delete their account and all access. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMember}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting..." : "Delete Member"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Plan limit reached dialog */}
       <LimitReachedDialog

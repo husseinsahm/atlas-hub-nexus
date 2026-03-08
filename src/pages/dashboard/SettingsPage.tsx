@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Building2, Globe, Phone, Mail, MapPin, Camera, Loader2, Save,
   Languages, DollarSign, Hash, Trash2, Plus, CheckCircle, Settings,
-  Image as ImageIcon
+  Image as ImageIcon, KeyRound, Eye, EyeOff, ShieldCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -248,6 +248,9 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="numbering" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
             <Hash className="w-3.5 h-3.5" /> Numbering
+          </TabsTrigger>
+          <TabsTrigger value="security" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" /> Security
           </TabsTrigger>
         </TabsList>
 
@@ -566,7 +569,110 @@ export default function SettingsPage() {
             </div>
           </div>
         </TabsContent>
+        {/* ── Security Tab ── */}
+        <TabsContent value="security">
+          <PasswordChangeSection />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function PasswordChangeSection() {
+  const { updatePassword } = useAuth();
+  const { toast } = useToast();
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const passwordsMatch = newPassword === confirmPassword;
+  const isValid = newPassword.length >= 6 && passwordsMatch;
+
+  async function handleChangePassword() {
+    if (!isValid) return;
+    setSaving(true);
+    try {
+      const result = await updatePassword(newPassword);
+      if (result.error) throw new Error(result.error);
+      toast({ title: "Password updated successfully ✓" });
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="luxury-card p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <ShieldCheck className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <h3 className="font-semibold font-display text-foreground">Change Password</h3>
+          <p className="text-xs text-muted-foreground">Update your login password</p>
+        </div>
+      </div>
+
+      <div className="max-w-md space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">New Password</label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type={showNew ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Min 6 characters"
+              className="luxury-input w-full pl-9 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNew(!showNew)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Confirm Password</label>
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type={showConfirm ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter your new password"
+              className="luxury-input w-full pl-9 pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          {confirmPassword && !passwordsMatch && (
+            <p className="text-xs text-destructive">Passwords do not match</p>
+          )}
+        </div>
+
+        <Button
+          onClick={handleChangePassword}
+          disabled={!isValid || saving}
+          className="gold-gradient border-0 text-accent-foreground font-semibold hover:opacity-90 gap-2"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+          Update Password
+        </Button>
+      </div>
     </div>
   );
 }
