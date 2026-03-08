@@ -30,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
