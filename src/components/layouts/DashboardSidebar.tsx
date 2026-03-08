@@ -16,19 +16,6 @@ import {
   Cog,
   Heart,
 } from "lucide-react";
-  Users,
-  UserCog,
-  Settings,
-  CreditCard,
-  BarChart3,
-  FileText,
-  Receipt,
-  Compass,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  Cog,
-} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
