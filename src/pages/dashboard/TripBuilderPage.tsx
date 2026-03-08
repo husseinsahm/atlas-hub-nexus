@@ -13,6 +13,7 @@ import {
   TrendingUp, CheckCircle2, Copy, ChevronUp, ChevronDown,
   ArrowUpDown, StickyNote, Image as ImageIcon,
   MoveUp, MoveDown, CopyPlus, MessageSquare,
+  Eye, EyeOff, Percent, Tag, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,8 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
