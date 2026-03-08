@@ -203,16 +203,15 @@ export default function CustomersPage() {
     setSaving(true);
 
     try {
-      // Refresh session to ensure valid auth token before saving
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) {
-        toast({ title: "Session expired", description: "Please log in again and retry.", variant: "destructive" });
-        setSaving(false);
-        return;
+      // Force token refresh to ensure valid auth
+      console.log("[CustomerSave] Starting save, editingId:", editingId);
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error("[CustomerSave] Session refresh failed:", refreshError);
       }
 
-      const payload = {
-        company_id: companyId,
+      // Build payload — exclude company_id from updates (it doesn't change and avoids unnecessary RLS checks)
+      const basePayload = {
         full_name: form.full_name.trim(),
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
@@ -229,41 +228,57 @@ export default function CustomersPage() {
         tags: form.selectedPrefs,
       };
 
-      const maxRetries = 2;
+      const maxRetries = 3;
       let lastError: any = null;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
+          console.log(`[CustomerSave] Attempt ${attempt + 1}/${maxRetries + 1}`);
+
           if (editingId) {
-            const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
+            const { data, error, status } = await supabase
+              .from("customers")
+              .update(basePayload)
+              .eq("id", editingId)
+              .select();
+            console.log("[CustomerSave] Update response:", { data, error, status });
             if (error) throw error;
             toast({ title: "Customer updated" });
           } else {
-            const { error } = await supabase.from("customers").insert({ ...payload, created_by: user.id });
+            const { data, error, status } = await supabase
+              .from("customers")
+              .insert({ ...basePayload, company_id: companyId, created_by: user.id })
+              .select();
+            console.log("[CustomerSave] Insert response:", { data, error, status });
             if (error) throw error;
             toast({ title: "Customer created" });
           }
           setFormOpen(false);
           setFormErrors({});
           fetchCustomers();
-          return; // success — exit
+          return; // success
         } catch (err: any) {
           lastError = err;
+          console.error(`[CustomerSave] Attempt ${attempt + 1} failed:`, err?.message, err);
+
           // Only retry on network-level failures
           if (err?.message?.includes("Failed to fetch") && attempt < maxRetries) {
-            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-            // Refresh session before retrying
-            await supabase.auth.getSession();
+            const delay = 1000 * (attempt + 1);
+            console.log(`[CustomerSave] Retrying in ${delay}ms...`);
+            await new Promise((r) => setTimeout(r, delay));
+            // Force refresh session before retry
+            await supabase.auth.refreshSession();
             continue;
           }
-          throw err; // non-retryable error
+          throw err;
         }
       }
 
       throw lastError;
     } catch (err: any) {
+      console.error("[CustomerSave] Final error:", err);
       const description = err?.message?.includes("Failed to fetch")
-        ? "Network error — please check your connection and try again."
+        ? "Network error — please check your connection and try again. If this persists, try logging out and back in."
         : err?.message || "Please check your connection and try again";
       toast({ title: "Error saving customer", description, variant: "destructive" });
     } finally {
