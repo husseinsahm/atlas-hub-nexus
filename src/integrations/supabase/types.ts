@@ -14,10 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          company_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
           created_at: string
+          created_by: string | null
+          deleted_at: string | null
           email: string | null
           id: string
           is_active: boolean
@@ -25,13 +77,13 @@ export type Database = {
           name: string
           phone: string | null
           slug: string
-          subscription_plan: string | null
-          subscription_status: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -39,13 +91,13 @@ export type Database = {
           name: string
           phone?: string | null
           slug: string
-          subscription_plan?: string | null
-          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -53,11 +105,68 @@ export type Database = {
           name?: string
           phone?: string | null
           slug?: string
-          subscription_plan?: string | null
-          subscription_status?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      company_branches: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_id: string
+          country: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          is_main: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_id: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_main?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_id?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          is_main?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_branches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_memberships: {
         Row: {
@@ -141,6 +250,66 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean
+          max_branches: number | null
+          max_trips: number | null
+          max_users: number | null
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          max_branches?: number | null
+          max_trips?: number | null
+          max_users?: number | null
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean
+          max_branches?: number | null
+          max_trips?: number | null
+          max_users?: number | null
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -170,6 +339,72 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string
+          canceled_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          canceled_at?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          canceled_at?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

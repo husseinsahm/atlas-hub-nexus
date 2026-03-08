@@ -34,6 +34,7 @@ const navItems: NavItem[] = [
   { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"] },
   { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] },
   { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] },
+  { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] },
   { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] },
   { title: "Trips", translationKey: "nav.trips", url: "/dashboard/trips", icon: Map, roles: ["company_admin", "agent", "operations"] },
   { title: "Itineraries", translationKey: "nav.itineraries", url: "/dashboard/itineraries", icon: FileText, roles: ["company_admin", "agent", "operations"] },

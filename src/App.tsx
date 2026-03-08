@@ -14,6 +14,8 @@ import AcceptInvite from "./pages/AcceptInvite";
 import { DashboardLayout } from "./components/layouts/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import PlaceholderPage from "./pages/dashboard/PlaceholderPage";
+import CompaniesPage from "./pages/dashboard/CompaniesPage";
+import PlansPage from "./pages/dashboard/PlansPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -62,7 +64,8 @@ function AppRoutes() {
       {/* Dashboard - protected */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Overview />} />
-        <Route path="companies" element={<PlaceholderPage />} />
+        <Route path="companies" element={<CompaniesPage />} />
+        <Route path="plans" element={<PlansPage />} />
         <Route path="subscriptions" element={<PlaceholderPage />} />
         <Route path="analytics" element={<PlaceholderPage />} />
         <Route path="trips" element={<PlaceholderPage />} />
