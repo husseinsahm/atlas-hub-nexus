@@ -226,16 +226,47 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
+  const [pricingView, setPricingView] = useState<"internal" | "client">("internal");
+
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
+    const markupType = (trip as any)?.markup_type || "percentage";
+    const markupValue = (trip as any)?.markup_value || 0;
+    const discountType = (trip as any)?.discount_type || "fixed";
+    const discountValue = (trip as any)?.discount_value || 0;
+    
+    // Calculate markup
+    let markupAmount = 0;
+    if (markupType === "percentage") {
+      markupAmount = totalCost * (markupValue / 100);
+    } else {
+      markupAmount = markupValue;
+    }
+    
+    const subtotalAfterMarkup = totalCost + markupAmount;
+    
+    // Calculate discount
+    let discountAmount = 0;
+    if (discountType === "percentage") {
+      discountAmount = subtotalAfterMarkup * (discountValue / 100);
+    } else {
+      discountAmount = discountValue;
+    }
+    
     const sellingPrice = trip?.selling_price || 0;
+    const calculatedClientPrice = subtotalAfterMarkup - discountAmount;
     const profit = sellingPrice - totalCost;
     const margin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
+    
     const perDay: Record<string, number> = {};
+    const perDayItems: Record<string, TripDayItem[]> = {};
     days.forEach(d => {
-      perDay[d.id] = allDayItems.filter(i => i.trip_day_id === d.id).reduce((s, i) => s + (i.total_price || 0), 0);
+      const items = allDayItems.filter(i => i.trip_day_id === d.id);
+      perDay[d.id] = items.reduce((s, i) => s + (i.total_price || 0), 0);
+      perDayItems[d.id] = items;
     });
-    return { totalCost, sellingPrice, profit, margin, perDay };
+    
+    return { totalCost, sellingPrice, profit, margin, perDay, perDayItems, markupAmount, discountAmount, calculatedClientPrice, subtotalAfterMarkup };
   }, [allDayItems, trip, days]);
 
   // === MUTATIONS ===
