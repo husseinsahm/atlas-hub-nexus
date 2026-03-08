@@ -871,7 +871,7 @@ export default function BookingDetailPage() {
                           <p className="text-sm font-bold font-mono text-foreground">
                             {Number(service.total_cost || 0).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{service.currency}</span>
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{service.quantity} × {Number(service.unit_price || 0).toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">{service.quantity}A × {Number(service.unit_price || 0).toLocaleString()}{(service.metadata as any)?.child_quantity > 0 && ` + ${(service.metadata as any).child_quantity}C × ${Number((service.metadata as any).child_unit_price || 0).toLocaleString()}`}</p>
                         </div>
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0 }); setShowServiceDialog(true); }}>
