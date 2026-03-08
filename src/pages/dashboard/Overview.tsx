@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { PlanOverviewCard } from "@/components/plan/PlanOverviewCard";
 
 // ─── SUPER ADMIN TYPES ───
 interface PlatformStats {
