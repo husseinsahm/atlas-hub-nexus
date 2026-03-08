@@ -19,6 +19,8 @@ import PlansPage from "./pages/dashboard/PlansPage";
 import SubscriptionsPage from "./pages/dashboard/SubscriptionsPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import TeamPage from "./pages/dashboard/TeamPage";
+import LeadsPage from "./pages/dashboard/LeadsPage";
+import LeadDetailPage from "./pages/dashboard/LeadDetailPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
