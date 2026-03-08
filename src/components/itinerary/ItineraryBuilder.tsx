@@ -63,6 +63,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [showTransport, setShowTransport] = useState<Record<string, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
 
   // Initialize transport toggle state from existing data
   const hasTransport = useCallback((day: ItineraryDay) => {
@@ -165,21 +166,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
       if (error) throw error;
 
       if (data?.days) {
-        for (const day of data.days) {
-          const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
-          if (existingDay) {
-            await supabase.from("booking_days").update({
-              title: day.title || existingDay.title,
-              short_description: day.short_description || null,
-              city: day.city || existingDay.city,
-              pickup_location: day.pickup_location || null,
-              dropoff_location: day.dropoff_location || null,
-              pickup_time: day.pickup_time || null,
-            }).eq("id", existingDay.id);
-          }
-        }
-        queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
-        toast({ title: isArabic ? "تم تحديث البرنامج بالذكاء الاصطناعي" : "Itinerary enhanced with AI" });
+        setAiSuggestions(data.days);
+        toast({ title: isArabic ? "تم توليد الاقتراحات - راجع وأكّد" : "AI suggestions ready — review & confirm below" });
       }
     } catch (err: any) {
       console.error("AI generation error:", err);
@@ -192,6 +180,30 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
       setIsGenerating(false);
     }
   }, [bookingId, booking, itineraryDays, queryClient, toast, isArabic]);
+
+  const applyAiSuggestions = useCallback(async () => {
+    if (!aiSuggestions) return;
+    try {
+      for (const day of aiSuggestions) {
+        const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
+        if (existingDay) {
+          await supabase.from("booking_days").update({
+            title: day.title || existingDay.title,
+            short_description: day.short_description || null,
+            city: day.city || existingDay.city,
+            pickup_location: day.pickup_location || null,
+            dropoff_location: day.dropoff_location || null,
+            pickup_time: day.pickup_time || null,
+          }).eq("id", existingDay.id);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      toast({ title: isArabic ? "تم تطبيق اقتراحات الذكاء الاصطناعي" : "AI suggestions applied" });
+      setAiSuggestions(null);
+    } catch (err: any) {
+      toast({ title: "Error applying suggestions", description: err?.message, variant: "destructive" });
+    }
+  }, [aiSuggestions, itineraryDays, bookingId, queryClient, toast, isArabic]);
 
   return (
     <div className="space-y-4">
@@ -266,7 +278,51 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
           </CardContent>
         </Card>
       ) : (
-        /* Timeline */
+        <>
+        {/* AI Suggestions Preview */}
+        {aiSuggestions && (
+          <Card className="border-accent/30 bg-accent/5 shadow-sm">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-accent" />
+                  <h4 className="text-sm font-bold text-foreground font-display">
+                    {isArabic ? "اقتراحات الذكاء الاصطناعي" : "AI Suggestions"}
+                  </h4>
+                  <Badge variant="secondary" className="text-[9px]">{aiSuggestions.length} {isArabic ? "يوم" : "days"}</Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setAiSuggestions(null)}>
+                    {isArabic ? "تجاهل" : "Dismiss"}
+                  </Button>
+                  <Button size="sm" className="gold-gradient text-accent-foreground text-xs h-7 gap-1.5" onClick={applyAiSuggestions}>
+                    <Check className="w-3 h-3" />
+                    {isArabic ? "تطبيق الكل" : "Apply All"}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {aiSuggestions.map((s: any) => (
+                  <div key={s.day_number} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background border border-border text-xs">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-[11px] shrink-0">
+                      {s.day_number}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <p className="font-semibold text-foreground truncate">{s.title}</p>
+                      {s.short_description && <p className="text-muted-foreground line-clamp-1">{s.short_description}</p>}
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        {s.city && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{s.city}</span>}
+                        {s.pickup_location && <span className="flex items-center gap-0.5"><Navigation className="w-2.5 h-2.5" />{s.pickup_location}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Timeline */}
         <div className="relative">
           {/* Timeline line */}
           <div className="absolute left-[23px] top-4 bottom-4 w-px bg-border z-0" />
@@ -296,6 +352,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
             </AnimatePresence>
           </div>
         </div>
+        </>
       )}
     </div>
   );
