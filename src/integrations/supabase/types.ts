@@ -602,6 +602,86 @@ export type Database = {
           },
         ]
       }
+      library_items: {
+        Row: {
+          category: Database["public"]["Enums"]["library_category"]
+          city: string | null
+          company_id: string
+          country: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          internal_notes: string | null
+          is_active: boolean
+          is_template: boolean
+          metadata: Json | null
+          photos: Json | null
+          price_amount: number | null
+          price_currency: string
+          price_type: string
+          tags: Json | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["library_category"]
+          city?: string | null
+          company_id: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_active?: boolean
+          is_template?: boolean
+          metadata?: Json | null
+          photos?: Json | null
+          price_amount?: number | null
+          price_currency?: string
+          price_type?: string
+          tags?: Json | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["library_category"]
+          city?: string | null
+          company_id?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          internal_notes?: string | null
+          is_active?: boolean
+          is_template?: boolean
+          metadata?: Json | null
+          photos?: Json | null
+          price_amount?: number | null
+          price_currency?: string
+          price_type?: string
+          tags?: Json | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_items_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string
@@ -827,6 +907,14 @@ export type Database = {
         | "awaiting_client"
         | "won"
         | "lost"
+      library_category:
+        | "attraction"
+        | "hotel"
+        | "activity"
+        | "transfer"
+        | "meal"
+        | "guide"
+        | "template"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -979,6 +1067,15 @@ export const Constants = {
         "awaiting_client",
         "won",
         "lost",
+      ],
+      library_category: [
+        "attraction",
+        "hotel",
+        "activity",
+        "transfer",
+        "meal",
+        "guide",
+        "template",
       ],
     },
   },
