@@ -416,7 +416,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
               )}
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowAddDialog(false); }}>
               Cancel
             </Button>
@@ -432,7 +432,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                 "Record Payment"
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
