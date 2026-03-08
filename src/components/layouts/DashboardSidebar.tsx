@@ -46,6 +46,7 @@ const navItems: NavItem[] = [
   { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
   { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] },
   { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] },
+  { title: "Quotations", translationKey: "nav.quotations", url: "/dashboard/quotations", icon: FileText, roles: ["company_admin", "agent", "finance"] },
   { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] },
   { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] },
 ];

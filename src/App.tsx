@@ -86,6 +86,8 @@ function AppRoutes() {
         <Route path="trips/:id" element={<TripBuilderPage />} />
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="bookings/:id" element={<BookingDetailPage />} />
+        <Route path="quotations" element={<QuotationsPage />} />
+        <Route path="quotations/:id" element={<QuotationDetailPage />} />
         <Route path="itineraries" element={<PlaceholderPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="clients" element={<LeadsPage />} />
