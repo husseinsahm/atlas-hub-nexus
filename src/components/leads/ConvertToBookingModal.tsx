@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Plane, User, Calendar, MapPin, Users, DollarSign, UserCheck,
-  FileText, CheckCircle2, Loader2, ArrowRight, Sparkles,
+  FileText, CheckCircle2, Loader2, ArrowRight, Sparkles, X,
 } from "lucide-react";
+import { CityAutocomplete, cities } from "@/components/ui/city-autocomplete";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -73,7 +74,7 @@ export default function ConvertToBookingModal({
   const [status, setStatus] = useState<BookingStatus>("tentative");
   const [arrivalDate, setArrivalDate] = useState(lead.travel_date || "");
   const [departureDate, setDepartureDate] = useState("");
-  const [destination, setDestination] = useState(lead.destinations?.join(", ") || "");
+  const [destinations, setDestinations] = useState<string[]>(lead.destinations?.length ? lead.destinations : []);
   const [itineraryNotes, setItineraryNotes] = useState(lead.notes || "");
   const [adults, setAdults] = useState(lead.adults);
   const [children, setChildren] = useState(lead.children);
@@ -137,7 +138,7 @@ export default function ConvertToBookingModal({
         .insert({
           company_id: companyId,
           booking_number: bNumber,
-          title: `${customerName} - ${destination || "Trip"}`,
+          title: `${customerName} - ${destinations.length ? destinations.join(", ") : "Trip"}`,
           customer_id: customer.id,
           lead_id: lead.id,
           source: lead.source,
@@ -288,13 +289,36 @@ export default function ConvertToBookingModal({
                       <Input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="h-9" />
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs">Destination</Label>
-                      <Input
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        placeholder="e.g. Paris, Rome"
-                        className="h-9"
-                      />
+                      <Label className="text-xs">Destinations</Label>
+                      <div className="space-y-2">
+                        {destinations.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {destinations.map((dest, idx) => (
+                              <Badge key={idx} variant="secondary" className="gap-1 pl-2 pr-1 py-1 text-xs">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                {dest}
+                                <button
+                                  type="button"
+                                  onClick={() => setDestinations(prev => prev.filter((_, i) => i !== idx))}
+                                  className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 transition-colors"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <CityAutocomplete
+                          value=""
+                          onValueChange={(city) => {
+                            if (city && !destinations.includes(city)) {
+                              setDestinations(prev => [...prev, city]);
+                            }
+                          }}
+                          placeholder="Add destination..."
+                          className="h-9"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
