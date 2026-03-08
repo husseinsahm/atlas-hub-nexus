@@ -16,6 +16,7 @@ import {
   Cog,
   Heart,
   BookOpen,
+  Briefcase,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
