@@ -1196,76 +1196,122 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
   const [form, setForm] = useState({ ...service });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Hotel className="w-5 h-5 text-accent" />
-            {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 py-4">
-          <div>
-            <Label className="text-xs">{isArabic ? "نوع الخدمة" : "Service Type"} *</Label>
-            <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {SERVICE_TYPES.map(st => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
-            <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "العنوان" : "Title"} *</Label>
-            <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
-            <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
-            <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
-            <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
-            <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الكمية" : "Quantity"}</Label>
-            <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
-            <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1" />
-          </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
-            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-xs" />
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+        <div className="relative px-6 pt-5 pb-4 navy-gradient">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <Hotel className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-display">
+                {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
+              </h2>
+              <p className="text-[11px] text-white/60">{isArabic ? "فنادق، نقل، جولات، مرشدين" : "Hotels, transfers, tours, guides"}</p>
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+
+        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Service type chips */}
+          <div>
+            <Label className="text-xs font-medium mb-2 block">{isArabic ? "نوع الخدمة" : "Service Type"}</Label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {SERVICE_TYPES.map(st => {
+                const StIcon = st.icon;
+                return (
+                  <button
+                    key={st.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, service_type: st.value })}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border p-2.5 text-[10px] font-medium transition-all",
+                      form.service_type === st.value
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    <StIcon className="w-4 h-4" />
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "العنوان" : "Title"} <span className="text-destructive">*</span></Label>
+              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
+              <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
+                <SelectTrigger className="mt-1 h-11"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
+              <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
+              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
+              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
+              <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1 h-11" />
+            </div>
+          </div>
+
+          {/* Pricing row */}
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1">
+              <DollarSign className="w-3 h-3" /> {isArabic ? "التسعير" : "Pricing"}
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "الكمية" : "Qty"}</Label>
+                <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1 h-11 text-center font-bold" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
+                <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1 h-11 font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الإجمالي" : "Total"}</Label>
+                <div className="mt-1 h-11 rounded-md border border-border bg-background flex items-center justify-center text-sm font-bold font-mono text-foreground">
+                  {((form.quantity || 1) * (form.unit_price || 0)).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
+            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
           <Button
+            size="sm"
             disabled={!form.title?.trim() || isSaving}
             onClick={() => onSave(form)}
-            className="gold-gradient text-accent-foreground gap-2"
+            className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
           >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isArabic ? "حفظ" : "Save"}
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isArabic ? "حفظ" : "Save Service"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
