@@ -1,12 +1,13 @@
-import { Search, Globe, LogOut } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/NotificationBell";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Topbar() {
   const { user, logout } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
 
   const companyName = user?.activeMembership?.companyName;
 
@@ -25,14 +26,7 @@ export function Topbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <Globe className="w-4 h-4" />
-        </Button>
+        <LanguageSwitcher />
 
         <NotificationBell />
 
