@@ -114,54 +114,153 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
   }, [profiles]);
 
-  // Upload handler
+  // Upload handler with enhanced error handling and progress
   const handleUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (!user) {
+      toast({ title: "Please log in to upload files", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
+    setUploadProgress(0);
+    
+    const fileArray = Array.from(files);
+    let successCount = 0;
+    let failCount = 0;
 
     try {
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        setUploadProgress(((i + 1) / fileArray.length) * 100);
+
+        // Validate file size (10MB limit)
         if (file.size > 10 * 1024 * 1024) {
-          toast({ title: `${file.name} exceeds 10MB limit`, variant: "destructive" });
+          toast({ 
+            title: `File too large: ${file.name}`, 
+            description: "Maximum file size is 10MB",
+            variant: "destructive" 
+          });
+          failCount++;
           continue;
         }
 
-        const ext = file.name.split(".").pop();
-        const storagePath = `${companyId}/${entityType}/${entityId}/${Date.now()}_${file.name}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("attachments")
-          .upload(storagePath, file, { contentType: file.type });
-
-        if (uploadError) {
-          toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
-          continue;
-        }
-
-        // Insert record
-        const { error: dbError } = await supabase.from("entity_attachments").insert({
-          entity_type: entityType,
-          entity_id: entityId,
-          company_id: companyId,
-          file_name: file.name,
-          file_url: storagePath,
-          file_type: file.type,
-          file_size: file.size,
-          category: uploadCategory,
-          uploaded_by: user!.id,
+        // Validate file type
+        const allowedTypes = [
+          'image/*', 'application/pdf', 'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/plain', 'text/csv'
+        ];
+        
+        const isValidType = allowedTypes.some(type => {
+          if (type.endsWith('*')) {
+            return file.type.startsWith(type.slice(0, -1));
+          }
+          return file.type === type;
         });
 
-        if (dbError) {
-          toast({ title: `Failed to save ${file.name}`, variant: "destructive" });
+        if (!isValidType) {
+          toast({ 
+            title: `Invalid file type: ${file.name}`, 
+            description: "Only images, PDFs, and office documents are allowed",
+            variant: "destructive" 
+          });
+          failCount++;
+          continue;
+        }
+
+        // Create sanitized file path
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `${companyId}/${entityType}/${entityId}/${timestamp}_${randomSuffix}_${sanitizedName}`;
+
+        try {
+          // First create database record
+          const { data: dbRecord, error: dbError } = await supabase
+            .from("entity_attachments")
+            .insert({
+              entity_type: entityType,
+              entity_id: entityId,
+              company_id: companyId,
+              file_name: file.name,
+              file_url: storagePath,
+              file_type: file.type,
+              file_size: file.size,
+              category: uploadCategory,
+              uploaded_by: user.id,
+            })
+            .select()
+            .single();
+
+          if (dbError) {
+            console.error('Database error:', dbError);
+            toast({ 
+              title: `Database error for ${file.name}`, 
+              description: dbError.message,
+              variant: "destructive" 
+            });
+            failCount++;
+            continue;
+          }
+
+          // Then upload file to storage
+          const { error: uploadError } = await supabase.storage
+            .from("attachments")
+            .upload(storagePath, file, { 
+              contentType: file.type,
+              cacheControl: '3600'
+            });
+
+          if (uploadError) {
+            console.error('Storage error:', uploadError);
+            // Rollback database record if upload fails
+            await supabase.from("entity_attachments").delete().eq('id', dbRecord.id);
+            toast({ 
+              title: `Storage error for ${file.name}`, 
+              description: uploadError.message,
+              variant: "destructive" 
+            });
+            failCount++;
+            continue;
+          }
+
+          successCount++;
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast({ 
+            title: `Failed to upload ${file.name}`, 
+            description: error instanceof Error ? error.message : "Unknown error",
+            variant: "destructive" 
+          });
+          failCount++;
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
-      toast({ title: "Files uploaded successfully" });
-    } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+      // Show final result
+      if (successCount > 0) {
+        queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
+        toast({ 
+          title: `Successfully uploaded ${successCount} file${successCount === 1 ? '' : 's'}`,
+          ...(failCount > 0 && { description: `${failCount} file${failCount === 1 ? '' : 's'} failed` })
+        });
+      }
+      
+      if (successCount === 0 && failCount > 0) {
+        toast({ title: "All uploads failed", variant: "destructive" });
+      }
+
+    } catch (error) {
+      console.error('Upload handler error:', error);
+      toast({ 
+        title: "Upload failed", 
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [companyId, entityType, entityId, uploadCategory, user, toast, queryClient]);
