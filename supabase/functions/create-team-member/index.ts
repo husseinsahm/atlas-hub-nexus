@@ -55,17 +55,35 @@ Deno.serve(async (req) => {
       if (!superRole) throw new Error("Only company admins can create team members");
     }
 
-    // Create auth user (auto-confirmed)
-    const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: fullName },
-    });
+    // Check if user already exists
+    let userId: string;
+    const { data: { users: existingUsers } } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.find((u: any) => u.email === email);
 
-    if (createErr) throw new Error(createErr.message);
+    if (existingUser) {
+      // Check if already a member of this company
+      const { data: existingMembership } = await adminClient
+        .from("company_memberships")
+        .select("id")
+        .eq("user_id", existingUser.id)
+        .eq("company_id", companyId)
+        .maybeSingle();
 
-    const userId = newUser.user.id;
+      if (existingMembership) {
+        throw new Error("This user is already a member of this company");
+      }
+      userId = existingUser.id;
+    } else {
+      // Create auth user (auto-confirmed)
+      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: fullName },
+      });
+      if (createErr) throw new Error(createErr.message);
+      userId = newUser.user.id;
+    }
 
     // Create profile
     await adminClient.from("profiles").upsert({
