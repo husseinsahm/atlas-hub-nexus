@@ -8,6 +8,7 @@ import {
   Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
   Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
   Sparkles, Navigation, FileText, Activity, User, Calendar,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
