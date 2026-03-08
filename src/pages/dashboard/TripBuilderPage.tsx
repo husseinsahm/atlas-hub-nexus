@@ -909,13 +909,21 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client")}>
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback")}>
               <TabsList className="w-full h-8">
                 <TabsTrigger value="internal" className="flex-1 text-[11px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
                 </TabsTrigger>
                 <TabsTrigger value="client" className="flex-1 text-[11px] gap-1">
-                  <Eye className="w-3 h-3" /> Client View
+                  <Eye className="w-3 h-3" /> Client
+                </TabsTrigger>
+                <TabsTrigger value="feedback" className="flex-1 text-[11px] gap-1 relative">
+                  <MessageCircle className="w-3 h-3" /> Feedback
+                  {tripFeedback.length > 0 && (
+                    <span className="ml-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                      {tripFeedback.length}
+                    </span>
+                  )}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
