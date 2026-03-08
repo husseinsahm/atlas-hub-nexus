@@ -287,8 +287,9 @@ export default function BookingDetailPage() {
 
   const saveService = useMutation({
     mutationFn: async (service: any) => {
-      const adultTotal = (service.quantity || 0) * (service.unit_price || 0);
-      const childTotal = (service.child_quantity || 0) * (service.child_unit_price || 0);
+      const isFlat = service.pricing_mode === "flat";
+      const adultTotal = isFlat ? (service.unit_price || 0) : (service.quantity || 0) * (service.unit_price || 0);
+      const childTotal = isFlat || service.children_free ? 0 : (service.child_quantity || 0) * (service.child_unit_price || 0);
       const payload = {
         booking_id: id!,
         company_id: booking!.company_id,
@@ -300,7 +301,7 @@ export default function BookingDetailPage() {
         confirmation_number: service.confirmation_number || null,
         service_date: service.service_date || null,
         location: service.location || null,
-        quantity: service.quantity || 1,
+        quantity: isFlat ? 1 : (service.quantity || 1),
         unit_price: service.unit_price || 0,
         total_cost: adultTotal + childTotal,
         currency: booking?.currency || "USD",
@@ -308,8 +309,10 @@ export default function BookingDetailPage() {
         notes: service.notes || null,
         created_by: user?.id,
         metadata: {
+          pricing_mode: service.pricing_mode || "detailed",
           child_quantity: service.child_quantity || 0,
-          child_unit_price: service.child_unit_price || 0,
+          child_unit_price: service.children_free ? 0 : (service.child_unit_price || 0),
+          children_free: service.children_free || false,
         },
       };
       if (service.id && !service._isNew) {
@@ -874,7 +877,7 @@ export default function BookingDetailPage() {
                           <p className="text-[10px] text-muted-foreground">{service.quantity}A × {Number(service.unit_price || 0).toLocaleString()}{(service.metadata as any)?.child_quantity > 0 && ` + ${(service.metadata as any).child_quantity}C × ${Number((service.metadata as any).child_unit_price || 0).toLocaleString()}`}</p>
                         </div>
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0 }); setShowServiceDialog(true); }}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, pricing_mode: service.metadata?.pricing_mode || "detailed", child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0, children_free: service.metadata?.children_free || false }); setShowServiceDialog(true); }}>
                             <Pencil className="w-3 h-3" />
                           </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteService.mutate(service.id)}>
@@ -1523,52 +1526,98 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
 
           {/* Pricing row */}
           <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1">
-              <DollarSign className="w-3 h-3" /> {isArabic ? "التسعير" : "Pricing"}
-            </p>
-            {/* Adults row */}
-            <div className="flex items-center gap-2 mb-1.5">
-              <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "بالغين" : "Adults"}</Badge>
-              <div className="flex-1 grid grid-cols-3 gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                <DollarSign className="w-3 h-3" /> {isArabic ? "التسعير" : "Pricing"}
+              </p>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button type="button" onClick={() => setForm({ ...form, pricing_mode: "flat" })} className={cn("px-3 py-1 text-[10px] font-semibold transition-all", (form.pricing_mode || "detailed") === "flat" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
+                  {isArabic ? "مبلغ إجمالي" : "Flat Rate"}
+                </button>
+                <button type="button" onClick={() => setForm({ ...form, pricing_mode: "detailed" })} className={cn("px-3 py-1 text-[10px] font-semibold transition-all", (form.pricing_mode || "detailed") === "detailed" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
+                  {isArabic ? "تفصيلي" : "Detailed"}
+                </button>
+              </div>
+            </div>
+
+            {(form.pricing_mode || "detailed") === "flat" ? (
+              /* ── Flat rate: single total ── */
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "عدد" : "Qty"}</Label>
-                  <Input type="number" min={0} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="mt-0.5 h-9 text-center font-bold text-sm" />
+                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "المبلغ الإجمالي" : "Total Amount"}</Label>
+                  <Input type="number" min={0} value={form.unit_price || 0} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0, quantity: 1, child_quantity: 0, child_unit_price: 0 })} className="mt-0.5 h-11 font-mono text-sm font-bold" placeholder="e.g., 500" />
                 </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "سعر الفرد" : "Price/each"}</Label>
-                  <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-0.5 h-9 font-mono text-sm" />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "الإجمالي" : "Subtotal"}</Label>
-                  <div className="mt-0.5 h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
-                    {((form.quantity || 0) * (form.unit_price || 0)).toLocaleString()}
+                <div className="flex items-end">
+                  <div className="h-11 w-full rounded-md border border-border bg-background flex items-center justify-center text-sm font-bold font-mono text-foreground">
+                    {(form.unit_price || 0).toLocaleString()}
                   </div>
                 </div>
               </div>
-            </div>
-            {/* Children row */}
-            <div className="flex items-center gap-2 mb-3">
-              <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "أطفال" : "Children"}</Badge>
-              <div className="flex-1 grid grid-cols-3 gap-2">
-                <div>
-                  <Input type="number" min={0} value={form.child_quantity || 0} onChange={e => setForm({ ...form, child_quantity: parseInt(e.target.value) || 0 })} className="h-9 text-center font-bold text-sm" />
-                </div>
-                <div>
-                  <Input type="number" min={0} value={form.child_unit_price || 0} onChange={e => setForm({ ...form, child_unit_price: parseFloat(e.target.value) || 0 })} className="h-9 font-mono text-sm" />
-                </div>
-                <div>
-                  <div className="h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
-                    {((form.child_quantity || 0) * (form.child_unit_price || 0)).toLocaleString()}
+            ) : (
+              /* ── Detailed: adults + children ── */
+              <>
+                {/* Adults row */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "بالغين" : "Adults"}</Badge>
+                  <div className="flex-1 grid grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "عدد" : "Qty"}</Label>
+                      <Input type="number" min={0} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="mt-0.5 h-9 text-center font-bold text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "سعر الفرد" : "Price/each"}</Label>
+                      <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-0.5 h-9 font-mono text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "الإجمالي" : "Subtotal"}</Label>
+                      <div className="mt-0.5 h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
+                        {((form.quantity || 0) * (form.unit_price || 0)).toLocaleString()}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+                {/* Children row */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "أطفال" : "Children"}</Badge>
+                  <div className="flex-1 grid grid-cols-3 gap-2">
+                    <div>
+                      <Input type="number" min={0} value={form.child_quantity || 0} onChange={e => setForm({ ...form, child_quantity: parseInt(e.target.value) || 0 })} className="h-9 text-center font-bold text-sm" disabled={form.children_free} />
+                    </div>
+                    <div>
+                      <Input type="number" min={0} value={form.children_free ? 0 : (form.child_unit_price || 0)} onChange={e => setForm({ ...form, child_unit_price: parseFloat(e.target.value) || 0 })} className="h-9 font-mono text-sm" disabled={form.children_free} />
+                    </div>
+                    <div>
+                      <div className="h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
+                        {form.children_free ? "0" : ((form.child_quantity || 0) * (form.child_unit_price || 0)).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Children free toggle */}
+                <div className="flex items-center gap-2 mb-3 ml-[4.5rem]">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, children_free: !form.children_free, child_unit_price: !form.children_free ? 0 : form.child_unit_price })}
+                    className={cn("flex items-center gap-1.5 text-[10px] font-medium rounded-full border px-2.5 py-1 transition-all",
+                      form.children_free ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-border text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    <CheckCircle2 className={cn("w-3 h-3", form.children_free ? "text-emerald-600" : "text-muted-foreground/40")} />
+                    {isArabic ? "الأطفال مجاناً" : "Children are FREE"}
+                  </button>
+                </div>
+              </>
+            )}
+
             {/* Grand total */}
             <Separator className="mb-3" />
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground">{isArabic ? "الإجمالي الكلي" : "Grand Total"}</span>
               <span className="text-base font-bold font-mono text-foreground">
-                {(((form.quantity || 0) * (form.unit_price || 0)) + ((form.child_quantity || 0) * (form.child_unit_price || 0))).toLocaleString()}
+                {(form.pricing_mode || "detailed") === "flat"
+                  ? (form.unit_price || 0).toLocaleString()
+                  : (((form.quantity || 0) * (form.unit_price || 0)) + (form.children_free ? 0 : ((form.child_quantity || 0) * (form.child_unit_price || 0)))).toLocaleString()
+                }
               </span>
             </div>
           </div>
