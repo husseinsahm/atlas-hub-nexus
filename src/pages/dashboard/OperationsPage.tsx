@@ -436,6 +436,9 @@ export default function OperationsPage() {
                             {service.service_type === "transfer" && <Car className="w-4 h-4 text-purple-600" />}
                             {service.service_type === "tour" && <MapPin className="w-4 h-4 text-emerald-600" />}
                             {service.service_type === "guide" && <User className="w-4 h-4 text-cyan-600" />}
+                            {service.service_type === "flight" && <Plane className="w-4 h-4 text-sky-600" />}
+                            {service.service_type === "visa" && <Stamp className="w-4 h-4 text-orange-600" />}
+                            {service.service_type === "entrance" && <Ticket className="w-4 h-4 text-pink-600" />}
                             <span className="text-sm">{service.title}</span>
                           </div>
                         </TableCell>
