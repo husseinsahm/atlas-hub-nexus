@@ -679,10 +679,13 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Customer ─── */}
       {activeTab === "customer" && (
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="border-border/60 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-accent" /> {isArabic ? "معلومات العميل" : "Customer Information"}
+              <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                <UserCheck className="w-3.5 h-3.5 text-accent" />
+              </div>
+              {isArabic ? "معلومات العميل" : "Customer Information"}
             </CardTitle>
           </CardHeader>
           <CardContent>
