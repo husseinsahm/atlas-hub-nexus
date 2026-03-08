@@ -410,6 +410,13 @@ export default function TripsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan limit reached dialog */}
+      <LimitReachedDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        type="trips"
+      />
     </div>
   );
 }
