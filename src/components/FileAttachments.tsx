@@ -564,9 +564,14 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 text-destructive/60 hover:text-destructive"
+                              disabled={deleteAttachment.isPending}
                               onClick={() => deleteAttachment.mutate(file)}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              {deleteAttachment.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
                             </Button>
                           </div>
                         </motion.div>
