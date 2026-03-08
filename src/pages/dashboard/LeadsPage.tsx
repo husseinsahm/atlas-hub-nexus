@@ -18,6 +18,11 @@ import {
   MapPin, Calendar, DollarSign, TrendingUp, UserCheck, Clock,
   Trophy, XCircle, MessageSquare, Sparkles,
 } from "lucide-react";
+import { NationalitySelect } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { NoLeadsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { TableLoadingState, StatsGridLoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
