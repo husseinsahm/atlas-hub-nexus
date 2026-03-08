@@ -12,9 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail, Globe,
-  MapPin, Tag, Heart, Star, Calendar,
+  MapPin, Tag, Heart, Star, Calendar, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CountrySelect, NationalitySelect } from "@/components/ui/country-select";
