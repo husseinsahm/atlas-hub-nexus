@@ -78,25 +78,40 @@ function AppRoutes() {
       {/* Dashboard - protected */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<Overview />} />
+        
+        {/* Super Admin */}
         <Route path="companies" element={<CompaniesPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        {/* Main entity: Booking Files */}
-        <Route path="bookings" element={<BookingsPage />} />
-        <Route path="bookings/:id" element={<BookingDetailPage />} />
-        {/* Reusable itinerary templates */}
-        <Route path="templates" element={<TemplatesPage />} />
-        <Route path="templates/:id" element={<PlaceholderPage />} />
-        <Route path="quotations" element={<QuotationsPage />} />
-        <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="library" element={<LibraryPage />} />
+        
+        {/* Sales & CRM */}
         <Route path="clients" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
-        <Route path="staff" element={<TeamPage />} />
+        
+        {/* Main entity: Booking Files */}
+        <Route path="bookings" element={<BookingsPage />} />
+        <Route path="bookings/:id" element={<BookingDetailPage />} />
+        
+        {/* Operations */}
+        <Route path="operations" element={<OperationsPage />} />
+        
+        {/* Product Management */}
+        <Route path="templates" element={<TemplatesPage />} />
+        <Route path="templates/:id" element={<PlaceholderPage />} />
+        <Route path="library" element={<LibraryPage />} />
+        
+        {/* Finance */}
+        <Route path="quotations" element={<QuotationsPage />} />
+        <Route path="quotations/:id" element={<QuotationDetailPage />} />
         <Route path="invoices" element={<PlaceholderPage />} />
+        
+        {/* Analytics & Reports */}
+        <Route path="analytics" element={<AnalyticsPage />} />
+        
+        {/* Team & Settings */}
+        <Route path="staff" element={<TeamPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
