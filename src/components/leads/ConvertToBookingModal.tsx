@@ -203,7 +203,7 @@ export default function ConvertToBookingModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[860px] p-0 gap-0 overflow-hidden border-border/50 shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-[860px] p-0 gap-0 overflow-hidden border-border/50 shadow-2xl rounded-2xl dark-header-dialog">
         <AnimatePresence mode="wait">
           {step === "form" && (
             <motion.div
