@@ -447,7 +447,7 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
-  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback" | "history" | "comments">("internal");
+  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback" | "history" | "comments" | "files">("internal");
 
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
