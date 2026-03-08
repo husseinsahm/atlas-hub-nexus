@@ -67,7 +67,7 @@ function AppRoutes() {
         <Route index element={<Overview />} />
         <Route path="companies" element={<CompaniesPage />} />
         <Route path="plans" element={<PlansPage />} />
-        <Route path="subscriptions" element={<PlaceholderPage />} />
+        <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="analytics" element={<PlaceholderPage />} />
         <Route path="trips" element={<PlaceholderPage />} />
         <Route path="itineraries" element={<PlaceholderPage />} />
