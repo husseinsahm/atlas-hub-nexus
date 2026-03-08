@@ -409,6 +409,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   onDeleteDay={() => deleteDay.mutate(day.id)}
                   onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
                   onDeleteItem={(itemId) => deleteDayItem.mutate(itemId)}
+                  onAiEnhanceDay={() => generateSingleDay(day)}
+                  isAiGenerating={generatingDayId === day.id}
                   isUpdating={updateDay.isPending}
                 />
               ))}
