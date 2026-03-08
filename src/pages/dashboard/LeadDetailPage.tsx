@@ -912,14 +912,14 @@ export default function LeadDetailPage() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              The lead status will be changed to "Won" and a trip draft will be available to create in the Trips module.
+              A new Booking File and Customer record will be created from this lead's information.
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConvertOpen(false)}>Cancel</Button>
-            <Button onClick={convertToTripDraft} disabled={converting} className="gold-gradient text-accent-foreground gap-2">
+            <Button onClick={convertToBooking} disabled={converting} className="gold-gradient text-accent-foreground gap-2">
               <Plane className="w-4 h-4" />
-              {converting ? "Converting..." : "Convert & Create Draft"}
+              {converting ? "Converting..." : "Convert to Booking"}
             </Button>
           </DialogFooter>
         </DialogContent>
