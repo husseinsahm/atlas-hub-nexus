@@ -344,10 +344,11 @@ function DayCard({
   const itemsTotal = items.reduce((sum: number, i: any) => sum + Number(i.total_price || 0), 0);
 
   const saveAllFields = useCallback(() => {
+    const cityString = localCities.join(", ");
     onUpdateDay({
       title: localTitle || `Day ${day.day_number}`,
       short_description: localDesc || null,
-      city: localCity || null,
+      city: cityString || null,
       pickup_location: showTransportFields ? (localPickup || null) : null,
       dropoff_location: showTransportFields ? (localDropoff || null) : null,
       pickup_time: showTransportFields ? (localPickupTime || null) : null,
@@ -356,7 +357,32 @@ function DayCard({
       internal_notes: localNotes || null,
     });
     onToggleEdit();
-  }, [localTitle, localDesc, localCity, localPickup, localDropoff, localPickupTime, localStartTime, localEndTime, localNotes, showTransportFields, day.day_number, onUpdateDay, onToggleEdit]);
+  }, [localTitle, localDesc, localCities, localPickup, localDropoff, localPickupTime, localStartTime, localEndTime, localNotes, showTransportFields, day.day_number, onUpdateDay, onToggleEdit]);
+
+  const generateDescription = useCallback(async () => {
+    setIsGeneratingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-day-description", {
+        body: {
+          dayTitle: localTitle || day.title,
+          dayNumber: day.day_number,
+          cities: localCities.join(", ") || day.city,
+          pickupLocation: localPickup || day.pickup_location,
+          dropoffLocation: localDropoff || day.dropoff_location,
+          items: items.map((i: any) => ({ category: i.category, custom_title: i.custom_title })),
+          tripTitle: "",
+        },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setLocalDesc(data.description);
+      }
+    } catch (err: any) {
+      console.error("AI description error:", err);
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  }, [localTitle, day, localCities, localPickup, localDropoff, items]);
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
