@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
+import { FileAttachments } from "@/components/FileAttachments";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
