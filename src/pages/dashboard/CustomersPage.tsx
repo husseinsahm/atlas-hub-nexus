@@ -203,10 +203,13 @@ export default function CustomersPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
+      console.log("Deleting customer:", deleteTarget.id);
+      const { error, data, status, statusText } = await supabase
         .from("customers")
         .update({ deleted_at: new Date().toISOString() })
-        .eq("id", deleteTarget.id);
+        .eq("id", deleteTarget.id)
+        .select();
+      console.log("Delete result:", { error, data, status, statusText });
       if (error) throw error;
       toast({ title: "Customer deleted" });
       setCustomers((prev) => prev.filter((c) => c.id !== deleteTarget.id));
