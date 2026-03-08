@@ -17,7 +17,7 @@ import {
   ArrowLeft, Mail, Phone, Globe, Calendar, Users, MapPin, DollarSign,
   Clock, Trophy, XCircle, Sparkles, MessageSquare, UserCheck, Edit2,
   Send, Activity, CheckCircle2, Plane, Bell, AlertTriangle, Bookmark,
-  FileText, ArrowRight,
+  FileText, ArrowRight, MessageCircle, Flame, Languages,
 } from "lucide-react";
 import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
@@ -52,7 +52,11 @@ interface LeadDetail {
   full_name: string;
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   nationality: string | null;
+  preferred_language: string | null;
+  trip_type: string | null;
+  urgency: string | null;
   travel_date: string | null;
   adults: number;
   children: number;
@@ -500,7 +504,7 @@ export default function LeadDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</p>
                   <Badge className={`${sc.color} border`}>{sc.label}</Badge>
@@ -508,6 +512,19 @@ export default function LeadDetailPage() {
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Source</p>
                   <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Urgency</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-emerald-500" : "bg-amber-500"
+                    }`} />
+                    <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Trip Type</p>
+                  <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Days Open</p>
@@ -545,10 +562,22 @@ export default function LeadDetailPage() {
                     <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Phone</p><p className="text-sm font-medium text-foreground">{lead.phone}</p></div>
                   </div>
                 )}
+                {lead.whatsapp && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><MessageCircle className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">WhatsApp</p><p className="text-sm font-medium text-foreground">{lead.whatsapp}</p></div>
+                  </div>
+                )}
                 {lead.nationality && (
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><Globe className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Nationality</p><p className="text-sm font-medium text-foreground">{lead.nationality}</p></div>
+                  </div>
+                )}
+                {lead.preferred_language && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><Languages className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Language</p><p className="text-sm font-medium text-foreground capitalize">{lead.preferred_language}</p></div>
                   </div>
                 )}
                 {lead.travel_date && (
@@ -790,16 +819,16 @@ export default function LeadDetailPage() {
                   </Button>
                 )}
                 {lead.phone && (
-                  <>
-                    <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
-                      <a href={`tel:${lead.phone}`}><Phone className="w-4 h-4" /> Call</a>
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
-                      <a href={`https://wa.me/${encodeURIComponent(lead.phone.replace(/[\s\-()]/g, ""))}`} target="_blank" rel="noopener noreferrer">
-                        <MessageSquare className="w-4 h-4" /> WhatsApp
-                      </a>
-                    </Button>
-                  </>
+                  <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
+                    <a href={`tel:${lead.phone}`}><Phone className="w-4 h-4" /> Call</a>
+                  </Button>
+                )}
+                {(lead.whatsapp || lead.phone) && (
+                  <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
+                    <a href={`https://wa.me/${encodeURIComponent((lead.whatsapp || lead.phone || "").replace(/[\s\-()]/g, ""))}`} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </a>
+                  </Button>
                 )}
               </CardContent>
             </Card>
