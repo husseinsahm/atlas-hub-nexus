@@ -457,7 +457,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   onToggleTransport={(v) => setShowTransport(prev => ({ ...prev, [day.id]: v }))}
                   onUpdateDay={(updates) => updateDay.mutate({ dayId: day.id, updates })}
                   onDeleteDay={() => deleteDay.mutate(day.id)}
-                  onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
+                  onAddItem={(category, title) => addDayItem.mutate({ dayId: day.id, category, title })}}
                   onUpdateItem={async (itemId, updates) => {
                     await supabase.from("booking_day_items").update(updates).eq("id", itemId);
                     queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
