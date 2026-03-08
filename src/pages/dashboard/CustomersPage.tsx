@@ -410,15 +410,28 @@ export default function CustomersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555 123 4567" maxLength={30} />
+              <PhoneInput
+                value={form.phone}
+                onValueChange={(v) => setForm({ ...form, phone: v })}
+                defaultCountry="AE"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Secondary Phone</Label>
-              <Input value={form.secondary_phone} onChange={(e) => setForm({ ...form, secondary_phone: e.target.value })} placeholder="Optional" maxLength={30} />
+              <PhoneInput
+                value={form.secondary_phone}
+                onValueChange={(v) => setForm({ ...form, secondary_phone: v })}
+                defaultCountry="AE"
+                placeholder="Optional"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Nationality</Label>
-              <Input value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })} placeholder="American" maxLength={100} />
+              <NationalitySelect
+                value={form.nationality}
+                onValueChange={(v) => setForm({ ...form, nationality: v })}
+                placeholder="Select nationality"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Date of Birth</Label>
