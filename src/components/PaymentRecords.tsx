@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
   const [newPayment, setNewPayment] = useState({
     amount: "",
     payment_method: "cash",
@@ -303,11 +305,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                     size="icon"
                     variant="ghost"
                     className="h-7 w-7 text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    onClick={() => {
-                      if (window.confirm("Delete this payment record?")) {
-                        deletePayment.mutate(payment.id);
-                      }
-                    }}
+                    onClick={() => setDeletingPaymentId(payment.id)}
                     disabled={deletePayment.isPending}
                     title="Delete payment"
                   >
@@ -434,6 +432,42 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingPaymentId} onOpenChange={(open) => !open && setDeletingPaymentId(null)}>
+        <AlertDialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+          <div className="bg-[hsl(var(--sidebar-background))] px-6 py-5 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <Trash2 className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <AlertDialogTitle className="text-base font-bold text-white font-display">Delete Payment</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-white/60 mt-0.5">This action cannot be undone</AlertDialogDescription>
+            </div>
+          </div>
+          <div className="px-6 py-5">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete this payment record? The booking balance will be recalculated automatically.
+            </p>
+          </div>
+          <AlertDialogFooter className="px-6 py-4 border-t border-border">
+            <AlertDialogCancel className="text-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs"
+              disabled={deletePayment.isPending}
+              onClick={() => {
+                if (deletingPaymentId) {
+                  deletePayment.mutate(deletingPaymentId, {
+                    onSettled: () => setDeletingPaymentId(null),
+                  });
+                }
+              }}
+            >
+              {deletePayment.isPending ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> Deleting...</> : "Delete Payment"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
