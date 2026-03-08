@@ -305,11 +305,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                     size="icon"
                     variant="ghost"
                     className="h-7 w-7 text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    onClick={() => {
-                      if (window.confirm("Delete this payment record?")) {
-                        deletePayment.mutate(payment.id);
-                      }
-                    }}
+                    onClick={() => setDeletingPaymentId(payment.id)}
                     disabled={deletePayment.isPending}
                     title="Delete payment"
                   >
