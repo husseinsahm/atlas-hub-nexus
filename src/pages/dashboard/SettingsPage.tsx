@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Building2, Globe, Phone, Mail, MapPin, Camera, Loader2, Save,
   Languages, DollarSign, Hash, Trash2, Plus, CheckCircle, Settings,
-  Image as ImageIcon
+  Image as ImageIcon, KeyRound, Eye, EyeOff, ShieldCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
