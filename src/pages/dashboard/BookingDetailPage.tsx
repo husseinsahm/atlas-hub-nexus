@@ -709,67 +709,63 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Customer ─── */}
       {activeTab === "customer" && (
         <Card className="border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+          <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                <UserCheck className="w-3.5 h-3.5 text-accent" />
+              <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                <UserCheck className="w-3.5 h-3.5 text-accent-foreground" />
               </div>
               {isArabic ? "معلومات العميل" : "Customer Information"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5">
             {customer ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الاسم" : "Full Name"}</Label>
-                  <p className="text-sm font-medium text-foreground">{customer.full_name}</p>
+              <div className="space-y-5">
+                {/* Customer header card */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/40 border border-border/50">
+                  <div className="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center text-xl font-bold text-accent-foreground shadow-lg">
+                    {customer.full_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-foreground font-display">{customer.full_name}</h3>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                      {customer.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</span>}
+                      {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</span>}
+                    </div>
+                  </div>
                 </div>
-                {customer.email && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البريد" : "Email"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</p>
-                  </div>
-                )}
-                {customer.phone && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الهاتف" : "Phone"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</p>
-                  </div>
-                )}
-                {customer.nationality && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Globe className="w-3 h-3" /> {customer.nationality}</p>
-                  </div>
-                )}
-                {customer.country && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البلد" : "Country"}</Label>
-                    <p className="text-sm text-foreground">{customer.country}</p>
-                  </div>
-                )}
-                {customer.city && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المدينة" : "City"}</Label>
-                    <p className="text-sm text-foreground">{customer.city}</p>
-                  </div>
-                )}
-                {customer.passport_number && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "جواز السفر" : "Passport"}</Label>
-                    <p className="text-sm text-foreground font-mono">{customer.passport_number}</p>
-                  </div>
-                )}
-                <div className="col-span-full">
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
-                    <Eye className="w-3.5 h-3.5 mr-1.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
-                  </Button>
+
+                {/* Info grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { label: isArabic ? "الجنسية" : "Nationality", value: customer.nationality, icon: Globe, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
+                    { label: isArabic ? "البلد" : "Country", value: customer.country, icon: MapPin, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
+                    { label: isArabic ? "المدينة" : "City", value: customer.city, icon: MapPin, iconBg: "bg-violet-100 dark:bg-violet-900/40", iconText: "text-violet-600 dark:text-violet-400" },
+                    { label: isArabic ? "جواز السفر" : "Passport", value: customer.passport_number, icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400", mono: true },
+                    { label: isArabic ? "تاريخ الميلاد" : "Date of Birth", value: customer.date_of_birth ? format(new Date(customer.date_of_birth), "MMM d, yyyy") : null, icon: Calendar, iconBg: "bg-rose-100 dark:bg-rose-900/40", iconText: "text-rose-600 dark:text-rose-400" },
+                  ].filter(f => f.value).map((field, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", field.iconBg)}>
+                        <field.icon className={cn("w-3.5 h-3.5", field.iconText)} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</p>
+                        <p className={cn("text-sm font-medium text-foreground truncate", field.mono && "font-mono")}>{field.value}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+
+                <Button variant="outline" size="sm" className="text-xs gap-1.5 mt-2" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
+                  <Eye className="w-3.5 h-3.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
+                </Button>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <UserCheck className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <UserCheck className="w-8 h-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "اربط عميل من صفحة العملاء" : "Link a customer from the customers page"}</p>
               </div>
             )}
           </CardContent>
