@@ -12,7 +12,7 @@ interface ModalDarkHeaderProps {
 
 export function ModalDarkHeader({ icon, title, description, badge, className }: ModalDarkHeaderProps) {
   return (
-    <div className={cn("relative overflow-hidden rounded-t-lg", className)}>
+    <div className={cn("relative overflow-hidden", className)}>
       {/* Dark navy background */}
       <div className="bg-primary px-6 py-5">
         {/* Decorative circles */}
@@ -36,7 +36,7 @@ export function ModalDarkHeader({ icon, title, description, badge, className }: 
                 )}
               </div>
             </div>
-            {badge && <div className="flex items-center gap-2">{badge}</div>}
+            {badge && <div className="flex items-center gap-2 pr-6">{badge}</div>}
           </div>
         </DialogHeader>
       </div>
