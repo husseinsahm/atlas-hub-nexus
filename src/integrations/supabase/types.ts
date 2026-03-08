@@ -315,6 +315,124 @@ export type Database = {
           },
         ]
       }
+      lead_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string
+          id: string
+          lead_id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description: string
+          id?: string
+          lead_id: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string
+          id?: string
+          lead_id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          adults: number
+          assigned_to: string | null
+          budget_currency: string
+          budget_max: number | null
+          budget_min: number | null
+          children: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          destinations: Json | null
+          email: string | null
+          full_name: string
+          id: string
+          nationality: string | null
+          notes: string | null
+          phone: string | null
+          source: Database["public"]["Enums"]["lead_source"]
+          status: Database["public"]["Enums"]["lead_status"]
+          travel_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          assigned_to?: string | null
+          budget_currency?: string
+          budget_max?: number | null
+          budget_min?: number | null
+          children?: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destinations?: Json | null
+          email?: string | null
+          full_name: string
+          id?: string
+          nationality?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          status?: Database["public"]["Enums"]["lead_status"]
+          travel_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          assigned_to?: string | null
+          budget_currency?: string
+          budget_max?: number | null
+          budget_min?: number | null
+          children?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          destinations?: Json | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          nationality?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          status?: Database["public"]["Enums"]["lead_status"]
+          travel_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string
@@ -524,6 +642,22 @@ export type Database = {
         | "operations"
         | "finance"
         | "viewer"
+      lead_source:
+        | "website"
+        | "referral"
+        | "social_media"
+        | "walk_in"
+        | "phone"
+        | "email"
+        | "partner"
+        | "other"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "planning"
+        | "awaiting_client"
+        | "won"
+        | "lost"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -658,6 +792,24 @@ export const Constants = {
         "operations",
         "finance",
         "viewer",
+      ],
+      lead_source: [
+        "website",
+        "referral",
+        "social_media",
+        "walk_in",
+        "phone",
+        "email",
+        "partner",
+        "other",
+      ],
+      lead_status: [
+        "new",
+        "contacted",
+        "planning",
+        "awaiting_client",
+        "won",
+        "lost",
       ],
     },
   },
