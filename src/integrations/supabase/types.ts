@@ -271,6 +271,175 @@ export type Database = {
           },
         ]
       }
+      customer_attachments: {
+        Row: {
+          created_at: string
+          customer_id: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_attachments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_notes: {
+        Row: {
+          content: string
+          created_at: string
+          customer_id: string
+          id: string
+          metadata: Json | null
+          note_type: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          metadata?: Json | null
+          note_type?: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          metadata?: Json | null
+          note_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          city: string | null
+          company_id: string
+          country: string | null
+          created_at: string
+          created_by: string | null
+          date_of_birth: string | null
+          deleted_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          lead_id: string | null
+          nationality: string | null
+          notes: string | null
+          passport_number: string | null
+          phone: string | null
+          preferences: Json | null
+          secondary_phone: string | null
+          source: string | null
+          tags: Json | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          company_id: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          lead_id?: string | null
+          nationality?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          secondary_phone?: string | null
+          source?: string | null
+          tags?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          company_id?: string
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          lead_id?: string | null
+          nationality?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          secondary_phone?: string | null
+          source?: string | null
+          tags?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
