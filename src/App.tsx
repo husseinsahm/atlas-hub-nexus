@@ -16,6 +16,7 @@ import Overview from "./pages/dashboard/Overview";
 import PlaceholderPage from "./pages/dashboard/PlaceholderPage";
 import CompaniesPage from "./pages/dashboard/CompaniesPage";
 import PlansPage from "./pages/dashboard/PlansPage";
+import SubscriptionsPage from "./pages/dashboard/SubscriptionsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
