@@ -440,13 +440,15 @@ interface DayCardProps {
   onDeleteDay: () => void;
   onAddItem: (category: string) => void;
   onDeleteItem: (itemId: string) => void;
+  onAiEnhanceDay: () => void;
+  isAiGenerating: boolean;
   isUpdating: boolean;
 }
 
 function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
-  onAddItem, onDeleteItem, isUpdating,
+  onAddItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
