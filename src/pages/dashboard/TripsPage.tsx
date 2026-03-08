@@ -197,12 +197,18 @@ export default function TripsPage() {
             </div>
             Trip Builder
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Create and manage custom travel itineraries</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm text-muted-foreground">Create and manage custom travel itineraries</p>
+            {limits.maxTripsPerMonth !== null && <UsageIndicator type="trips" />}
+          </div>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gold-gradient text-accent-foreground shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={handleCreateClick} className="gold-gradient text-accent-foreground shadow-md hover:shadow-lg transition-shadow">
           <Plus className="w-4 h-4 mr-2" /> New Trip
         </Button>
       </div>
+
+      {/* Plan limit warning */}
+      <UpgradeBanner type="trips" />
 
       {/* Status pipeline */}
       <div className="flex gap-2 overflow-x-auto pb-1">
