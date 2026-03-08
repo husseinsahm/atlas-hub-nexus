@@ -574,21 +574,19 @@ export default function LeadsPage() {
             {/* Phone */}
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input
+              <PhoneInput
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+1 555 123 4567"
-                maxLength={30}
+                onValueChange={(v) => setForm({ ...form, phone: v })}
+                defaultCountry="AE"
               />
             </div>
             {/* Nationality */}
             <div className="space-y-1.5">
               <Label>Nationality</Label>
-              <Input
+              <NationalitySelect
                 value={form.nationality}
-                onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                placeholder="American"
-                maxLength={100}
+                onValueChange={(v) => setForm({ ...form, nationality: v })}
+                placeholder="Select nationality"
               />
             </div>
             {/* Travel Date */}
