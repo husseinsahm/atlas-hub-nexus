@@ -49,11 +49,39 @@ interface ItineraryBuilderProps {
   isArabic: boolean;
 }
 
+const GUIDE_LANGUAGES = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "de", label: "German", flag: "🇩🇪" },
+  { code: "ja", label: "Japanese", flag: "🇯🇵" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "es", label: "Spanish", flag: "🇪🇸" },
+  { code: "it", label: "Italian", flag: "🇮🇹" },
+  { code: "ar", label: "Arabic", flag: "🇸🇦" },
+  { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  { code: "ru", label: "Russian", flag: "🇷🇺" },
+  { code: "pt", label: "Portuguese", flag: "🇵🇹" },
+  { code: "ko", label: "Korean", flag: "🇰🇷" },
+];
+
+const DEFAULT_TITLES: Record<string, string> = {
+  activity: "Sightseeing tour & local experience",
+  hotel: "Accommodation in 5-star hotel",
+  transfer: "Private airport/city transfer",
+  guide: "English-speaking tour guide",
+};
+
+const DEFAULT_TITLES_AR: Record<string, string> = {
+  activity: "جولة سياحية وتجربة محلية",
+  hotel: "إقامة في فندق 5 نجوم",
+  transfer: "نقل خاص من/إلى المطار أو المدينة",
+  guide: "مرشد سياحي يتحدث الإنجليزية",
+};
+
 const QUICK_ACTIONS = [
   { type: "activity", label: "Activity", labelAr: "نشاط", icon: Activity, color: "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100", desc: "Tour, excursion, experience", descAr: "جولة، رحلة، تجربة" },
   { type: "hotel", label: "Hotel", labelAr: "فندق", icon: Hotel, color: "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100", desc: "Accommodation & stay", descAr: "إقامة وسكن" },
   { type: "transfer", label: "Transfer", labelAr: "نقل", icon: Car, color: "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100", desc: "Airport, city transport", descAr: "مطار، نقل داخلي" },
-  { type: "guide", label: "Guide", labelAr: "مرشد", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100", desc: "Tour guide service", descAr: "خدمة مرشد سياحي" },
+  { type: "guide", label: "Guide", labelAr: "مرشد", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100", desc: "Select language & add guide", descAr: "اختر اللغة وأضف مرشد" },
 ];
 
 export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking, isArabic }: ItineraryBuilderProps) {
@@ -120,10 +148,11 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const addDayItem = useMutation({
     mutationFn: async ({ dayId, category, title }: { dayId: string; category: string; title?: string }) => {
       const items = itineraryDays.find(d => d.id === dayId)?.booking_day_items || [];
+      const defaultTitle = title || (isArabic ? DEFAULT_TITLES_AR[category] : DEFAULT_TITLES[category]) || "";
       const { data, error } = await supabase.from("booking_day_items").insert({
         booking_day_id: dayId,
         category,
-        custom_title: title || "",
+        custom_title: defaultTitle,
         sort_order: items.length,
         currency: booking?.currency || "USD",
       }).select().single();
@@ -428,7 +457,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   onToggleTransport={(v) => setShowTransport(prev => ({ ...prev, [day.id]: v }))}
                   onUpdateDay={(updates) => updateDay.mutate({ dayId: day.id, updates })}
                   onDeleteDay={() => deleteDay.mutate(day.id)}
-                  onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
+                  onAddItem={(category: string, title?: string) => addDayItem.mutate({ dayId: day.id, category, title })}
                   onUpdateItem={async (itemId, updates) => {
                     await supabase.from("booking_day_items").update(updates).eq("id", itemId);
                     queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
@@ -465,7 +494,7 @@ interface DayCardProps {
   onToggleTransport: (v: boolean) => void;
   onUpdateDay: (updates: Record<string, any>) => void;
   onDeleteDay: () => void;
-  onAddItem: (category: string) => void;
+  onAddItem: (category: string, title?: string) => void;
   onUpdateItem: (itemId: string, updates: Record<string, any>) => void;
   onDeleteItem: (itemId: string) => void;
   onAiEnhanceDay: () => void;
@@ -903,6 +932,44 @@ function DayCard({
                 <div className="grid grid-cols-2 gap-2 pt-1 pb-1">
                   {QUICK_ACTIONS.map(qa => {
                     const QIcon = qa.icon;
+
+                    // Guide gets a special dropdown with language selection
+                    if (qa.type === "guide") {
+                      return (
+                        <DropdownMenu key={qa.type}>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className={cn(
+                                "flex items-start gap-2.5 rounded-xl border-2 border-dashed px-3 py-3 text-start transition-all hover:scale-[1.01] hover:border-solid hover:shadow-sm cursor-pointer",
+                                qa.color,
+                              )}
+                            >
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                                <QIcon className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-semibold block">{isArabic ? qa.labelAr : qa.label}</span>
+                                <span className="text-[10px] opacity-70 font-normal block mt-0.5">{isArabic ? qa.descAr : qa.desc}</span>
+                              </div>
+                              <Plus className="w-3.5 h-3.5 shrink-0 opacity-40 mt-1 ms-auto" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-52">
+                            {GUIDE_LANGUAGES.map(lang => (
+                              <DropdownMenuItem
+                                key={lang.code}
+                                className="text-xs gap-2 cursor-pointer"
+                                onClick={() => onAddItem("guide", `${lang.flag} ${lang.label}-speaking tour guide`)}
+                              >
+                                <span className="text-base">{lang.flag}</span>
+                                <span>{lang.label} {isArabic ? "مرشد" : "Guide"}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    }
+
                     return (
                       <button
                         key={qa.type}
@@ -912,7 +979,7 @@ function DayCard({
                         )}
                         onClick={() => onAddItem(qa.type)}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5")}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                           <QIcon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
