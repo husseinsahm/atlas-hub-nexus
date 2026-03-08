@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
+import { createNotification } from "@/hooks/useNotifications";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
@@ -511,6 +512,23 @@ export default function TripBuilderPage() {
       const keys = Object.keys(updates);
       if (keys.includes("status")) {
         trackRevision("status_change", `Status changed to ${STATUS_CONFIG[updates.status as TripStatus]?.label || updates.status}`, updates);
+        // Notify relevant team members about trip status
+        if (trip) {
+          const notifyIds = new Set<string>();
+          if (trip.assigned_to && trip.assigned_to !== user?.id) notifyIds.add(trip.assigned_to);
+          if (trip.created_by && trip.created_by !== user?.id) notifyIds.add(trip.created_by);
+          for (const uid of notifyIds) {
+            createNotification({
+              userId: uid,
+              companyId: trip.company_id,
+              type: "trip_approval",
+              title: `Trip status updated`,
+              message: `"${trip.title}" → ${STATUS_CONFIG[updates.status as TripStatus]?.label || updates.status}`,
+              entityType: "trip",
+              entityId: id!,
+            });
+          }
+        }
       } else if (keys.includes("selling_price")) {
         trackRevision("pricing", `Selling price updated to ${updates.selling_price}`, updates);
       } else if (keys.includes("markup_value") || keys.includes("discount_value")) {

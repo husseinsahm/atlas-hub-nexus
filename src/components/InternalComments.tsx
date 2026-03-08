@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { createNotification } from "@/hooks/useNotifications";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare, Send, Loader2, Trash2, AtSign, Reply, CornerDownRight, Shield,
@@ -140,6 +141,31 @@ export function InternalComments({ entityType, entityId, companyId, className }:
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["internal-comments", entityType, entityId] });
+      // Notify mentioned users
+      const mentionRegex = /@(\w[\w\s]*?)(?=\s@|\s|$)/g;
+      const mentionedNames: string[] = [];
+      let m;
+      while ((m = mentionRegex.exec(content)) !== null) {
+        mentionedNames.push(m[1].trim());
+      }
+      const mentionedIds = teamMembers
+        .filter(tm => mentionedNames.some(name =>
+          tm.full_name?.toLowerCase().includes(name.toLowerCase())
+        ))
+        .map(tm => tm.id)
+        .filter(uid => uid !== user?.id);
+
+      for (const uid of mentionedIds) {
+        createNotification({
+          userId: uid,
+          companyId,
+          type: "mention",
+          title: `${user?.profile.fullName || "Someone"} mentioned you`,
+          message: content.trim().substring(0, 120),
+          entityType,
+          entityId,
+        });
+      }
       setContent("");
       setReplyTo(null);
     },

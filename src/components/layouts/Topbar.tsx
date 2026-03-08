@@ -1,7 +1,8 @@
-import { Search, Bell, Globe, LogOut } from "lucide-react";
+import { Search, Globe, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -33,10 +34,7 @@ export function Topbar() {
           <Globe className="w-4 h-4" />
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-2 end-2 w-2 h-2 bg-accent rounded-full" />
-        </Button>
+        <NotificationBell />
 
         {companyName && (
           <span className="text-xs bg-secondary text-secondary-foreground px-3 py-1.5 rounded-full font-medium hidden sm:inline-block">
