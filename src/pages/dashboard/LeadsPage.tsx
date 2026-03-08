@@ -284,7 +284,7 @@ export default function LeadsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      console.log("Deleting lead:", deleteTarget.id, "company:", deleteTarget.company_id);
+      console.log("Deleting lead:", deleteTarget.id);
       const { error, data, status, statusText } = await supabase
         .from("leads")
         .update({ deleted_at: new Date().toISOString() })
