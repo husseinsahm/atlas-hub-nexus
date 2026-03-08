@@ -17,7 +17,7 @@ import {
   ArrowLeft, Mail, Phone, Globe, Calendar, Users, MapPin, DollarSign,
   Clock, Trophy, XCircle, Sparkles, MessageSquare, UserCheck, Edit2,
   Send, Activity, CheckCircle2, Plane, Bell, AlertTriangle, Bookmark,
-  FileText, ArrowRight,
+  FileText, ArrowRight, MessageCircle, Flame, Languages,
 } from "lucide-react";
 import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
