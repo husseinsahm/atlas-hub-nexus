@@ -2,32 +2,58 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 
-export default function Login() {
-  const { login, isLoading } = useAuth();
+export default function ForgotPassword() {
+  const { resetPassword } = useAuth();
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const result = await login(email, password);
+    setLoading(true);
+    const result = await resetPassword(email);
     if (result.error) setError(result.error);
+    else setSent(true);
+    setLoading(false);
   };
+
+  if (sent) {
+    return (
+      <AuthLayout>
+        <div className="text-center animate-fade-in">
+          <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-7 h-7 text-gold" />
+          </div>
+          <h2 className="text-2xl font-bold font-display text-foreground mb-2">
+            {t("auth.resetSent")}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Check your inbox for a link to reset your password.
+          </p>
+          <Link to="/login">
+            <Button variant="ghost" className="text-gold hover:text-gold-dark">
+              {t("auth.backToLogin")}
+            </Button>
+          </Link>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
       <h2 className="text-2xl font-bold font-display text-foreground mb-2">
-        {t("auth.welcome")}
+        {t("auth.forgotTitle")}
       </h2>
       <p className="text-sm text-muted-foreground mb-8">
-        {t("auth.subtitle")}
+        {t("auth.forgotSubtitle")}
       </p>
 
       {error && (
@@ -52,49 +78,19 @@ export default function Login() {
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-medium text-foreground/80 uppercase tracking-wider">
-              {t("auth.password")}
-            </label>
-            <Link to="/forgot-password" className="text-xs text-gold hover:text-gold-dark transition-colors">
-              {t("auth.forgot")}
-            </Link>
-          </div>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="luxury-input w-full"
-              style={{ paddingInlineEnd: 40 }}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              style={{ insetInlineEnd: 12 }}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={loading}
           className="w-full h-11 gold-gradient border-0 text-accent-foreground font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity"
         >
-          {isLoading ? (
+          {loading ? (
             <span className="flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />
-              {t("auth.signingIn")}
+              Sending...
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              {t("auth.login")}
+              {t("auth.sendReset")}
               <ArrowRight className="w-4 h-4" />
             </span>
           )}
@@ -102,9 +98,8 @@ export default function Login() {
       </form>
 
       <p className="mt-6 text-sm text-center text-muted-foreground">
-        {t("auth.noAccount")}{" "}
-        <Link to="/register" className="text-gold hover:text-gold-dark font-medium transition-colors">
-          {t("auth.register")}
+        <Link to="/login" className="text-gold hover:text-gold-dark font-medium transition-colors">
+          {t("auth.backToLogin")}
         </Link>
       </p>
     </AuthLayout>
