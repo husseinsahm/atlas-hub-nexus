@@ -561,12 +561,35 @@ function DayCard({
                     </div>
                     <div>
                       <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "المدينة / الوجهة" : "City / Destination"}</Label>
-                      <Input value={localCity} onChange={e => setLocalCity(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Cairo" />
+                      <div className="mt-1">
+                        <MultiCityAutocomplete
+                          value={localCities}
+                          onValueChange={setLocalCities}
+                          placeholder={isArabic ? "اختر المدن" : "Select cities"}
+                          isRtl={isArabic}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div>
-                    <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وصف مختصر" : "Short Description"}</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وصف مختصر" : "Short Description"}</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1 text-accent hover:text-accent/80 px-2"
+                        onClick={generateDescription}
+                        disabled={isGeneratingDesc}
+                      >
+                        {isGeneratingDesc ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3 h-3" />
+                        )}
+                        {isArabic ? "توليد بالذكاء" : "Generate AI"}
+                      </Button>
+                    </div>
                     <Textarea value={localDesc} onChange={e => setLocalDesc(e.target.value)} className="text-xs mt-1 resize-none" rows={2} placeholder={isArabic ? "وصف مختصر لنشاطات اليوم..." : "Brief overview of the day's activities..."} />
                   </div>
 
