@@ -23,6 +23,7 @@ import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
 import { FollowUpTimeline } from "@/components/leads/FollowUpManager";
+import { createNotification } from "@/hooks/useNotifications";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
@@ -201,7 +202,7 @@ export default function LeadDetailPage() {
   }
 
   async function assignAgent(agentId: string) {
-    if (!lead || !user) return;
+    if (!lead || !user || !companyId) return;
     const assignedTo = agentId === "none" ? null : agentId;
     const agentName = agents.find((a) => a.userId === agentId)?.fullName || "Unassigned";
     try {
@@ -211,6 +212,23 @@ export default function LeadDetailPage() {
         lead_id: lead.id, user_id: user.id, activity_type: "assigned",
         description: assignedTo ? `Assigned to ${agentName}` : "Unassigned",
       });
+
+      // Send notification to the assigned agent
+      if (assignedTo && assignedTo !== user.id) {
+        await createNotification({
+          userId: assignedTo,
+          companyId,
+          type: "lead_assigned",
+          title: `📋 New lead assigned to you: ${lead.full_name}`,
+          message: lead.destinations?.length
+            ? `Destinations: ${lead.destinations.join(", ")} · ${lead.adults} adults${lead.children ? `, ${lead.children} children` : ""}`
+            : `${lead.adults} adults${lead.children ? `, ${lead.children} children` : ""}`,
+          entityType: "lead",
+          entityId: lead.id,
+          metadata: { assignedBy: user.profile?.fullName || "Team member", leadName: lead.full_name },
+        });
+      }
+
       setLead({ ...lead, assigned_to: assignedTo });
       fetchActivities();
       toast({ title: assignedTo ? `Assigned to ${agentName}` : "Unassigned" });
