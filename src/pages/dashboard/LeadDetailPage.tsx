@@ -425,7 +425,7 @@ export default function LeadDetailPage() {
             size="lg"
           >
             <Plane className="w-5 h-5" />
-            Convert to Trip Draft
+            Convert to Booking
           </Button>
         )}
         {lead.status === "won" && (
