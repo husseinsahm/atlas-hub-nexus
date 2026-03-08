@@ -1048,6 +1048,8 @@ export default function BookingDetailPage() {
           onClose={() => { setShowServiceDialog(false); setEditingService(null); }}
           onSave={(s: any) => saveService.mutate(s)}
           isSaving={saveService.isPending}
+          bookingAdults={booking?.adults || 1}
+          bookingChildren={booking?.children || 0}
         />
       )}
     </div>
