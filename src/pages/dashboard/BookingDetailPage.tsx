@@ -162,6 +162,23 @@ export default function BookingDetailPage() {
           title: `Status changed to ${STATUS_CONFIG[updates.status as BookingStatus]?.label || updates.status}`,
           user_id: user?.id,
         });
+        // Notify assigned agent and creator about status change
+        if (booking) {
+          const notifyUserIds = new Set<string>();
+          if (booking.assigned_to && booking.assigned_to !== user?.id) notifyUserIds.add(booking.assigned_to);
+          if (booking.created_by && booking.created_by !== user?.id) notifyUserIds.add(booking.created_by);
+          for (const uid of notifyUserIds) {
+            createNotification({
+              userId: uid,
+              companyId: booking.company_id,
+              type: "booking_status_change",
+              title: `Booking status changed`,
+              message: `"${booking.title}" → ${STATUS_CONFIG[updates.status as BookingStatus]?.label || updates.status}`,
+              entityType: "booking",
+              entityId: id!,
+            });
+          }
+        }
       }
     },
     onSuccess: () => {
