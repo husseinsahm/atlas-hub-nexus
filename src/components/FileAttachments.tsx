@@ -265,16 +265,37 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
     }
   }, [companyId, entityType, entityId, uploadCategory, user, toast, queryClient]);
 
-  // Delete handler
+  // Delete handler with better error handling
   const deleteAttachment = useMutation({
     mutationFn: async (attachment: Attachment) => {
-      await supabase.storage.from("attachments").remove([attachment.file_url]);
-      const { error } = await supabase.from("entity_attachments").delete().eq("id", attachment.id);
-      if (error) throw error;
+      // First delete from database
+      const { error: dbError } = await supabase
+        .from("entity_attachments")
+        .delete()
+        .eq("id", attachment.id);
+      
+      if (dbError) throw new Error(`Database error: ${dbError.message}`);
+      
+      // Then remove from storage
+      const { error: storageError } = await supabase.storage
+        .from("attachments")
+        .remove([attachment.file_url]);
+      
+      if (storageError) {
+        console.warn('Storage cleanup failed:', storageError);
+        // Don't throw here as the database record is already deleted
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
-      toast({ title: "File deleted" });
+      toast({ title: "File deleted successfully" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Failed to delete file", 
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive" 
+      });
     },
   });
 
