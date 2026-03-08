@@ -1143,7 +1143,7 @@ export default function TripBuilderPage() {
                   />
                 </div>
               </div>
-            ) : (
+            ) : pricingView === "client" ? (
               /* ===== CLIENT-FACING PRICING VIEW ===== */
               <div className="p-4 space-y-4">
                 <div className="text-center py-3">
