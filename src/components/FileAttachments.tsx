@@ -69,6 +69,7 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
 
   const [uploadCategory, setUploadCategory] = useState("other");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState("");
