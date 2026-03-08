@@ -7,6 +7,8 @@ export function Topbar() {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useLanguage();
 
+  const companyName = user?.activeMembership?.companyName;
+
   return (
     <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-6 shrink-0 sticky top-0 z-20">
       {/* Search */}
@@ -22,7 +24,6 @@ export function Topbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-2">
-        {/* Language toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -32,20 +33,17 @@ export function Topbar() {
           <Globe className="w-4 h-4" />
         </Button>
 
-        {/* Notifications */}
         <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
           <Bell className="w-4 h-4" />
           <span className="absolute top-2 end-2 w-2 h-2 bg-accent rounded-full" />
         </Button>
 
-        {/* Company badge */}
-        {user?.companyName && (
+        {companyName && (
           <span className="text-xs bg-secondary text-secondary-foreground px-3 py-1.5 rounded-full font-medium hidden sm:inline-block">
-            {user.companyName}
+            {companyName}
           </span>
         )}
 
-        {/* Logout */}
         <Button
           variant="ghost"
           size="icon"

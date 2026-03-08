@@ -13,24 +13,23 @@ export default function Overview() {
   const { user } = useAuth();
   const { t } = useLanguage();
 
+  const displayName = user?.profile.fullName?.split(" ")[0] || "there";
   const greeting = new Date().getHours() < 12 ? "Good morning" : new Date().getHours() < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold font-display text-foreground">
-          {greeting}, {user?.name?.split(" ")[0]}
+          {greeting}, {displayName}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Here's what's happening across your travel platform today.
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats
-          .filter((s) => s.label !== "Companies" || user?.role === "super_admin")
+          .filter((s) => s.label !== "Companies" || user?.isSuperAdmin)
           .map((stat) => (
             <div key={stat.label} className="luxury-card p-5">
               <div className="flex items-start justify-between">
@@ -50,7 +49,6 @@ export default function Overview() {
           ))}
       </div>
 
-      {/* Placeholder sections */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 luxury-card p-6">
           <h3 className="font-semibold font-display text-foreground mb-4">Recent Activity</h3>
