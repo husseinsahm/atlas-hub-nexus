@@ -204,12 +204,7 @@ export default function CustomersPage() {
     setDeleting(true);
     try {
       console.log("Deleting customer:", deleteTarget.id);
-      const { error, data, status, statusText } = await supabase
-        .from("customers")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", deleteTarget.id)
-        .select();
-      console.log("Delete result:", { error, data, status, statusText });
+      const { error } = await supabase.rpc("soft_delete_customer", { _customer_id: deleteTarget.id });
       if (error) throw error;
       toast({ title: "Customer deleted" });
       setCustomers((prev) => prev.filter((c) => c.id !== deleteTarget.id));

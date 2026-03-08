@@ -285,12 +285,7 @@ export default function LeadsPage() {
     setDeleting(true);
     try {
       console.log("Deleting lead:", deleteTarget.id);
-      const { error, data, status, statusText } = await supabase
-        .from("leads")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", deleteTarget.id)
-        .select();
-      console.log("Delete result:", { error, data, status, statusText });
+      const { error } = await supabase.rpc("soft_delete_lead", { _lead_id: deleteTarget.id });
       if (error) throw error;
       toast({ title: "Lead deleted" });
       setLeads((prev) => prev.filter((l) => l.id !== deleteTarget.id));
