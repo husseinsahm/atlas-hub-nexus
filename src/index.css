@@ -152,6 +152,11 @@
     @apply backdrop-blur-xl border border-border/50;
     background: hsl(var(--background) / 0.8);
   }
+
+  /* Dark header modals: close button should be white */
+  [data-state] > .bg-primary ~ button[class*="absolute"] {
+    color: hsl(var(--primary-foreground));
+  }
 }
 
 @layer utilities {
