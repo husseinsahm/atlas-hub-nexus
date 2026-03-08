@@ -447,11 +447,14 @@ interface DayCardProps {
   onToggleTransport: (v: boolean) => void;
   onUpdateDay: (updates: Record<string, any>) => void;
   onDeleteDay: () => void;
-  onAddItem: (category: string, title?: string) => void;
+  onAddItem: (category: string) => void;
+  onUpdateItem: (itemId: string, updates: Record<string, any>) => void;
   onDeleteItem: (itemId: string) => void;
   onAiEnhanceDay: () => void;
   isAiGenerating: boolean;
   isUpdating: boolean;
+  editingItemId: string | null;
+  onSetEditingItemId: (id: string | null) => void;
 }
 
 function DayCard({
