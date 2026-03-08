@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
+import { FileAttachments } from "@/components/FileAttachments";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
