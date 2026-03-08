@@ -554,14 +554,14 @@ export default function LibraryPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); setForm(emptyForm); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-lg">
-              {editingItem ? "Edit Item" : "Add New Item"}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 dark-header-dialog">
+          <ModalDarkHeader
+            icon={<Plus className="w-5 h-5 text-accent-foreground" />}
+            title={editingItem ? "Edit Item" : "Add New Item"}
+            description="Manage your service library"
+          />
 
-          <div className="space-y-5">
+          <div className="px-6 py-5 space-y-5">
             {/* Row 1: Category & Title */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">

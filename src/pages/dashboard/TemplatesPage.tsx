@@ -232,15 +232,14 @@ export default function TemplatesPage() {
 
       {/* New Template Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-accent" />
-              {isArabic ? "قالب جديد" : "New Itinerary Template"}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
+          <ModalDarkHeader
+            icon={<FileText className="w-5 h-5 text-accent-foreground" />}
+            title={isArabic ? "قالب جديد" : "New Itinerary Template"}
+            description={isArabic ? "أنشئ قالبًا جديدًا للبرنامج" : "Create a reusable itinerary template"}
+          />
 
-          <div className="space-y-4 py-4">
+          <div className="px-6 py-5 space-y-4">
             <div>
               <Label className="text-xs">{isArabic ? "اسم القالب" : "Template Name"} *</Label>
               <Input
