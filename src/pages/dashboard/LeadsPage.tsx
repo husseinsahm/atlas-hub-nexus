@@ -253,6 +253,18 @@ export default function LeadsPage() {
           description: "Lead details updated",
         });
         toast({ title: "Lead updated" });
+        // Notify assigned agent if changed
+        if (payload.assigned_to && payload.assigned_to !== user.id) {
+          createNotification({
+            userId: payload.assigned_to,
+            companyId: companyId,
+            type: "lead_assigned",
+            title: "New lead assigned to you",
+            message: `Lead "${payload.full_name}" has been assigned to you.`,
+            entityType: "lead",
+            entityId: editingId,
+          });
+        }
       } else {
         const { data: newLead, error } = await supabase
           .from("leads")
