@@ -461,11 +461,20 @@ export default function CustomersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>City</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} maxLength={100} />
+              <CityAutocomplete
+                value={form.city}
+                onValueChange={(v) => setForm({ ...form, city: v })}
+                filterByCountry={form.country}
+                placeholder="Select city"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Country</Label>
-              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} maxLength={100} />
+              <CountrySelect
+                value={form.country}
+                onValueChange={(v) => setForm({ ...form, country: v })}
+                placeholder="Select country"
+              />
             </div>
 
             {/* Preferences */}
