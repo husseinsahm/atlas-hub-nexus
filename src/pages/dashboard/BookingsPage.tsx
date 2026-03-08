@@ -445,19 +445,20 @@ export default function BookingsPage() {
                 </div>
                 <div>
                   <Label className="text-xs">{isArabic ? "رقم الهاتف" : "Phone"}</Label>
-                  <Input
+                  <PhoneInput
                     value={newBooking.customer_phone}
-                    onChange={e => setNewBooking({ ...newBooking, customer_phone: e.target.value })}
-                    placeholder="+971..."
+                    onValueChange={v => setNewBooking({ ...newBooking, customer_phone: v })}
+                    defaultCountry="AE"
                     className="mt-1"
                   />
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                  <Input
+                  <NationalitySelect
                     value={newBooking.customer_nationality}
-                    onChange={e => setNewBooking({ ...newBooking, customer_nationality: e.target.value })}
-                    placeholder={isArabic ? "الجنسية" : "Nationality"}
+                    onValueChange={v => setNewBooking({ ...newBooking, customer_nationality: v })}
+                    placeholder={isArabic ? "اختر الجنسية" : "Select nationality"}
+                    isRtl={isArabic}
                     className="mt-1"
                   />
                 </div>
