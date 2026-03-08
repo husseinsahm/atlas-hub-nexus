@@ -50,10 +50,10 @@ interface ItineraryBuilderProps {
 }
 
 const QUICK_ACTIONS = [
-  { type: "activity", label: "Activity", icon: Activity, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-  { type: "hotel", label: "Hotel", icon: Hotel, color: "text-blue-600 bg-blue-50 border-blue-200" },
-  { type: "transfer", label: "Transfer", icon: Car, color: "text-amber-600 bg-amber-50 border-amber-200" },
-  { type: "guide", label: "Guide", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200" },
+  { type: "activity", label: "Activity", labelAr: "نشاط", icon: Activity, color: "text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100", desc: "Tour, excursion, experience", descAr: "جولة، رحلة، تجربة" },
+  { type: "hotel", label: "Hotel", labelAr: "فندق", icon: Hotel, color: "text-blue-600 bg-blue-50 border-blue-200 hover:bg-blue-100", desc: "Accommodation & stay", descAr: "إقامة وسكن" },
+  { type: "transfer", label: "Transfer", labelAr: "نقل", icon: Car, color: "text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100", desc: "Airport, city transport", descAr: "مطار، نقل داخلي" },
+  { type: "guide", label: "Guide", labelAr: "مرشد", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200 hover:bg-purple-100", desc: "Tour guide service", descAr: "خدمة مرشد سياحي" },
 ];
 
 export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking, isArabic }: ItineraryBuilderProps) {
@@ -66,6 +66,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingDayId, setGeneratingDayId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   // Initialize transport toggle state from existing data
   const hasTransport = useCallback((day: ItineraryDay) => {
@@ -117,19 +118,21 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   });
 
   const addDayItem = useMutation({
-    mutationFn: async ({ dayId, category }: { dayId: string; category: string }) => {
+    mutationFn: async ({ dayId, category, title }: { dayId: string; category: string; title?: string }) => {
       const items = itineraryDays.find(d => d.id === dayId)?.booking_day_items || [];
-      const { error } = await supabase.from("booking_day_items").insert({
+      const { data, error } = await supabase.from("booking_day_items").insert({
         booking_day_id: dayId,
         category,
-        custom_title: `New ${category}`,
+        custom_title: title || "",
         sort_order: items.length,
         currency: booking?.currency || "USD",
-      });
+      }).select().single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      if (data?.id) setEditingItemId(data.id);
     },
   });
 
@@ -408,7 +411,13 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   onUpdateDay={(updates) => updateDay.mutate({ dayId: day.id, updates })}
                   onDeleteDay={() => deleteDay.mutate(day.id)}
                   onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
+                  onUpdateItem={async (itemId, updates) => {
+                    await supabase.from("booking_day_items").update(updates).eq("id", itemId);
+                    queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+                  }}
                   onDeleteItem={(itemId) => deleteDayItem.mutate(itemId)}
+                  editingItemId={editingItemId}
+                  onSetEditingItemId={setEditingItemId}
                   onAiEnhanceDay={() => generateSingleDay(day)}
                   isAiGenerating={generatingDayId === day.id}
                   isUpdating={updateDay.isPending}
@@ -439,16 +448,20 @@ interface DayCardProps {
   onUpdateDay: (updates: Record<string, any>) => void;
   onDeleteDay: () => void;
   onAddItem: (category: string) => void;
+  onUpdateItem: (itemId: string, updates: Record<string, any>) => void;
   onDeleteItem: (itemId: string) => void;
   onAiEnhanceDay: () => void;
   isAiGenerating: boolean;
   isUpdating: boolean;
+  editingItemId: string | null;
+  onSetEditingItemId: (id: string | null) => void;
 }
 
 function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
-  onAddItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
+  onAddItem, onUpdateItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
+  editingItemId, onSetEditingItemId,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
@@ -836,70 +849,59 @@ function DayCard({
               <div className="px-4 py-3 space-y-2">
                 {items.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    {isArabic ? "لا توجد عناصر - أضف نشاط أو خدمة" : "No items yet — add an activity or service below"}
+                    {isArabic ? "لا توجد عناصر - أضف نشاط أو خدمة من الأزرار أدناه" : "No items yet — use the buttons below to add services to this day"}
                   </p>
                 ) : (
                   items.map((item: any, i: number) => {
                     const ItemIcon = getCategoryIcon(item.category);
                     const colorClass = getCategoryColor(item.category);
+                    const isItemEditing = editingItemId === item.id;
                     return (
-                      <motion.div
+                      <DayItemRow
                         key={item.id}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="group flex items-center gap-2.5 p-2.5 rounded-lg border border-border hover:bg-muted/20 transition-colors"
-                      >
-                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
-                          <ItemIcon className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <Badge variant="outline" className="text-[8px] capitalize shrink-0 px-1.5">{item.category}</Badge>
-                            <span className="text-xs font-medium text-foreground truncate">{item.custom_title || "Untitled"}</span>
-                          </div>
-                          {item.start_time && (
-                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
-                              <Clock className="w-2.5 h-2.5" /> {item.start_time}
-                            </p>
-                          )}
-                        </div>
-                        {Number(item.total_price || 0) > 0 && (
-                          <span className="text-[11px] font-mono font-semibold text-foreground shrink-0">
-                            {Number(item.total_price).toLocaleString()} {item.currency}
-                          </span>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive/50 hover:text-destructive shrink-0"
-                          onClick={() => onDeleteItem(item.id)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </motion.div>
+                        item={item}
+                        index={i}
+                        isEditing={isItemEditing}
+                        isArabic={isArabic}
+                        ItemIcon={ItemIcon}
+                        colorClass={colorClass}
+                        onStartEdit={() => onSetEditingItemId(item.id)}
+                        onSave={(title) => {
+                          onUpdateItem(item.id, { custom_title: title });
+                          onSetEditingItemId(null);
+                        }}
+                        onCancel={() => onSetEditingItemId(null)}
+                        onDelete={() => onDeleteItem(item.id)}
+                      />
                     );
                   })
                 )}
 
                 {/* Quick add buttons */}
                 <Separator className="my-2" />
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 pb-1">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide px-1">
+                  {isArabic ? "إضافة خدمة لهذا اليوم" : "Add a service to this day"}
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1 pb-1">
                   {QUICK_ACTIONS.map(qa => {
                     const QIcon = qa.icon;
                     return (
                       <button
                         key={qa.type}
                         className={cn(
-                          "flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-3 py-3 text-xs font-semibold transition-all hover:scale-[1.02] hover:border-solid hover:shadow-sm cursor-pointer",
+                          "flex items-start gap-2.5 rounded-xl border-2 border-dashed px-3 py-3 text-start transition-all hover:scale-[1.01] hover:border-solid hover:shadow-sm cursor-pointer",
                           qa.color,
                         )}
                         onClick={() => onAddItem(qa.type)}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", qa.color)}>
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5")}>
                           <QIcon className="w-4 h-4" />
                         </div>
-                        <span>{isArabic ? qa.label : `Add ${qa.label}`}</span>
+                        <div className="min-w-0">
+                          <span className="text-xs font-semibold block">{isArabic ? qa.labelAr : qa.label}</span>
+                          <span className="text-[10px] opacity-70 font-normal block mt-0.5">{isArabic ? qa.descAr : qa.desc}</span>
+                        </div>
+                        <Plus className="w-3.5 h-3.5 shrink-0 opacity-40 mt-1 ms-auto" />
                       </button>
                     );
                   })}
@@ -909,6 +911,85 @@ function DayCard({
           )}
         </AnimatePresence>
       </Card>
+    </motion.div>
+  );
+}
+
+/* Inline-editable day item row */
+function DayItemRow({ item, index, isEditing, isArabic, ItemIcon, colorClass, onStartEdit, onSave, onCancel, onDelete }: {
+  item: any; index: number; isEditing: boolean; isArabic: boolean;
+  ItemIcon: any; colorClass: string;
+  onStartEdit: () => void; onSave: (title: string) => void; onCancel: () => void; onDelete: () => void;
+}) {
+  const [editTitle, setEditTitle] = useState(item.custom_title || "");
+
+  if (isEditing) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-primary/30 bg-primary/5"
+      >
+        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
+          <ItemIcon className="w-3.5 h-3.5" />
+        </div>
+        <Input
+          autoFocus
+          value={editTitle}
+          onChange={e => setEditTitle(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") onSave(editTitle); if (e.key === "Escape") onCancel(); }}
+          placeholder={isArabic ? "اكتب اسم الخدمة..." : "Type service name..."}
+          className="h-7 text-xs flex-1"
+        />
+        <Button size="icon" variant="ghost" className="h-6 w-6 text-primary" onClick={() => onSave(editTitle)}>
+          <Check className="w-3.5 h-3.5" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onCancel}>
+          <X className="w-3.5 h-3.5" />
+        </Button>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className="group flex items-center gap-2.5 p-2.5 rounded-lg border border-border hover:bg-muted/20 transition-colors cursor-pointer"
+      onClick={onStartEdit}
+    >
+      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
+        <ItemIcon className="w-3.5 h-3.5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline" className="text-[8px] capitalize shrink-0 px-1.5">{item.category}</Badge>
+          <span className="text-xs font-medium text-foreground truncate">
+            {item.custom_title || <span className="italic text-muted-foreground">{isArabic ? "اضغط لتسمية..." : "Click to name..."}</span>}
+          </span>
+        </div>
+        {item.start_time && (
+          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
+            <Clock className="w-2.5 h-2.5" /> {item.start_time}
+          </p>
+        )}
+      </div>
+      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity shrink-0" />
+      {Number(item.total_price || 0) > 0 && (
+        <span className="text-[11px] font-mono font-semibold text-foreground shrink-0">
+          {Number(item.total_price).toLocaleString()} {item.currency}
+        </span>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive/50 hover:text-destructive shrink-0"
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+      >
+        <Trash2 className="w-3 h-3" />
+      </Button>
     </motion.div>
   );
 }
