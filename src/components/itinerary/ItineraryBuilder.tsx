@@ -66,6 +66,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingDayId, setGeneratingDayId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   // Initialize transport toggle state from existing data
   const hasTransport = useCallback((day: ItineraryDay) => {
