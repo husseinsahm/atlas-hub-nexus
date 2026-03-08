@@ -553,6 +553,13 @@ export default function TeamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan limit reached dialog */}
+      <LimitReachedDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        type="users"
+      />
     </div>
   );
 }
