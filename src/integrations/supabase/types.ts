@@ -963,6 +963,47 @@ export type Database = {
           },
         ]
       }
+      trip_feedback: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          created_at: string
+          feedback_type: string
+          id: string
+          message: string | null
+          status: string
+          trip_id: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string | null
+          status?: string
+          trip_id: string
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string | null
+          status?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_feedback_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           adults: number

@@ -14,6 +14,7 @@ import {
   ArrowUpDown, StickyNote, Image as ImageIcon,
   MoveUp, MoveDown, CopyPlus, MessageSquare,
   Eye, EyeOff, Percent, Tag, Receipt,
+  MessageCircle, CheckCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,6 +187,21 @@ export default function TripBuilderPage() {
     enabled: days.length > 0,
   });
 
+  // Feedback
+  const { data: tripFeedback = [] } = useQuery({
+    queryKey: ["trip-feedback", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trip_feedback")
+        .select("*")
+        .eq("trip_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as { id: string; trip_id: string; feedback_type: string; client_name: string; client_email: string | null; message: string | null; status: string; created_at: string }[];
+    },
+    enabled: !!id,
+  });
+
   const { data: libraryItems = [] } = useQuery({
     queryKey: ["library-items-for-trip", companyId],
     queryFn: async () => {
@@ -226,7 +242,7 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
-  const [pricingView, setPricingView] = useState<"internal" | "client">("internal");
+  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback">("internal");
 
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
@@ -893,13 +909,21 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client")}>
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback")}>
               <TabsList className="w-full h-8">
                 <TabsTrigger value="internal" className="flex-1 text-[11px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
                 </TabsTrigger>
                 <TabsTrigger value="client" className="flex-1 text-[11px] gap-1">
-                  <Eye className="w-3 h-3" /> Client View
+                  <Eye className="w-3 h-3" /> Client
+                </TabsTrigger>
+                <TabsTrigger value="feedback" className="flex-1 text-[11px] gap-1 relative">
+                  <MessageCircle className="w-3 h-3" /> Feedback
+                  {tripFeedback.length > 0 && (
+                    <span className="ml-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                      {tripFeedback.length}
+                    </span>
+                  )}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -1119,7 +1143,7 @@ export default function TripBuilderPage() {
                   />
                 </div>
               </div>
-            ) : (
+            ) : pricingView === "client" ? (
               /* ===== CLIENT-FACING PRICING VIEW ===== */
               <div className="p-4 space-y-4">
                 <div className="text-center py-3">
@@ -1198,6 +1222,72 @@ export default function TripBuilderPage() {
                     className="text-xs"
                   />
                 </div>
+              </div>
+            ) : (
+              /* ===== FEEDBACK VIEW ===== */
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client Feedback</h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    {tripFeedback.length} {tripFeedback.length === 1 ? "response" : "responses"}
+                  </Badge>
+                </div>
+
+                {tripFeedback.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageCircle className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No feedback yet</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">Share the trip link with your client to get feedback</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {tripFeedback.map(fb => {
+                      const isApproval = fb.feedback_type === "approval";
+                      const isChange = fb.feedback_type === "change_request";
+                      return (
+                        <div key={fb.id} className={cn(
+                          "rounded-lg border p-3 space-y-2",
+                          isApproval ? "border-emerald-200 bg-emerald-50/30" :
+                          isChange ? "border-amber-200 bg-amber-50/30" :
+                          "border-border bg-background"
+                        )}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className={cn(
+                                "w-6 h-6 rounded flex items-center justify-center",
+                                isApproval ? "bg-emerald-100" : isChange ? "bg-amber-100" : "bg-blue-100"
+                              )}>
+                                {isApproval ? <CheckCircle className="w-3 h-3 text-emerald-600" /> :
+                                 isChange ? <RefreshCw className="w-3 h-3 text-amber-600" /> :
+                                 <MessageCircle className="w-3 h-3 text-blue-600" />}
+                              </div>
+                              <span className="text-xs font-semibold text-foreground">{fb.client_name}</span>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {format(new Date(fb.created_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={cn(
+                              "text-[9px]",
+                              isApproval ? "text-emerald-600 border-emerald-200" :
+                              isChange ? "text-amber-600 border-amber-200" :
+                              "text-blue-600 border-blue-200"
+                            )}>
+                              {isApproval ? "Approved" : isChange ? "Change Request" : "Comment"}
+                            </Badge>
+                            {fb.client_email && (
+                              <span className="text-[10px] text-muted-foreground truncate">{fb.client_email}</span>
+                            )}
+                          </div>
+                          {fb.message && (
+                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line">{fb.message}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </ScrollArea>
