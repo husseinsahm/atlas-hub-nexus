@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Plane, User, Calendar, MapPin, Users, DollarSign, UserCheck,
-  FileText, CheckCircle2, Loader2, ArrowRight, Sparkles,
+  FileText, CheckCircle2, Loader2, ArrowRight, Sparkles, X,
 } from "lucide-react";
+import { CityAutocomplete, cities } from "@/components/ui/city-autocomplete";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
