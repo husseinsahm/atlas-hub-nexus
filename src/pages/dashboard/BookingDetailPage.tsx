@@ -1124,21 +1124,11 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-        {/* Premium header */}
-        <div className="relative px-6 pt-5 pb-4 navy-gradient">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
-          <div className="relative flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
-              <Users className="w-5 h-5 text-accent-foreground" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white font-display">
-                {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
-              </h2>
-              <p className="text-[11px] text-white/60">{isArabic ? "معلومات جواز السفر والبيانات الشخصية" : "Passport details & personal info"}</p>
-            </div>
-          </div>
-        </div>
+        <ModalDarkHeader
+          icon={<Users className="w-5 h-5 text-accent-foreground" />}
+          title={form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
+          description={isArabic ? "معلومات جواز السفر والبيانات الشخصية" : "Passport details & personal info"}
+        />
 
         <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
           {/* Identity */}
