@@ -412,7 +412,7 @@ export default function CustomersPage() {
             </div>
           </div>
 
-          <div className="px-5 sm:px-6 py-5 space-y-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(95vh - 140px)' }}>
+          <div className="px-5 sm:px-6 py-5 space-y-6 overflow-y-auto flex-1" style={{ maxHeight: 'calc(95vh - 200px)' }}>
             {/* ─── Personal Info ─── */}
             <section>
               <div className="flex items-center gap-2 mb-3">
