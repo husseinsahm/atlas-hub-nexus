@@ -242,7 +242,7 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
-  const [pricingView, setPricingView] = useState<"internal" | "client">("internal");
+  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback">("internal");
 
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
