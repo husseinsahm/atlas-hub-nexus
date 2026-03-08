@@ -932,6 +932,44 @@ function DayCard({
                 <div className="grid grid-cols-2 gap-2 pt-1 pb-1">
                   {QUICK_ACTIONS.map(qa => {
                     const QIcon = qa.icon;
+
+                    // Guide gets a special dropdown with language selection
+                    if (qa.type === "guide") {
+                      return (
+                        <DropdownMenu key={qa.type}>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className={cn(
+                                "flex items-start gap-2.5 rounded-xl border-2 border-dashed px-3 py-3 text-start transition-all hover:scale-[1.01] hover:border-solid hover:shadow-sm cursor-pointer",
+                                qa.color,
+                              )}
+                            >
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                                <QIcon className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-xs font-semibold block">{isArabic ? qa.labelAr : qa.label}</span>
+                                <span className="text-[10px] opacity-70 font-normal block mt-0.5">{isArabic ? qa.descAr : qa.desc}</span>
+                              </div>
+                              <Plus className="w-3.5 h-3.5 shrink-0 opacity-40 mt-1 ms-auto" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-52">
+                            {GUIDE_LANGUAGES.map(lang => (
+                              <DropdownMenuItem
+                                key={lang.code}
+                                className="text-xs gap-2 cursor-pointer"
+                                onClick={() => onAddItem("guide", `${lang.flag} ${lang.label}-speaking tour guide`)}
+                              >
+                                <span className="text-base">{lang.flag}</span>
+                                <span>{lang.label} {isArabic ? "مرشد" : "Guide"}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    }
+
                     return (
                       <button
                         key={qa.type}
@@ -941,7 +979,7 @@ function DayCard({
                         )}
                         onClick={() => onAddItem(qa.type)}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5")}>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                           <QIcon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
