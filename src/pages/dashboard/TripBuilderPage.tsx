@@ -958,21 +958,24 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback")}>
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history")}>
               <TabsList className="w-full h-8">
-                <TabsTrigger value="internal" className="flex-1 text-[11px] gap-1">
+                <TabsTrigger value="internal" className="flex-1 text-[10px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
                 </TabsTrigger>
-                <TabsTrigger value="client" className="flex-1 text-[11px] gap-1">
+                <TabsTrigger value="client" className="flex-1 text-[10px] gap-1">
                   <Eye className="w-3 h-3" /> Client
                 </TabsTrigger>
-                <TabsTrigger value="feedback" className="flex-1 text-[11px] gap-1 relative">
+                <TabsTrigger value="feedback" className="flex-1 text-[10px] gap-1 relative">
                   <MessageCircle className="w-3 h-3" /> Feedback
                   {tripFeedback.length > 0 && (
-                    <span className="ml-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                    <span className="ml-0.5 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
                       {tripFeedback.length}
                     </span>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex-1 text-[10px] gap-1">
+                  <History className="w-3 h-3" /> History
                 </TabsTrigger>
               </TabsList>
             </Tabs>
