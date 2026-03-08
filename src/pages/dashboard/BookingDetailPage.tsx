@@ -448,10 +448,10 @@ export default function BookingDetailPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {Array.isArray(booking.travelers) && (booking.travelers as Traveler[]).length > 0 ? (
+                {travelers.length > 0 ? (
                   <div className="space-y-2">
                     <AnimatePresence>
-                      {(booking.travelers as Traveler[]).map((t, i) => {
+                      {travelers.map((t, i) => {
                         const isExpanded = expandedTraveler === t.id;
                         return (
                           <motion.div
