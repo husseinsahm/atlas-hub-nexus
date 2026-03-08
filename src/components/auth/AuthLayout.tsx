@@ -1,6 +1,6 @@
-import { Compass, Globe } from "lucide-react";
+import { Compass } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { motion } from "framer-motion";
 
 interface AuthLayoutProps {
@@ -8,7 +8,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
 
   return (
     <div className="flex min-h-screen">
@@ -35,16 +35,15 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             className="max-w-md"
           >
             <h2 className="text-4xl font-bold font-display leading-tight mb-6">
-              Crafting Extraordinary Travel Experiences
+              {t("app.heroTitle")}
             </h2>
             <p className="text-primary-foreground/60 text-lg leading-relaxed">
-              The complete platform for premium travel agencies to manage itineraries,
-              clients, and teams — all in one elegant workspace.
+              {t("app.heroSubtitle")}
             </p>
           </motion.div>
 
           <p className="text-xs text-primary-foreground/30">
-            © 2026 Safar. Premium Travel Management Platform.
+            {t("app.copyright")}
           </p>
         </div>
       </div>
@@ -59,15 +58,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         >
           {/* Language toggle */}
           <div className="flex justify-end mb-8">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLanguage(language === "en" ? "ar" : "en")}
-              className="text-muted-foreground hover:text-foreground gap-2"
-            >
-              <Globe className="w-4 h-4" />
-              {language === "en" ? "العربية" : "English"}
-            </Button>
+            <LanguageSwitcher variant="full" />
           </div>
 
           {/* Mobile logo */}
