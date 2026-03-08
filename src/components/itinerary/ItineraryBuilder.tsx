@@ -8,7 +8,7 @@ import {
   Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
   Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
   Sparkles, Navigation, FileText, Activity, User, Calendar,
-  Wand2,
+  Wand2, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -63,6 +64,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [editingDayId, setEditingDayId] = useState<string | null>(null);
   const [showTransport, setShowTransport] = useState<Record<string, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingDayId, setGeneratingDayId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
 
   // Initialize transport toggle state from existing data
@@ -205,6 +207,47 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
     }
   }, [aiSuggestions, itineraryDays, bookingId, queryClient, toast, isArabic]);
 
+  const generateSingleDay = useCallback(async (day: ItineraryDay) => {
+    setGeneratingDayId(day.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-itinerary", {
+        body: {
+          bookingId,
+          title: booking?.title,
+          totalDays: 1,
+          arrivalDate: day.date || booking?.arrival_date || booking?.start_date,
+          departureDate: day.date || booking?.departure_date || booking?.end_date,
+          adults: booking?.adults,
+          children: booking?.children,
+          existingDays: [{
+            id: day.id,
+            day_number: day.day_number,
+            city: day.city,
+            title: day.title,
+            date: day.date,
+          }],
+          singleDay: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.days?.[0]) {
+        setAiSuggestions([data.days[0]]);
+        toast({ title: isArabic ? "اقتراح جاهز - راجع وأكّد" : `AI suggestion for Day ${day.day_number} ready — review & confirm` });
+      }
+    } catch (err: any) {
+      console.error("AI single day error:", err);
+      toast({
+        title: isArabic ? "فشل التوليد" : "Generation failed",
+        description: err?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingDayId(null);
+    }
+  }, [bookingId, booking, toast, isArabic]);
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -225,20 +268,40 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         </div>
         <div className="flex items-center gap-2">
           {itineraryDays.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-[11px] gap-1.5 h-8 border-accent/30 text-accent hover:bg-accent/10"
-              onClick={generateItinerary}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="w-3.5 h-3.5" />
-              )}
-              {isGenerating ? (isArabic ? "جاري التوليد..." : "Generating...") : (isArabic ? "توليد بالذكاء الاصطناعي" : "AI Enhance")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-[11px] gap-1.5 h-8 border-accent/30 text-accent hover:bg-accent/10"
+                  disabled={isGenerating || !!generatingDayId}
+                >
+                  {(isGenerating || generatingDayId) ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isArabic ? "اقتراحات الذكاء" : "AI Enhance"}
+                  <ChevronDown className="w-3 h-3 ml-0.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={generateItinerary} className="gap-2 text-xs">
+                  <ListChecks className="w-3.5 h-3.5 text-accent" />
+                  <div>
+                    <p className="font-medium">{isArabic ? "كل الأيام" : "All Days"}</p>
+                    <p className="text-[10px] text-muted-foreground">{isArabic ? "توليد اقتراحات لكل الأيام" : `Generate suggestions for all ${itineraryDays.length} days`}</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled className="gap-2 text-xs opacity-60 pointer-events-none">
+                  <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{isArabic ? "يوم محدد" : "Specific Day"}</p>
+                    <p className="text-[10px] text-muted-foreground">{isArabic ? "استخدم زر ✨ على كل يوم" : "Use the ✨ button on each day card"}</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button
             size="sm"
@@ -346,6 +409,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   onDeleteDay={() => deleteDay.mutate(day.id)}
                   onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
                   onDeleteItem={(itemId) => deleteDayItem.mutate(itemId)}
+                  onAiEnhanceDay={() => generateSingleDay(day)}
+                  isAiGenerating={generatingDayId === day.id}
                   isUpdating={updateDay.isPending}
                 />
               ))}
@@ -375,13 +440,15 @@ interface DayCardProps {
   onDeleteDay: () => void;
   onAddItem: (category: string) => void;
   onDeleteItem: (itemId: string) => void;
+  onAiEnhanceDay: () => void;
+  isAiGenerating: boolean;
   isUpdating: boolean;
 }
 
 function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
-  onAddItem, onDeleteItem, isUpdating,
+  onAddItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
@@ -576,6 +643,20 @@ function DayCard({
 
           {/* Right actions */}
           <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-accent/70 hover:text-accent"
+                  onClick={onAiEnhanceDay}
+                  disabled={isAiGenerating}
+                >
+                  {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">{isArabic ? "اقتراح ذكاء اصطناعي" : "AI Enhance this day"}</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onToggleEdit}>
