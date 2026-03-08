@@ -545,22 +545,6 @@ export default function BookingDetailPage() {
                     <p className="text-sm font-mono font-medium text-foreground">{booking.booking_number}</p>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الحالة" : "Status"}</Label>
-                    <Select 
-                      value={booking.status} 
-                      onValueChange={v => updateBooking.mutate({ status: v })}
-                    >
-                      <SelectTrigger className="h-8 text-xs mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                          <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
                     <Input
                       type="date"
