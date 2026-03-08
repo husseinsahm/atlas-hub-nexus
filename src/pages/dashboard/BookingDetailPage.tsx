@@ -1263,6 +1263,23 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
 
 function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, bookingAdults, bookingChildren }: any) {
   const [form, setForm] = useState({ ...service });
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const enhanceTitle = async () => {
+    if (!form.title?.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("enhance-service-title", {
+        body: { title: form.title, serviceType: form.service_type, language: isArabic ? "ar" : "en" },
+      });
+      if (error) throw error;
+      if (data?.enhanced) setForm((prev: any) => ({ ...prev, title: data.enhanced }));
+    } catch (e) {
+      console.error("Enhance failed:", e);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const typeConfig: Record<string, {
     icon: any; headerLabel: string; headerLabelAr: string; subtitle: string; subtitleAr: string;
@@ -1426,7 +1443,20 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <Label className="text-xs">{isArabic ? "العنوان" : "Title"} <span className="text-destructive">*</span></Label>
-              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? cfg.titlePlaceholderAr : cfg.titlePlaceholder} />
+              <div className="flex gap-2 mt-1">
+                <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="h-11 flex-1" placeholder={isArabic ? cfg.titlePlaceholderAr : cfg.titlePlaceholder} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={!form.title?.trim() || isEnhancing}
+                  onClick={enhanceTitle}
+                  className="h-11 px-3 gap-1.5 text-xs shrink-0 border-accent/30 text-accent hover:bg-accent/10"
+                >
+                  {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span className="text-sm">✨</span>}
+                  {isArabic ? "تحسين بالذكاء" : "AI Enhance"}
+                </Button>
+              </div>
             </div>
             <div>
               <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
