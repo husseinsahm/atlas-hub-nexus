@@ -562,46 +562,77 @@ export default function BookingDetailPage() {
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-5">
+            {/* Booking Details Card */}
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                    <Briefcase className="w-3.5 h-3.5 text-accent" />
+                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                    <Briefcase className="w-3.5 h-3.5 text-accent-foreground" />
                   </div>
                   {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "رقم الحجز" : "Booking #"}</Label>
-                    <p className="text-sm font-mono font-medium text-foreground">{booking.booking_number}</p>
+              <CardContent className="p-5 space-y-5">
+                {/* Booking Number & Status highlight */}
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/50">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Hash className="w-5 h-5 text-primary" />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "رقم الحجز" : "Booking Number"}</p>
+                    <p className="text-base font-bold font-mono text-foreground">{booking.booking_number}</p>
+                  </div>
+                  <Badge className={cn("border-0 text-xs font-semibold px-3 py-1", sc.bg, sc.color)}>
+                    {isArabic ? sc.labelAr : sc.label}
+                  </Badge>
+                </div>
+
+                {/* Date range visual */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                        <Plane className="w-3 h-3 text-emerald-600 dark:text-emerald-400 rotate-[-45deg]" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
+                    </div>
                     <Input
                       type="date"
-                      className="h-8 text-xs mt-1"
+                      className="h-9 text-xs border-border/60 bg-transparent"
                       defaultValue={(booking as any).arrival_date || booking.start_date || ""}
                       onBlur={e => updateBooking.mutate({ arrival_date: e.target.value || null, start_date: e.target.value || null })}
                     />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
+                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                        <Plane className="w-3 h-3 text-rose-600 dark:text-rose-400 rotate-45" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
+                    </div>
                     <Input
                       type="date"
-                      className="h-8 text-xs mt-1"
+                      className="h-9 text-xs border-border/60 bg-transparent"
                       defaultValue={(booking as any).departure_date || booking.end_date || ""}
                       onBlur={e => updateBooking.mutate({ departure_date: e.target.value || null, end_date: e.target.value || null })}
                     />
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المصدر" : "Source"}</Label>
+                </div>
+
+                {/* Source & Agent */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+                        <Globe className="w-3 h-3 text-violet-600 dark:text-violet-400" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "المصدر" : "Source"}</Label>
+                    </div>
                     <Select 
                       value={(booking as any).source || "email"} 
                       onValueChange={v => updateBooking.mutate({ source: v })}
                     >
-                      <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -611,13 +642,18 @@ export default function BookingDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
+                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                        <UserCheck className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
+                    </div>
                     <Select 
                       value={booking.assigned_to || ""} 
                       onValueChange={v => updateBooking.mutate({ assigned_to: v })}
                     >
-                      <SelectTrigger className="h-8 text-xs mt-1">
+                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
                         <SelectValue placeholder={isArabic ? "اختر..." : "Select..."} />
                       </SelectTrigger>
                       <SelectContent>
@@ -634,45 +670,36 @@ export default function BookingDetailPage() {
 
           <div className="space-y-5">
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                    <StickyNote className="w-3.5 h-3.5 text-accent" />
+                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                    <StickyNote className="w-3.5 h-3.5 text-accent-foreground" />
                   </div>
                   {isArabic ? "ملاحظات" : "Notes"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات داخلية" : "Internal Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.internal_notes || ""}
-                    onBlur={e => updateBooking.mutate({ internal_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات داخلية..." : "Internal notes..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العمليات" : "Operations Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.operations_notes || ""}
-                    onBlur={e => updateBooking.mutate({ operations_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات العمليات..." : "Operations notes..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العميل" : "Client Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.client_notes || ""}
-                    onBlur={e => updateBooking.mutate({ client_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات للعميل..." : "Notes for client..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
+              <CardContent className="p-4 space-y-4">
+                {[
+                  { key: "internal_notes", label: isArabic ? "ملاحظات داخلية" : "Internal Notes", placeholder: isArabic ? "ملاحظات داخلية..." : "Internal notes...", icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400" },
+                  { key: "operations_notes", label: isArabic ? "ملاحظات العمليات" : "Operations Notes", placeholder: isArabic ? "ملاحظات العمليات..." : "Operations notes...", icon: Activity, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
+                  { key: "client_notes", label: isArabic ? "ملاحظات العميل" : "Client Notes", placeholder: isArabic ? "ملاحظات للعميل..." : "Notes for client...", icon: User, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
+                ].map(note => (
+                  <div key={note.key} className="rounded-xl border border-border/50 p-3 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", note.iconBg)}>
+                        <note.icon className={cn("w-2.5 h-2.5", note.iconText)} />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{note.label}</Label>
+                    </div>
+                    <Textarea
+                      defaultValue={(booking as any)[note.key] || ""}
+                      onBlur={e => updateBooking.mutate({ [note.key]: e.target.value })}
+                      placeholder={note.placeholder}
+                      rows={3}
+                      className="text-xs border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 resize-none"
+                    />
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -682,67 +709,63 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Customer ─── */}
       {activeTab === "customer" && (
         <Card className="border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+          <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                <UserCheck className="w-3.5 h-3.5 text-accent" />
+              <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                <UserCheck className="w-3.5 h-3.5 text-accent-foreground" />
               </div>
               {isArabic ? "معلومات العميل" : "Customer Information"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-5">
             {customer ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الاسم" : "Full Name"}</Label>
-                  <p className="text-sm font-medium text-foreground">{customer.full_name}</p>
+              <div className="space-y-5">
+                {/* Customer header card */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/40 border border-border/50">
+                  <div className="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center text-xl font-bold text-accent-foreground shadow-lg">
+                    {customer.full_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-foreground font-display">{customer.full_name}</h3>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                      {customer.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</span>}
+                      {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</span>}
+                    </div>
+                  </div>
                 </div>
-                {customer.email && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البريد" : "Email"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</p>
-                  </div>
-                )}
-                {customer.phone && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الهاتف" : "Phone"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</p>
-                  </div>
-                )}
-                {customer.nationality && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                    <p className="text-sm text-foreground flex items-center gap-1"><Globe className="w-3 h-3" /> {customer.nationality}</p>
-                  </div>
-                )}
-                {customer.country && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البلد" : "Country"}</Label>
-                    <p className="text-sm text-foreground">{customer.country}</p>
-                  </div>
-                )}
-                {customer.city && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المدينة" : "City"}</Label>
-                    <p className="text-sm text-foreground">{customer.city}</p>
-                  </div>
-                )}
-                {customer.passport_number && (
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "جواز السفر" : "Passport"}</Label>
-                    <p className="text-sm text-foreground font-mono">{customer.passport_number}</p>
-                  </div>
-                )}
-                <div className="col-span-full">
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
-                    <Eye className="w-3.5 h-3.5 mr-1.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
-                  </Button>
+
+                {/* Info grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    { label: isArabic ? "الجنسية" : "Nationality", value: customer.nationality, icon: Globe, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
+                    { label: isArabic ? "البلد" : "Country", value: customer.country, icon: MapPin, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
+                    { label: isArabic ? "المدينة" : "City", value: customer.city, icon: MapPin, iconBg: "bg-violet-100 dark:bg-violet-900/40", iconText: "text-violet-600 dark:text-violet-400" },
+                    { label: isArabic ? "جواز السفر" : "Passport", value: customer.passport_number, icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400", mono: true },
+                    { label: isArabic ? "تاريخ الميلاد" : "Date of Birth", value: customer.date_of_birth ? format(new Date(customer.date_of_birth), "MMM d, yyyy") : null, icon: Calendar, iconBg: "bg-rose-100 dark:bg-rose-900/40", iconText: "text-rose-600 dark:text-rose-400" },
+                  ].filter(f => f.value).map((field, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
+                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", field.iconBg)}>
+                        <field.icon className={cn("w-3.5 h-3.5", field.iconText)} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</p>
+                        <p className={cn("text-sm font-medium text-foreground truncate", field.mono && "font-mono")}>{field.value}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+
+                <Button variant="outline" size="sm" className="text-xs gap-1.5 mt-2" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
+                  <Eye className="w-3.5 h-3.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
+                </Button>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <UserCheck className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <UserCheck className="w-8 h-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "اربط عميل من صفحة العملاء" : "Link a customer from the customers page"}</p>
               </div>
             )}
           </CardContent>
@@ -776,11 +799,18 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Services ─── */}
       {activeTab === "services" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {services.length} {isArabic ? "خدمة" : "services"} · {isArabic ? "الإجمالي" : "Total"}: {servicesTotalCost.toLocaleString()} {booking.currency}
-            </p>
-            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={() => {
+          {/* Services header */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-sm">
+                <Hotel className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? "الإجمالي" : "Total"}: <span className="font-mono font-semibold text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span></p>
+              </div>
+            </div>
+            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
               setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: 1, unit_price: 0, status: "pending" });
               setShowServiceDialog(true);
             }}>
@@ -789,44 +819,52 @@ export default function BookingDetailPage() {
           </div>
 
           {services.length === 0 ? (
-            <div className="text-center py-12">
-              <Hotel className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                <Hotel className="w-8 h-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "أضف فنادق ونقل وجولات" : "Add hotels, transfers, tours & more"}</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {services.map((service: any) => {
                 const typeConfig = SERVICE_TYPES.find(st => st.value === service.service_type);
                 const Icon = typeConfig?.icon || FileText;
+                const statusColors: Record<string, string> = {
+                  confirmed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+                  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+                  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+                };
                 return (
-                  <Card key={service.id} className="border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Card key={service.id} className="border-border/50 hover:border-accent/30 transition-colors overflow-hidden group">
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/15 transition-colors">
                           <Icon className="w-5 h-5 text-accent" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[9px] capitalize">{service.service_type}</Badge>
-                            <Badge variant={service.status === "confirmed" ? "default" : "secondary"} className="text-[9px]">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Badge variant="outline" className="text-[9px] capitalize border-border/60">{service.service_type}</Badge>
+                            <Badge className={cn("text-[9px] border-0", statusColors[service.status] || statusColors.pending)}>
                               {service.status}
                             </Badge>
                           </div>
-                          <h4 className="text-sm font-semibold text-foreground truncate mt-0.5">{service.title}</h4>
+                          <h4 className="text-sm font-semibold text-foreground truncate">{service.title}</h4>
                           <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                            {service.supplier_name && <span>{service.supplier_name}</span>}
-                            {service.service_date && <span>{format(new Date(service.service_date), "MMM d")}</span>}
+                            {service.supplier_name && <span className="flex items-center gap-0.5"><User className="w-2.5 h-2.5" />{service.supplier_name}</span>}
+                            {service.service_date && <span className="flex items-center gap-0.5"><Calendar className="w-2.5 h-2.5" />{format(new Date(service.service_date), "MMM d")}</span>}
                             {service.location && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{service.location}</span>}
-                            {service.confirmation_number && <span className="font-mono">#{service.confirmation_number}</span>}
+                            {service.confirmation_number && <span className="font-mono bg-muted px-1.5 py-0.5 rounded">#{service.confirmation_number}</span>}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-bold font-mono text-foreground">
-                            {Number(service.total_cost || 0).toLocaleString()} {service.currency}
+                            {Number(service.total_cost || 0).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{service.currency}</span>
                           </p>
                           <p className="text-[10px] text-muted-foreground">{service.quantity} × {Number(service.unit_price || 0).toLocaleString()}</p>
                         </div>
-                        <div className="flex gap-1 shrink-0">
+                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService(service); setShowServiceDialog(true); }}>
                             <Pencil className="w-3 h-3" />
                           </Button>
@@ -841,10 +879,15 @@ export default function BookingDetailPage() {
               })}
 
               {/* Services total */}
-              <Card className="border-accent/20 bg-accent/5">
+              <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10 overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
-                  <span className="text-lg font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4 text-accent" />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
+                  </div>
+                  <span className="text-xl font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
                 </CardContent>
               </Card>
             </div>
@@ -855,49 +898,80 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
         <div className="space-y-6">
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                  <DollarSign className="w-3.5 h-3.5 text-accent" />
+          {/* Financial KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              {
+                label: isArabic ? "التكلفة" : "Total Cost",
+                icon: DollarSign,
+                iconBg: "bg-slate-100 dark:bg-slate-800",
+                iconText: "text-slate-600 dark:text-slate-400",
+                editable: true,
+                field: "total_cost",
+                value: booking.total_cost || 0,
+              },
+              {
+                label: isArabic ? "سعر البيع" : "Selling Price",
+                icon: CreditCard,
+                iconBg: "bg-blue-100 dark:bg-blue-900/40",
+                iconText: "text-blue-600 dark:text-blue-400",
+                editable: true,
+                field: "selling_price",
+                value: booking.selling_price || 0,
+              },
+              {
+                label: isArabic ? "الربح" : "Profit",
+                icon: Activity,
+                iconBg: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40",
+                iconText: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                display: true,
+                displayValue: ((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString(),
+                displayColor: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive",
+              },
+              {
+                label: isArabic ? "الرصيد المتبقي" : "Balance",
+                icon: Clock,
+                iconBg: balance > 0 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-emerald-100 dark:bg-emerald-900/40",
+                iconText: balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400",
+                display: true,
+                displayValue: balance > 0 ? balance.toLocaleString() : (isArabic ? "مدفوع بالكامل" : "Fully Paid"),
+                displayColor: balance > 0 ? "text-amber-600" : "text-emerald-600",
+              },
+            ].map((kpi, idx) => (
+              <div key={idx} className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.iconBg)}>
+                    <kpi.icon className={cn("w-4 h-4", kpi.iconText)} />
+                  </div>
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{kpi.label}</Label>
                 </div>
-                {isArabic ? "الملخص المالي" : "Financial Summary"}
+                {kpi.editable ? (
+                  <Input
+                    type="number"
+                    className="h-10 text-sm font-mono font-bold border-border/60 bg-transparent"
+                    defaultValue={kpi.value}
+                    onBlur={e => updateBooking.mutate({ [kpi.field!]: parseFloat(e.target.value) || 0 })}
+                  />
+                ) : (
+                  <p className={cn("text-xl font-mono font-bold", (kpi as any).displayColor)}>
+                    {(kpi as any).displayValue} <span className="text-xs text-muted-foreground font-normal">{balance > 0 || idx !== 3 ? booking.currency : ""}</span>
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Payment Records */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                  <CreditCard className="w-3.5 h-3.5 text-accent-foreground" />
+                </div>
+                {isArabic ? "سجل المدفوعات" : "Payment Records"}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "التكلفة" : "Total Cost"}</Label>
-                  <Input
-                    type="number"
-                    className="h-8 text-xs mt-1 font-mono"
-                    defaultValue={booking.total_cost || 0}
-                    onBlur={e => updateBooking.mutate({ total_cost: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "سعر البيع" : "Selling Price"}</Label>
-                  <Input
-                    type="number"
-                    className="h-8 text-xs mt-1 font-mono"
-                    defaultValue={booking.selling_price || 0}
-                    onBlur={e => updateBooking.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الربح" : "Profit"}</Label>
-                  <p className={cn("text-lg font-mono font-bold mt-1", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
-                    {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الرصيد المتبقي" : "Balance"}</Label>
-                  <p className={cn("text-lg font-mono font-bold mt-1", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
-                    {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : isArabic ? "مدفوع بالكامل" : "Fully Paid"}
-                  </p>
-                </div>
-              </div>
-              <Separator className="my-4" />
+            <CardContent className="p-4">
               <PaymentRecords
                 bookingId={booking.id}
                 companyId={booking.company_id}
