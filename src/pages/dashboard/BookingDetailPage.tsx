@@ -433,8 +433,8 @@ export default function BookingDetailPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <Users className="w-4 h-4 text-accent" /> Travelers
-                    {Array.isArray(booking.travelers) && (booking.travelers as Traveler[]).length > 0 && (
-                      <Badge variant="secondary" className="text-[10px]">{(booking.travelers as Traveler[]).length}</Badge>
+                    {travelers.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px]">{travelers.length}</Badge>
                     )}
                   </CardTitle>
                   <Button
