@@ -187,6 +187,21 @@ export default function TripBuilderPage() {
     enabled: days.length > 0,
   });
 
+  // Feedback
+  const { data: tripFeedback = [] } = useQuery({
+    queryKey: ["trip-feedback", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trip_feedback")
+        .select("*")
+        .eq("trip_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as { id: string; trip_id: string; feedback_type: string; client_name: string; client_email: string | null; message: string | null; status: string; created_at: string }[];
+    },
+    enabled: !!id,
+  });
+
   const { data: libraryItems = [] } = useQuery({
     queryKey: ["library-items-for-trip", companyId],
     queryFn: async () => {
