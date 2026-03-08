@@ -68,6 +68,18 @@ export default function TripsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newTrip, setNewTrip] = useState({ title: "", description: "", total_days: "3", adults: "2", children: "0", currency: "USD" });
 
+  // Plan limits
+  const { limits, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
+  const handleCreateClick = () => {
+    if (!limits.canCreateTrip) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setCreateOpen(true);
+  };
+
   const { data: trips = [], isLoading } = useQuery({
     queryKey: ["trips", companyId],
     queryFn: async () => {
