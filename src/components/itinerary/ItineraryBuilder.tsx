@@ -148,10 +148,11 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const addDayItem = useMutation({
     mutationFn: async ({ dayId, category, title }: { dayId: string; category: string; title?: string }) => {
       const items = itineraryDays.find(d => d.id === dayId)?.booking_day_items || [];
+      const defaultTitle = title || (isArabic ? DEFAULT_TITLES_AR[category] : DEFAULT_TITLES[category]) || "";
       const { data, error } = await supabase.from("booking_day_items").insert({
         booking_day_id: dayId,
         category,
-        custom_title: title || "",
+        custom_title: defaultTitle,
         sort_order: items.length,
         currency: booking?.currency || "USD",
       }).select().single();
