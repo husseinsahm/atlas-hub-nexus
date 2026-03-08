@@ -302,15 +302,13 @@ export default function CustomersPage() {
       <Card className="border border-border bg-card">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
+            <TableLoadingState rows={5} columns={6} className="p-4" />
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Users className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm font-medium">No customers found</p>
-              <p className="text-xs mt-1">Add your first customer or convert a lead</p>
-            </div>
+            search.trim() ? (
+              <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} className="m-8" />
+            ) : (
+              <NoCustomersEmptyState onAction={isAdminOrAgent ? openCreate : undefined} className="m-8" />
+            )
           ) : (
             <Table>
               <TableHeader>
