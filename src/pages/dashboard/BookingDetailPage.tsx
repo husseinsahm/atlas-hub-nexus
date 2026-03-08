@@ -1081,85 +1081,112 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   const [form, setForm] = useState({ ...traveler });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-accent" />
-            {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 py-4">
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} *</Label>
-            <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1" />
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+        {/* Premium header */}
+        <div className="relative px-6 pt-5 pb-4 navy-gradient">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <Users className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-display">
+                {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
+              </h2>
+              <p className="text-[11px] text-white/60">{isArabic ? "معلومات جواز السفر والبيانات الشخصية" : "Passport details & personal info"}</p>
+            </div>
           </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Identity */}
           <div>
-            <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
-            <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">{isArabic ? "الهوية" : "Identity"}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span></Label>
+                <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-11" autoFocus />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
+                <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
+                  <SelectTrigger className="mt-1 h-11"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
+                <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
+                <NationalitySelect value={form.nationality || ""} onValueChange={v => setForm({ ...form, nationality: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
+                <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
+                <PhoneInput value={form.phone || ""} onValueChange={v => setForm({ ...form, phone: v })} defaultCountry="AE" className="mt-1" />
+              </div>
+            </div>
           </div>
+
+          {/* Passport */}
           <div>
-            <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
-            <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 flex items-center gap-1"><Shield className="w-3 h-3" />{isArabic ? "جواز السفر" : "Passport"}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
+                <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1 h-11 font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Expiry"}</Label>
+                <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "بلد الإصدار" : "Issuing Country"}</Label>
+                <CountrySelect value={form.passport_country || ""} onValueChange={v => setForm({ ...form, passport_country: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Pref."}</Label>
+                <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1 h-11" />
+              </div>
+            </div>
           </div>
+
+          {/* Extras */}
           <div>
-            <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-            <Input value={form.nationality || ""} onChange={e => setForm({ ...form, nationality: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
-            <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
-            <Input value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
-            <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Passport Expiry"}</Label>
-            <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "بلد الجواز" : "Passport Country"}</Label>
-            <Input value={form.passport_country || ""} onChange={e => setForm({ ...form, passport_country: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Preference"}</Label>
-            <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1" />
-          </div>
-          <div className="col-span-2">
             <Label className="text-xs">{isArabic ? "متطلبات خاصة" : "Special Requirements"}</Label>
-            <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-xs" />
+            <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
           </div>
-          <div className="flex items-center gap-4 col-span-2">
+          <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} />
+              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} className="rounded" />
               {isArabic ? "المسافر الرئيسي" : "Lead Traveler"}
             </label>
             <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} />
+              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} className="rounded" />
               {isArabic ? "بالغ" : "Adult"}
             </label>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+
+        <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
           <Button
+            size="sm"
             disabled={!form.full_name?.trim() || isSaving}
             onClick={() => onSave(form)}
-            className="gold-gradient text-accent-foreground gap-2"
+            className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
           >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isArabic ? "حفظ" : "Save"}
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isArabic ? "حفظ" : "Save Traveler"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
