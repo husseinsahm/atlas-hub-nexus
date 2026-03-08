@@ -16,6 +16,7 @@ import Overview from "./pages/dashboard/Overview";
 import PlaceholderPage from "./pages/dashboard/PlaceholderPage";
 import CompaniesPage from "./pages/dashboard/CompaniesPage";
 import PlansPage from "./pages/dashboard/PlansPage";
+import SubscriptionsPage from "./pages/dashboard/SubscriptionsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -66,7 +67,7 @@ function AppRoutes() {
         <Route index element={<Overview />} />
         <Route path="companies" element={<CompaniesPage />} />
         <Route path="plans" element={<PlansPage />} />
-        <Route path="subscriptions" element={<PlaceholderPage />} />
+        <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="analytics" element={<PlaceholderPage />} />
         <Route path="trips" element={<PlaceholderPage />} />
         <Route path="itineraries" element={<PlaceholderPage />} />

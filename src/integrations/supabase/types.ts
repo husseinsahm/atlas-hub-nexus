@@ -350,11 +350,13 @@ export type Database = {
           current_period_end: string
           current_period_start: string
           id: string
+          payment_status: string
           plan_id: string
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           trial_ends_at: string | null
+          trial_starts_at: string | null
           updated_at: string
         }
         Insert: {
@@ -366,11 +368,13 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          payment_status?: string
           plan_id: string
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_starts_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -382,11 +386,13 @@ export type Database = {
           current_period_end?: string
           current_period_start?: string
           id?: string
+          payment_status?: string
           plan_id?: string
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           trial_ends_at?: string | null
+          trial_starts_at?: string | null
           updated_at?: string
         }
         Relationships: [
