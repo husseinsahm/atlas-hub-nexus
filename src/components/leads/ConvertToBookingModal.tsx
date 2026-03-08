@@ -74,7 +74,7 @@ export default function ConvertToBookingModal({
   const [status, setStatus] = useState<BookingStatus>("tentative");
   const [arrivalDate, setArrivalDate] = useState(lead.travel_date || "");
   const [departureDate, setDepartureDate] = useState("");
-  const [destination, setDestination] = useState(lead.destinations?.join(", ") || "");
+  const [destinations, setDestinations] = useState<string[]>(lead.destinations?.length ? lead.destinations : []);
   const [itineraryNotes, setItineraryNotes] = useState(lead.notes || "");
   const [adults, setAdults] = useState(lead.adults);
   const [children, setChildren] = useState(lead.children);
