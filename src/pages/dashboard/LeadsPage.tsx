@@ -712,9 +712,14 @@ export default function LeadsPage() {
                             <Eye className="w-4 h-4" />
                           </Button>
                           {isAdminOrAgent && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(lead)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
