@@ -452,7 +452,8 @@ export default function CustomersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
                   <Label className="text-xs">Full Name <span className="text-destructive">*</span></Label>
-                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" maxLength={200} className="h-11" autoFocus />
+                  <Input value={form.full_name} onChange={(e) => { setForm({ ...form, full_name: e.target.value }); setFormErrors(prev => ({ ...prev, full_name: "" })); }} placeholder="John Smith" maxLength={200} className={cn("h-11", formErrors.full_name && "border-destructive ring-1 ring-destructive/30")} autoFocus />
+                  {formErrors.full_name && <p className="text-[11px] text-destructive">{formErrors.full_name}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Date of Birth</Label>
