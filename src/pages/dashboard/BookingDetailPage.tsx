@@ -287,8 +287,9 @@ export default function BookingDetailPage() {
 
   const saveService = useMutation({
     mutationFn: async (service: any) => {
-      const adultTotal = (service.quantity || 0) * (service.unit_price || 0);
-      const childTotal = (service.child_quantity || 0) * (service.child_unit_price || 0);
+      const isFlat = service.pricing_mode === "flat";
+      const adultTotal = isFlat ? (service.unit_price || 0) : (service.quantity || 0) * (service.unit_price || 0);
+      const childTotal = isFlat || service.children_free ? 0 : (service.child_quantity || 0) * (service.child_unit_price || 0);
       const payload = {
         booking_id: id!,
         company_id: booking!.company_id,
@@ -300,7 +301,7 @@ export default function BookingDetailPage() {
         confirmation_number: service.confirmation_number || null,
         service_date: service.service_date || null,
         location: service.location || null,
-        quantity: service.quantity || 1,
+        quantity: isFlat ? 1 : (service.quantity || 1),
         unit_price: service.unit_price || 0,
         total_cost: adultTotal + childTotal,
         currency: booking?.currency || "USD",
@@ -308,8 +309,10 @@ export default function BookingDetailPage() {
         notes: service.notes || null,
         created_by: user?.id,
         metadata: {
+          pricing_mode: service.pricing_mode || "detailed",
           child_quantity: service.child_quantity || 0,
-          child_unit_price: service.child_unit_price || 0,
+          child_unit_price: service.children_free ? 0 : (service.child_unit_price || 0),
+          children_free: service.children_free || false,
         },
       };
       if (service.id && !service._isNew) {
