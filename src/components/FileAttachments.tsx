@@ -299,32 +299,73 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
     },
   });
 
-  // Get signed URL for download/preview
+  // Get signed URL for download/preview with error handling
   const getSignedUrl = useCallback(async (path: string) => {
-    const { data } = await supabase.storage
-      .from("attachments")
-      .createSignedUrl(path, 3600);
-    return data?.signedUrl || null;
-  }, []);
+    try {
+      const { data, error } = await supabase.storage
+        .from("attachments")
+        .createSignedUrl(path, 3600);
+      
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        toast({ 
+          title: "File access error", 
+          description: "Unable to access file. Please try again.",
+          variant: "destructive" 
+        });
+        return null;
+      }
+      
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Signed URL error:', error);
+      return null;
+    }
+  }, [toast]);
 
   const handleDownload = useCallback(async (attachment: Attachment) => {
-    const url = await getSignedUrl(attachment.file_url);
-    if (url) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = attachment.file_name;
-      a.click();
+    try {
+      const url = await getSignedUrl(attachment.file_url);
+      if (url) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = attachment.file_name;
+        a.target = "_blank"; // Fallback for some browsers
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      toast({ 
+        title: "Download failed", 
+        description: "Unable to download file. Please try again.",
+        variant: "destructive" 
+      });
     }
-  }, [getSignedUrl]);
+  }, [getSignedUrl, toast]);
 
   const handlePreview = useCallback(async (attachment: Attachment) => {
-    const url = await getSignedUrl(attachment.file_url);
-    if (url) {
-      setPreviewUrl(url);
-      setPreviewType(attachment.file_type);
-      setPreviewName(attachment.file_name);
+    try {
+      const url = await getSignedUrl(attachment.file_url);
+      if (url) {
+        setPreviewUrl(url);
+        setPreviewType(attachment.file_type);
+        setPreviewName(attachment.file_name);
+      } else {
+        toast({ 
+          title: "Preview unavailable", 
+          description: "Unable to generate preview for this file.",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: "Preview failed", 
+        description: "Unable to preview file. Please try again.",
+        variant: "destructive" 
+      });
     }
-  }, [getSignedUrl]);
+  }, [getSignedUrl, toast]);
 
   // Group by category
   const grouped = useMemo(() => {
