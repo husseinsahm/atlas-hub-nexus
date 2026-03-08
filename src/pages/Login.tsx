@@ -110,11 +110,13 @@ export default function Login() {
 
       {/* Demo accounts hint */}
       <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
-        <p className="text-xs font-medium text-muted-foreground mb-2">Demo Accounts:</p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">Demo Accounts <span className="text-muted-foreground/60">(password = email)</span>:</p>
         <div className="space-y-1 text-xs text-muted-foreground/80">
           <p><span className="font-mono">admin@safar.com</span> — Super Admin</p>
           <p><span className="font-mono">company@safar.com</span> — Company Admin</p>
-          <p><span className="font-mono">staff@safar.com</span> — Staff Agent</p>
+          <p><span className="font-mono">agent@safar.com</span> — Agent</p>
+          <p><span className="font-mono">ops@safar.com</span> — Operations</p>
+          <p><span className="font-mono">finance@safar.com</span> — Finance</p>
         </div>
       </div>
     </AuthLayout>
