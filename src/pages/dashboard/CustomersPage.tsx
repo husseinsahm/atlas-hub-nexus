@@ -16,6 +16,7 @@ import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail, Globe,
   MapPin, Tag, Heart, Star, Calendar,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { CountrySelect, NationalitySelect } from "@/components/ui/country-select";
 import { CityAutocomplete } from "@/components/ui/city-autocomplete";
 import { PhoneInput } from "@/components/ui/phone-input";
