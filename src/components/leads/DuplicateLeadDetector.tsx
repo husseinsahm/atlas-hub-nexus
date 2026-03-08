@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,23 +48,12 @@ export default function DuplicateLeadDetector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] p-0 gap-0 overflow-hidden border-border">
-        <div className="h-1.5 bg-amber-400 w-full" />
-        <div className="px-6 pt-5 pb-3">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <DialogTitle className="font-display text-lg">Possible Duplicates Found</DialogTitle>
-                <DialogDescription className="text-xs mt-0.5">
-                  We found {duplicates.length} existing lead{duplicates.length > 1 ? "s" : ""} matching the contact details for "{newLeadName}"
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-        </div>
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 overflow-hidden border-border dark-header-dialog">
+        <ModalDarkHeader
+          icon={<AlertTriangle className="w-5 h-5 text-accent-foreground" />}
+          title="Possible Duplicates Found"
+          description={<>We found {duplicates.length} existing lead{duplicates.length > 1 ? "s" : ""} matching the contact details for "{newLeadName}"</>}
+        />
 
         <div className="px-6 pb-4 max-h-[50vh] overflow-y-auto space-y-3">
           {duplicates.map(dup => (

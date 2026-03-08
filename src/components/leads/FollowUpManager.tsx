@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -295,19 +296,12 @@ export function FollowUpTimeline({ leadId, companyId, userId, agents, isAdminOrA
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden border-border">
-          <div className="h-1.5 gold-gradient w-full" />
-          <div className="px-6 pt-5 pb-3">
-            <DialogHeader>
-              <DialogTitle className="font-display flex items-center gap-2">
-                <Bell className="w-5 h-5 text-accent" />
-                {editingId ? "Edit Follow-up" : "Schedule Follow-up"}
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {editingId ? "Update follow-up details" : "Create a new follow-up reminder"}
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+        <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden border-border dark-header-dialog">
+          <ModalDarkHeader
+            icon={<Bell className="w-5 h-5 text-accent-foreground" />}
+            title={editingId ? "Edit Follow-up" : "Schedule Follow-up"}
+            description={editingId ? "Update follow-up details" : "Create a new follow-up reminder"}
+          />
 
           <div className="px-6 pb-4 space-y-4">
             {/* Type selector */}

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -553,14 +554,14 @@ export default function LibraryPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditingItem(null); setForm(emptyForm); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display text-lg">
-              {editingItem ? "Edit Item" : "Add New Item"}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 dark-header-dialog">
+          <ModalDarkHeader
+            icon={<Plus className="w-5 h-5 text-accent-foreground" />}
+            title={editingItem ? "Edit Item" : "Add New Item"}
+            description="Manage your service library"
+          />
 
-          <div className="space-y-5">
+          <div className="px-6 py-5 space-y-5">
             {/* Row 1: Category & Title */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
@@ -738,7 +739,7 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <DialogFooter className="mt-4">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={() => saveMutation.mutate({ ...form, id: editingItem?.id })}
@@ -748,7 +749,7 @@ export default function LibraryPage() {
               {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {editingItem ? "Update" : "Create"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

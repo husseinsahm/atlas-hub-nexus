@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -322,13 +323,13 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
 
       {/* Add Payment Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(v) => { if (!v) resetForm(); setShowAddDialog(v); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-accent" /> Record Payment
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
+          <ModalDarkHeader
+            icon={<DollarSign className="w-5 h-5 text-accent-foreground" />}
+            title="Record Payment"
+            description={`Add a payment record in ${currency}`}
+          />
+          <div className="px-6 py-5 space-y-4">
             <div>
               <Label className="text-xs">Amount ({currency}) <span className="text-destructive">*</span></Label>
               <Input
@@ -415,7 +416,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
               )}
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => { resetForm(); setShowAddDialog(false); }}>
               Cancel
             </Button>
@@ -431,7 +432,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                 "Record Payment"
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

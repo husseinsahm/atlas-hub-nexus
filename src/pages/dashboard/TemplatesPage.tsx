@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -231,15 +232,14 @@ export default function TemplatesPage() {
 
       {/* New Template Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-accent" />
-              {isArabic ? "قالب جديد" : "New Itinerary Template"}
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
+          <ModalDarkHeader
+            icon={<FileText className="w-5 h-5 text-accent-foreground" />}
+            title={isArabic ? "قالب جديد" : "New Itinerary Template"}
+            description={isArabic ? "أنشئ قالبًا جديدًا للبرنامج" : "Create a reusable itinerary template"}
+          />
 
-          <div className="space-y-4 py-4">
+          <div className="px-6 py-5 space-y-4">
             <div>
               <Label className="text-xs">{isArabic ? "اسم القالب" : "Template Name"} *</Label>
               <Input
@@ -274,7 +274,7 @@ export default function TemplatesPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" onClick={() => setShowNewDialog(false)}>
               {isArabic ? "إلغاء" : "Cancel"}
             </Button>
@@ -286,7 +286,7 @@ export default function TemplatesPage() {
               {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               {isArabic ? "إنشاء القالب" : "Create Template"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
