@@ -21,6 +21,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UpgradeBanner, UsageIndicator } from "@/components/plan/UpgradeBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
