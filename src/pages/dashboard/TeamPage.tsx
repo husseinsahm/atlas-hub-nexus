@@ -84,6 +84,18 @@ export default function TeamPage() {
   const [editRole, setEditRole] = useState<CompanyRole>("agent");
   const [saving, setSaving] = useState(false);
 
+  // Plan limits
+  const { limits, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
+  const handleInviteClick = () => {
+    if (!limits.canAddUser) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setInviteOpen(true);
+  };
+
   useEffect(() => {
     if (companyId) fetchTeam();
   }, [companyId]);
