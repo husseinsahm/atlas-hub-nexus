@@ -138,7 +138,7 @@ export default function ConvertToBookingModal({
         .insert({
           company_id: companyId,
           booking_number: bNumber,
-          title: `${customerName} - ${destination || "Trip"}`,
+          title: `${customerName} - ${destinations.length ? destinations.join(", ") : "Trip"}`,
           customer_id: customer.id,
           lead_id: lead.id,
           source: lead.source,
