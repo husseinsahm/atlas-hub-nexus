@@ -364,7 +364,7 @@ export default function TripBuilderPage() {
       if (error) throw error;
       await supabase.from("trips").update({ total_days: nextNum }).eq("id", id!);
     },
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); trackRevision("day_added", `Day ${days.length + 1} added`); },
   });
 
   const duplicateDay = useMutation({
