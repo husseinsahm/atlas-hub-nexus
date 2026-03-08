@@ -13,12 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail,
   MapPin, Calendar, DollarSign, Clock,
   Trophy, XCircle, Sparkles, LayoutGrid, List,
-  User, Globe, MessageCircle, Flame, Plane, FileText, UserCheck,
+  User, Globe, MessageCircle, Flame, Plane, FileText, UserCheck, Trash2,
 } from "lucide-react";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -167,6 +168,8 @@ export default function LeadsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Duplicate detection
   const [duplicateOpen, setDuplicateOpen] = useState(false);
@@ -274,6 +277,25 @@ export default function LeadsPage() {
       toast({ title: `Lead moved to ${STATUS_CONFIG[newStatus].label}` });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  }
+
+  async function handleDeleteLead() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "Lead deleted" });
+      setLeads((prev) => prev.filter((l) => l.id !== deleteTarget.id));
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
     }
   }
 
@@ -690,9 +712,14 @@ export default function LeadsPage() {
                             <Eye className="w-4 h-4" />
                           </Button>
                           {isAdminOrAgent && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}>
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lead)}>
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(lead)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -732,6 +759,24 @@ export default function LeadsPage() {
         newLeadName={form.full_name}
         agentMap={agentNameMap}
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.full_name}</strong>? This action can be undone by an administrator.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLead} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

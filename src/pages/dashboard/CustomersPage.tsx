@@ -12,9 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail, Globe,
-  MapPin, Tag, Heart, Star, Calendar,
+  MapPin, Tag, Heart, Star, Calendar, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CountrySelect, NationalitySelect } from "@/components/ui/country-select";
@@ -99,6 +100,8 @@ export default function CustomersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (companyId) fetchCustomers();
@@ -194,6 +197,25 @@ export default function CustomersPage() {
       return false;
     }
     return true;
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "Customer deleted" });
+      setCustomers((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   }
 
   async function handleSave() {
@@ -420,9 +442,14 @@ export default function CustomersPage() {
                           <Eye className="w-4 h-4" />
                         </Button>
                         {isAdminOrAgent && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(c)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -616,6 +643,24 @@ export default function CustomersPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.full_name}</strong>? This action can be undone by an administrator.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
