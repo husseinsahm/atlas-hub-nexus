@@ -1447,7 +1447,7 @@ export default function TripBuilderPage() {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </ScrollArea>
         </div>
       </div>
