@@ -13,12 +13,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail,
   MapPin, Calendar, DollarSign, Clock,
   Trophy, XCircle, Sparkles, LayoutGrid, List,
-  User, Globe, MessageCircle, Flame, Plane, FileText, UserCheck,
+  User, Globe, MessageCircle, Flame, Plane, FileText, UserCheck, Trash2,
 } from "lucide-react";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
