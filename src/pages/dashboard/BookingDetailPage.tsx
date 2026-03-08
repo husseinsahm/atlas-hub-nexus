@@ -898,49 +898,80 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
         <div className="space-y-6">
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                  <DollarSign className="w-3.5 h-3.5 text-accent" />
+          {/* Financial KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              {
+                label: isArabic ? "التكلفة" : "Total Cost",
+                icon: DollarSign,
+                iconBg: "bg-slate-100 dark:bg-slate-800",
+                iconText: "text-slate-600 dark:text-slate-400",
+                editable: true,
+                field: "total_cost",
+                value: booking.total_cost || 0,
+              },
+              {
+                label: isArabic ? "سعر البيع" : "Selling Price",
+                icon: CreditCard,
+                iconBg: "bg-blue-100 dark:bg-blue-900/40",
+                iconText: "text-blue-600 dark:text-blue-400",
+                editable: true,
+                field: "selling_price",
+                value: booking.selling_price || 0,
+              },
+              {
+                label: isArabic ? "الربح" : "Profit",
+                icon: Activity,
+                iconBg: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40",
+                iconText: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                display: true,
+                displayValue: ((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString(),
+                displayColor: (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive",
+              },
+              {
+                label: isArabic ? "الرصيد المتبقي" : "Balance",
+                icon: Clock,
+                iconBg: balance > 0 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-emerald-100 dark:bg-emerald-900/40",
+                iconText: balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400",
+                display: true,
+                displayValue: balance > 0 ? balance.toLocaleString() : (isArabic ? "مدفوع بالكامل" : "Fully Paid"),
+                displayColor: balance > 0 ? "text-amber-600" : "text-emerald-600",
+              },
+            ].map((kpi, idx) => (
+              <div key={idx} className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.iconBg)}>
+                    <kpi.icon className={cn("w-4 h-4", kpi.iconText)} />
+                  </div>
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{kpi.label}</Label>
                 </div>
-                {isArabic ? "الملخص المالي" : "Financial Summary"}
+                {kpi.editable ? (
+                  <Input
+                    type="number"
+                    className="h-10 text-sm font-mono font-bold border-border/60 bg-transparent"
+                    defaultValue={kpi.value}
+                    onBlur={e => updateBooking.mutate({ [kpi.field!]: parseFloat(e.target.value) || 0 })}
+                  />
+                ) : (
+                  <p className={cn("text-xl font-mono font-bold", (kpi as any).displayColor)}>
+                    {(kpi as any).displayValue} <span className="text-xs text-muted-foreground font-normal">{balance > 0 || idx !== 3 ? booking.currency : ""}</span>
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Payment Records */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                  <CreditCard className="w-3.5 h-3.5 text-accent-foreground" />
+                </div>
+                {isArabic ? "سجل المدفوعات" : "Payment Records"}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "التكلفة" : "Total Cost"}</Label>
-                  <Input
-                    type="number"
-                    className="h-8 text-xs mt-1 font-mono"
-                    defaultValue={booking.total_cost || 0}
-                    onBlur={e => updateBooking.mutate({ total_cost: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "سعر البيع" : "Selling Price"}</Label>
-                  <Input
-                    type="number"
-                    className="h-8 text-xs mt-1 font-mono"
-                    defaultValue={booking.selling_price || 0}
-                    onBlur={e => updateBooking.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الربح" : "Profit"}</Label>
-                  <p className={cn("text-lg font-mono font-bold mt-1", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
-                    {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الرصيد المتبقي" : "Balance"}</Label>
-                  <p className={cn("text-lg font-mono font-bold mt-1", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
-                    {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : isArabic ? "مدفوع بالكامل" : "Fully Paid"}
-                  </p>
-                </div>
-              </div>
-              <Separator className="my-4" />
+            <CardContent className="p-4">
               <PaymentRecords
                 bookingId={booking.id}
                 companyId={booking.company_id}
