@@ -403,7 +403,7 @@ export default function TripBuilderPage() {
       }
       await supabase.from("trips").update({ total_days: nextNum }).eq("id", id!);
     },
-    onSuccess: () => { invalidateAll(); toast({ title: "Day duplicated" }); },
+    onSuccess: () => { invalidateAll(); trackRevision("day_duplicated", "Day duplicated"); toast({ title: "Day duplicated" }); },
   });
 
   const removeDay = useMutation({
