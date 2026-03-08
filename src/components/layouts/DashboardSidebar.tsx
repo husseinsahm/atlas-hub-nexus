@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Building2,
-  Map,
   Users,
   UserCog,
   Settings,
@@ -13,10 +12,10 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  Cog,
   Heart,
   BookOpen,
   Briefcase,
+  FolderOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
@@ -39,9 +38,10 @@ const navItems: NavItem[] = [
   { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] },
   { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] },
   { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] },
-  { title: "Trips", translationKey: "nav.trips", url: "/dashboard/trips", icon: Map, roles: ["company_admin", "agent", "operations"] },
-  { title: "Bookings", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations"] },
-  { title: "Itineraries", translationKey: "nav.itineraries", url: "/dashboard/itineraries", icon: FileText, roles: ["company_admin", "agent", "operations"] },
+  // Main entity: Booking Files
+  { title: "Booking Files", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations"] },
+  // Templates for reusable itineraries
+  { title: "Templates", translationKey: "nav.templates", url: "/dashboard/templates", icon: FolderOpen, roles: ["company_admin", "agent", "operations"] },
   { title: "Library", translationKey: "nav.library", url: "/dashboard/library", icon: BookOpen, roles: ["company_admin", "agent", "operations"] },
   { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
   { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] },

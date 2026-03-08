@@ -24,8 +24,7 @@ import LeadDetailPage from "./pages/dashboard/LeadDetailPage";
 import CustomersPage from "./pages/dashboard/CustomersPage";
 import CustomerDetailPage from "./pages/dashboard/CustomerDetailPage";
 import LibraryPage from "./pages/dashboard/LibraryPage";
-import TripsPage from "./pages/dashboard/TripsPage";
-import TripBuilderPage from "./pages/dashboard/TripBuilderPage";
+import TemplatesPage from "./pages/dashboard/TemplatesPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
@@ -83,13 +82,14 @@ function AppRoutes() {
         <Route path="plans" element={<PlansPage />} />
         <Route path="subscriptions" element={<SubscriptionsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="trips" element={<TripsPage />} />
-        <Route path="trips/:id" element={<TripBuilderPage />} />
+        {/* Main entity: Booking Files */}
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="bookings/:id" element={<BookingDetailPage />} />
+        {/* Reusable itinerary templates */}
+        <Route path="templates" element={<TemplatesPage />} />
+        <Route path="templates/:id" element={<PlaceholderPage />} />
         <Route path="quotations" element={<QuotationsPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="itineraries" element={<PlaceholderPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="clients" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
