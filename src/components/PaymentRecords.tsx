@@ -300,20 +300,20 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
                       <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{payment.notes}</p>
                     )}
                   </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                        onClick={() => deletePayment.mutate(payment.id)}
-                        disabled={deletePayment.isPending}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="text-[10px]">Delete payment</TooltipContent>
-                  </Tooltip>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-destructive/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    onClick={() => {
+                      if (window.confirm("Delete this payment record?")) {
+                        deletePayment.mutate(payment.id);
+                      }
+                    }}
+                    disabled={deletePayment.isPending}
+                    title="Delete payment"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </motion.div>
               );
             })}
