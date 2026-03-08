@@ -383,8 +383,19 @@ export default function BookingDetailPage() {
   }, [booking, updateBooking, toast]);
 
   // ─── Computed values ───
+  const serviceCostByStatus = useMemo(() => {
+    const breakdown: Record<string, number> = { pending: 0, confirmed: 0, booked: 0, cancelled: 0 };
+    services.forEach((s: any) => {
+      const status = s.status || "pending";
+      breakdown[status] = (breakdown[status] || 0) + Number(s.total_cost || 0);
+    });
+    return breakdown;
+  }, [services]);
   const servicesTotalCost = useMemo(() => 
     services.reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
+  , [services]);
+  const servicesActiveCost = useMemo(() => 
+    services.filter((s: any) => s.status !== "cancelled").reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
   , [services]);
 
   if (isLoading) {
