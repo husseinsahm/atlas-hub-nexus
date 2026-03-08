@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Users, UserPlus, Mail, Shield, MoreHorizontal, Search,
-  CheckCircle2, XCircle, Clock, Send, Edit2, UserCog, Activity,
-  Trash2, Eye, EyeOff, Lock, KeyRound,
+  CheckCircle2, XCircle, Clock, Send, Edit2, Trash2, Eye, EyeOff, Lock, Pencil,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
@@ -51,6 +50,7 @@ interface TeamMember {
   email: string;
   fullName: string;
   avatarUrl?: string;
+  phone?: string;
   role: CompanyRole;
   isActive: boolean;
   joinedAt: string;
@@ -89,6 +89,7 @@ export default function TeamPage() {
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
   const [editMember, setEditMember] = useState<TeamMember | null>(null);
+  const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState<CompanyRole>("agent");
   const [saving, setSaving] = useState(false);
 
@@ -117,36 +118,29 @@ export default function TeamPage() {
     if (!companyId) return;
     setLoading(true);
     try {
-      const { data: membershipsData, error: mErr } = await supabase
-        .from("company_memberships")
-        .select("id, user_id, role, is_active, created_at")
-        .eq("company_id", companyId);
+      // Fetch members via edge function (includes emails from auth)
+      const { data, error } = await supabase.functions.invoke("list-team-members", {
+        body: { companyId },
+      });
 
-      if (mErr) throw mErr;
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
-      const userIds = (membershipsData || []).map((m) => m.user_id);
-      let profilesMap: Record<string, any> = {};
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url, phone")
-          .in("id", userIds);
-        (profiles || []).forEach((p) => { profilesMap[p.id] = p; });
-      }
-
-      const mapped: TeamMember[] = (membershipsData || []).map((m) => ({
-        membershipId: m.id,
-        userId: m.user_id,
-        email: "",
-        fullName: profilesMap[m.user_id]?.full_name || "Unknown",
-        avatarUrl: profilesMap[m.user_id]?.avatar_url,
+      const mapped: TeamMember[] = (data?.members || []).map((m: any) => ({
+        membershipId: m.membershipId,
+        userId: m.userId,
+        email: m.email || "",
+        fullName: m.fullName || "Unknown",
+        avatarUrl: m.avatarUrl,
+        phone: m.phone,
         role: m.role as CompanyRole,
-        isActive: m.is_active,
-        joinedAt: m.created_at,
+        isActive: m.isActive,
+        joinedAt: m.joinedAt,
       }));
 
       setMembers(mapped);
 
+      // Fetch invitations
       const { data: invData } = await supabase
         .from("invitations")
         .select("id, email, role, created_at, expires_at, accepted_at, invited_by")
@@ -206,16 +200,34 @@ export default function TeamPage() {
     }
   }
 
-  async function handleUpdateRole() {
+  function openEditDialog(m: TeamMember) {
+    setEditMember(m);
+    setEditName(m.fullName);
+    setEditRole(m.role);
+    setEditOpen(true);
+  }
+
+  async function handleEditMember() {
     if (!editMember) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Update role in membership
+      const { error: roleErr } = await supabase
         .from("company_memberships")
         .update({ role: editRole })
         .eq("id", editMember.membershipId);
-      if (error) throw error;
-      toast({ title: "Role updated" });
+      if (roleErr) throw roleErr;
+
+      // Update name in profile
+      if (editName.trim() !== editMember.fullName) {
+        const { error: profileErr } = await supabase
+          .from("profiles")
+          .update({ full_name: editName.trim() })
+          .eq("id", editMember.userId);
+        if (profileErr) throw profileErr;
+      }
+
+      toast({ title: "Member updated ✓" });
       setEditOpen(false);
       fetchTeam();
     } catch (err: any) {
@@ -279,6 +291,7 @@ export default function TeamPage() {
   const filteredMembers = members.filter(
     (m) =>
       m.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      m.email.toLowerCase().includes(search.toLowerCase()) ||
       m.role.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -344,7 +357,7 @@ export default function TeamPage() {
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or role..."
+                placeholder="Search by name, email or role..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -388,7 +401,7 @@ export default function TeamPage() {
                               {m.fullName}
                               {isSelf && <span className="text-xs text-muted-foreground ms-1.5">(You)</span>}
                             </p>
-                            <p className="text-xs text-muted-foreground">{m.userId.slice(0, 8)}...</p>
+                            <p className="text-xs text-muted-foreground">{m.email || "—"}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -412,14 +425,8 @@ export default function TeamPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setEditMember(m);
-                                  setEditRole(m.role);
-                                  setEditOpen(true);
-                                }}
-                              >
-                                <Edit2 className="w-4 h-4 mr-2" /> Change Role
+                              <DropdownMenuItem onClick={() => openEditDialog(m)}>
+                                <Pencil className="w-4 h-4 mr-2" /> Edit Member
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => toggleActive(m)}>
@@ -540,23 +547,13 @@ export default function TeamPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Full Name</Label>
-              <Input
-                placeholder="e.g. Ahmed Hassan"
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-              />
+              <Input placeholder="e.g. Ahmed Hassan" value={createName} onChange={(e) => setCreateName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Email Address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="colleague@example.com"
-                  value={createEmail}
-                  onChange={(e) => setCreateEmail(e.target.value)}
-                  className="pl-9"
-                />
+                <Input type="email" placeholder="colleague@example.com" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} className="pl-9" />
               </div>
             </div>
             <div className="space-y-2">
@@ -570,11 +567,7 @@ export default function TeamPage() {
                   onChange={(e) => setCreatePassword(e.target.value)}
                   className="pl-9 pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -585,16 +578,11 @@ export default function TeamPage() {
             <div className="space-y-2">
               <Label>Role</Label>
               <Select value={createRole} onValueChange={(v) => setCreateRole(v as CompanyRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {COMPANY_ROLES.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5" />
-                        {r.label}
-                      </div>
+                      <div className="flex items-center gap-2"><Shield className="w-3.5 h-3.5" />{r.label}</div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -624,40 +612,64 @@ export default function TeamPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Role Dialog */}
+      {/* Edit Member Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">Change Member Role</DialogTitle>
-            <DialogDescription>
-              Update the role for <span className="font-medium text-foreground">{editMember?.fullName}</span>
-            </DialogDescription>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle className="font-display">Edit Team Member</DialogTitle>
+                <DialogDescription>Update member details and role</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {editMember && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-foreground">
+                  {editMember.fullName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{editMember.email || "—"}</p>
+                  <p className="text-xs text-muted-foreground">Joined {format(new Date(editMember.joinedAt), "MMM d, yyyy")}</p>
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
-              <Label>Current Role</Label>
-              <div>{editMember && getRoleBadge(editMember.role)}</div>
+              <Label>Full Name</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>New Role</Label>
+              <Label>Role</Label>
               <Select value={editRole} onValueChange={(v) => setEditRole(v as CompanyRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {COMPANY_ROLES.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
-                      {r.label}
+                      <div className="flex items-center gap-2"><Shield className="w-3.5 h-3.5" />{r.label}</div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="rounded-lg bg-muted p-3">
+              <h4 className="text-xs font-semibold text-foreground mb-1.5">Role Permissions</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {editRole === "company_admin" && "Full access to company settings, team management, and all modules."}
+                {editRole === "agent" && "Can manage trips, clients, and itineraries. Cannot access billing or team settings."}
+                {editRole === "operations" && "Can manage trip operations, logistics, and supplier coordination."}
+                {editRole === "finance" && "Access to invoices, payments, and financial reports."}
+                {editRole === "viewer" && "Read-only access to dashboards and reports. Cannot create or modify data."}
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpdateRole} disabled={saving}>
-              {saving ? "Saving..." : "Update Role"}
+            <Button onClick={handleEditMember} disabled={!editName.trim() || saving}>
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
