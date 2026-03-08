@@ -233,6 +233,18 @@ export default function BookingDetailPage() {
   const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
   const customer = (booking as any).customers;
   const balance = (booking.selling_price || 0) - (booking.amount_paid || 0);
+  const travelers: Traveler[] = Array.isArray(booking.travelers) ? (booking.travelers as unknown as Traveler[]) : [];
+
+  const saveTraveler = useCallback((traveler: Traveler) => {
+    const existing = travelers.find(t => t.id === traveler.id);
+    const updated = existing
+      ? travelers.map(t => t.id === traveler.id ? traveler : t)
+      : [...travelers, traveler];
+    updateBooking.mutate({ travelers: updated });
+    setShowTravelerDialog(false);
+    setEditingTraveler(null);
+    toast({ title: existing ? "Traveler updated" : "Traveler added" });
+  }, [travelers, updateBooking, toast]);
 
   return (
     <div className="space-y-6">
