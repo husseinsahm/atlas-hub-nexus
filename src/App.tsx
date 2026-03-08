@@ -28,6 +28,8 @@ import TripsPage from "./pages/dashboard/TripsPage";
 import TripBuilderPage from "./pages/dashboard/TripBuilderPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
+import QuotationsPage from "./pages/dashboard/QuotationsPage";
+import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -84,6 +86,8 @@ function AppRoutes() {
         <Route path="trips/:id" element={<TripBuilderPage />} />
         <Route path="bookings" element={<BookingsPage />} />
         <Route path="bookings/:id" element={<BookingDetailPage />} />
+        <Route path="quotations" element={<QuotationsPage />} />
+        <Route path="quotations/:id" element={<QuotationDetailPage />} />
         <Route path="itineraries" element={<PlaceholderPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="clients" element={<LeadsPage />} />

@@ -422,6 +422,8 @@ export type Database = {
           invoice_next_number: number
           invoice_prefix: string
           logo_url: string | null
+          quotation_next_number: number
+          quotation_prefix: string
           supported_languages: Json
           tagline: string | null
           trip_next_number: number
@@ -440,6 +442,8 @@ export type Database = {
           invoice_next_number?: number
           invoice_prefix?: string
           logo_url?: string | null
+          quotation_next_number?: number
+          quotation_prefix?: string
           supported_languages?: Json
           tagline?: string | null
           trip_next_number?: number
@@ -458,6 +462,8 @@ export type Database = {
           invoice_next_number?: number
           invoice_prefix?: string
           logo_url?: string | null
+          quotation_next_number?: number
+          quotation_prefix?: string
           supported_languages?: Json
           tagline?: string | null
           trip_next_number?: number
@@ -1136,6 +1142,122 @@ export type Database = {
         }
         Relationships: []
       }
+      quotations: {
+        Row: {
+          accepted_at: string | null
+          client_notes: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          deleted_at: string | null
+          deposit_amount: number | null
+          deposit_percentage: number | null
+          discount_amount: number | null
+          id: string
+          lead_id: string | null
+          notes: string | null
+          payment_terms: string | null
+          quotation_number: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quotation_status"]
+          subtotal: number | null
+          terms_and_conditions: string | null
+          total_amount: number | null
+          trip_id: string | null
+          trip_snapshot: Json | null
+          updated_at: string
+          valid_until: string | null
+          validity_days: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          client_notes?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          deposit_amount?: number | null
+          deposit_percentage?: number | null
+          discount_amount?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          payment_terms?: string | null
+          quotation_number: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          subtotal?: number | null
+          terms_and_conditions?: string | null
+          total_amount?: number | null
+          trip_id?: string | null
+          trip_snapshot?: Json | null
+          updated_at?: string
+          valid_until?: string | null
+          validity_days?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          client_notes?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          deposit_amount?: number | null
+          deposit_percentage?: number | null
+          discount_amount?: number | null
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          payment_terms?: string | null
+          quotation_number?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          subtotal?: number | null
+          terms_and_conditions?: string | null
+          total_amount?: number | null
+          trip_id?: string | null
+          trip_snapshot?: Json | null
+          updated_at?: string
+          valid_until?: string | null
+          validity_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           billing_cycle: string
@@ -1616,6 +1738,13 @@ export type Database = {
         | "meal"
         | "guide"
         | "template"
+      quotation_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "cancelled"
       trip_status:
         | "draft"
         | "under_review"
@@ -1791,6 +1920,14 @@ export const Constants = {
         "meal",
         "guide",
         "template",
+      ],
+      quotation_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "rejected",
+        "expired",
+        "cancelled",
       ],
       trip_status: [
         "draft",
