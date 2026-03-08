@@ -41,6 +41,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const { direction } = useLanguage();
+  const companyId = user?.activeMembership?.companyId;
   const companyId = user?.activeMembership?.companyId;
 
   const [dateRange, setDateRange] = useState<"3m" | "6m" | "12m" | "all">("6m");
