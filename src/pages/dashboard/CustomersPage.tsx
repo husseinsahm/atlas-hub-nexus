@@ -199,7 +199,25 @@ export default function CustomersPage() {
     return true;
   }
 
-  async function handleSave() {
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "Customer deleted" });
+      setCustomers((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  }
+
     if (!companyId || !user) return;
     if (!validateForm()) return;
 
