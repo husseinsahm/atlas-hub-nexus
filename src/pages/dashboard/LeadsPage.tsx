@@ -280,6 +280,25 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleDeleteLead() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "Lead deleted" });
+      setLeads((prev) => prev.filter((l) => l.id !== deleteTarget.id));
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  }
+
   async function handleSave() {
     if (!companyId || !user) return;
     if (!form.full_name.trim()) {
