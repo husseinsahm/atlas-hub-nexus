@@ -3,6 +3,7 @@ import { createNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import DuplicateLeadDetector, { checkDuplicateLeads, mergeLeads } from "@/components/leads/DuplicateLeadDetector";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
