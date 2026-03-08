@@ -34,6 +34,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { InternalComments } from "@/components/InternalComments";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
@@ -446,7 +447,7 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
-  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback" | "history">("internal");
+  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback" | "history" | "comments">("internal");
 
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
@@ -1207,7 +1208,7 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history")}>
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history" | "comments")}>
               <TabsList className="w-full h-8">
                 <TabsTrigger value="internal" className="flex-1 text-[10px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
@@ -1222,6 +1223,9 @@ export default function TripBuilderPage() {
                       {tripFeedback.length}
                     </span>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="comments" className="flex-1 text-[10px] gap-1">
+                  <MessageSquare className="w-3 h-3" /> Comments
                 </TabsTrigger>
                 <TabsTrigger value="history" className="flex-1 text-[10px] gap-1">
                   <History className="w-3 h-3" /> History
@@ -1589,6 +1593,14 @@ export default function TripBuilderPage() {
                     })}
                   </div>
                 )}
+              </div>
+            ) : pricingView === "comments" ? (
+              <div className="p-4">
+                <InternalComments
+                  entityType="trip"
+                  entityId={trip.id}
+                  companyId={trip.company_id}
+                />
               </div>
             ) : pricingView === "history" ? (
               /* ===== UNIFIED BOOKING FILE TIMELINE ===== */
