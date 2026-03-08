@@ -206,6 +206,71 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          booking_next_number: number
+          booking_prefix: string
+          company_id: string
+          created_at: string
+          default_currency: string
+          default_language: string
+          id: string
+          invoice_next_number: number
+          invoice_prefix: string
+          logo_url: string | null
+          supported_languages: Json
+          tagline: string | null
+          trip_next_number: number
+          trip_prefix: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          booking_next_number?: number
+          booking_prefix?: string
+          company_id: string
+          created_at?: string
+          default_currency?: string
+          default_language?: string
+          id?: string
+          invoice_next_number?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          supported_languages?: Json
+          tagline?: string | null
+          trip_next_number?: number
+          trip_prefix?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          booking_next_number?: number
+          booking_prefix?: string
+          company_id?: string
+          created_at?: string
+          default_currency?: string
+          default_language?: string
+          id?: string
+          invoice_next_number?: number
+          invoice_prefix?: string
+          logo_url?: string | null
+          supported_languages?: Json
+          tagline?: string | null
+          trip_next_number?: number
+          trip_prefix?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
