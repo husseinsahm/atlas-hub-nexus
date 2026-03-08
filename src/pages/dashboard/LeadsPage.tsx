@@ -3,6 +3,7 @@ import { createNotification } from "@/hooks/useNotifications";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import DuplicateLeadDetector, { checkDuplicateLeads, mergeLeads } from "@/components/leads/DuplicateLeadDetector";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,6 +168,11 @@ export default function LeadsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Duplicate detection
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [pendingSavePayload, setPendingSavePayload] = useState<any>(null);
+
   useEffect(() => {
     if (companyId) {
       fetchLeads();
@@ -312,6 +318,30 @@ export default function LeadsPage() {
     };
 
     try {
+      // Check duplicates for new leads
+      if (!editingId) {
+        const dups = await checkDuplicateLeads(companyId, payload.email, payload.phone);
+        if (dups.length > 0) {
+          setDuplicates(dups);
+          setPendingSavePayload(payload);
+          setDuplicateOpen(true);
+          setSaving(false);
+          return;
+        }
+      }
+
+      await executeSave(payload);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function executeSave(payload: any) {
+    if (!companyId || !user) return;
+    setSaving(true);
+    try {
       if (editingId) {
         const { error } = await supabase.from("leads").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -356,6 +386,17 @@ export default function LeadsPage() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleMerge(targetLeadId: string) {
+    if (!companyId || !user) return;
+    try {
+      // We don't have a source lead yet (it's being created), so just navigate to existing
+      setDuplicateOpen(false);
+      navigate(`/dashboard/leads/${targetLeadId}`);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
@@ -674,6 +715,22 @@ export default function LeadsPage() {
         saving={saving}
         editingId={editingId}
         agents={agents}
+      />
+
+      {/* Duplicate Lead Detector */}
+      <DuplicateLeadDetector
+        open={duplicateOpen}
+        onOpenChange={setDuplicateOpen}
+        duplicates={duplicates}
+        onContinue={() => {
+          if (pendingSavePayload) {
+            executeSave(pendingSavePayload);
+            setPendingSavePayload(null);
+          }
+        }}
+        onMerge={handleMerge}
+        newLeadName={form.full_name}
+        agentMap={agentNameMap}
       />
     </div>
   );
