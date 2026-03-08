@@ -383,8 +383,19 @@ export default function BookingDetailPage() {
   }, [booking, updateBooking, toast]);
 
   // ─── Computed values ───
+  const serviceCostByStatus = useMemo(() => {
+    const breakdown: Record<string, number> = { pending: 0, confirmed: 0, booked: 0, cancelled: 0 };
+    services.forEach((s: any) => {
+      const status = s.status || "pending";
+      breakdown[status] = (breakdown[status] || 0) + Number(s.total_cost || 0);
+    });
+    return breakdown;
+  }, [services]);
   const servicesTotalCost = useMemo(() => 
     services.reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
+  , [services]);
+  const servicesActiveCost = useMemo(() => 
+    services.filter((s: any) => s.status !== "cancelled").reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
   , [services]);
 
   if (isLoading) {
@@ -819,7 +830,7 @@ export default function BookingDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</p>
-                <p className="text-xs text-muted-foreground">{isArabic ? "الإجمالي" : "Total"}: <span className="font-mono font-semibold text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span></p>
+                <p className="text-xs text-muted-foreground">{isArabic ? "الفعلي" : "Active"}: <span className="font-mono font-semibold text-foreground">{servicesActiveCost.toLocaleString()} {booking.currency}</span>{serviceCostByStatus.pending > 0 && <span className="text-muted-foreground/70"> ({isArabic ? "معلق" : "pending"}: {serviceCostByStatus.pending.toLocaleString()})</span>}</p>
               </div>
             </div>
             <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
@@ -890,16 +901,46 @@ export default function BookingDetailPage() {
                 );
               })}
 
-              {/* Services total */}
+              {/* Services cost breakdown by status */}
               <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10 overflow-hidden">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
                       <DollarSign className="w-4 h-4 text-accent" />
                     </div>
-                    <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
+                    <span className="text-sm font-semibold text-foreground">{isArabic ? "تكاليف الخدمات" : "Services Cost"}</span>
                   </div>
-                  <span className="text-xl font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
+                  <div className="space-y-1.5 text-xs">
+                    {serviceCostByStatus.confirmed > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" />{isArabic ? "مؤكد" : "Confirmed"}</span>
+                        <span className="font-mono font-semibold text-foreground">{serviceCostByStatus.confirmed.toLocaleString()} {booking.currency}</span>
+                      </div>
+                    )}
+                    {serviceCostByStatus.booked > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{isArabic ? "محجوز" : "Booked"}</span>
+                        <span className="font-mono font-semibold text-foreground">{serviceCostByStatus.booked.toLocaleString()} {booking.currency}</span>
+                      </div>
+                    )}
+                    {serviceCostByStatus.pending > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400" />{isArabic ? "معلق" : "Pending"}</span>
+                        <span className="font-mono font-semibold text-muted-foreground">{serviceCostByStatus.pending.toLocaleString()} {booking.currency}</span>
+                      </div>
+                    )}
+                    {serviceCostByStatus.cancelled > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /><span className="line-through">{isArabic ? "ملغي" : "Cancelled"}</span></span>
+                        <span className="font-mono font-semibold text-muted-foreground line-through">{serviceCostByStatus.cancelled.toLocaleString()} {booking.currency}</span>
+                      </div>
+                    )}
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-foreground">{isArabic ? "الإجمالي الفعلي" : "Active Total"}</span>
+                    <span className="text-lg font-bold font-mono text-foreground">{servicesActiveCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
+                  </div>
                 </CardContent>
               </Card>
             </div>
