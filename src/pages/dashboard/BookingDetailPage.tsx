@@ -1263,6 +1263,23 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
 
 function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, bookingAdults, bookingChildren }: any) {
   const [form, setForm] = useState({ ...service });
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  const enhanceTitle = async () => {
+    if (!form.title?.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("enhance-service-title", {
+        body: { title: form.title, serviceType: form.service_type, language: isArabic ? "ar" : "en" },
+      });
+      if (error) throw error;
+      if (data?.enhanced) setForm((prev: any) => ({ ...prev, title: data.enhanced }));
+    } catch (e) {
+      console.error("Enhance failed:", e);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const typeConfig: Record<string, {
     icon: any; headerLabel: string; headerLabelAr: string; subtitle: string; subtitleAr: string;
