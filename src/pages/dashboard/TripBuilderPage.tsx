@@ -424,6 +424,7 @@ export default function TripBuilderPage() {
         return null;
       });
       invalidateAll();
+      trackRevision("day_removed", "Day removed from trip");
       toast({ title: "Day removed" });
     },
   });
