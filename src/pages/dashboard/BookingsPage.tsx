@@ -9,6 +9,10 @@ import {
   Loader2, Briefcase, ChevronRight, Clock, Plane, X,
   User, Phone, Mail, Globe, MapPin,
 } from "lucide-react";
+import { NationalitySelect } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { NoBookingsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { StatsGridLoadingState, TableLoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
