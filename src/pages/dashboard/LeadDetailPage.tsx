@@ -587,7 +587,7 @@ export default function LeadDetailPage() {
                   <InternalComments
                     entityType="lead"
                     entityId={lead.id}
-                    companyId={lead.company_id}
+                    companyId={companyId || ""}
                   />
                 </TabsContent>
 
