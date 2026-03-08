@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
