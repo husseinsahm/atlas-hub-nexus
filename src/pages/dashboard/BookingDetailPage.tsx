@@ -1123,7 +1123,7 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   const [form, setForm] = useState({ ...traveler });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
         <ModalDarkHeader
           icon={<Users className="w-5 h-5 text-accent-foreground" />}
           title={form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}

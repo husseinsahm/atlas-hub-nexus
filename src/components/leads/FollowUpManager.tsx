@@ -296,7 +296,7 @@ export function FollowUpTimeline({ leadId, companyId, userId, agents, isAdminOrA
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden border-border">
+        <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden border-border dark-header-dialog">
           <ModalDarkHeader
             icon={<Bell className="w-5 h-5 text-accent-foreground" />}
             title={editingId ? "Edit Follow-up" : "Schedule Follow-up"}

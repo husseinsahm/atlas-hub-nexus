@@ -48,7 +48,7 @@ export default function DuplicateLeadDetector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] p-0 gap-0 overflow-hidden border-border">
+      <DialogContent className="sm:max-w-[540px] p-0 gap-0 overflow-hidden border-border dark-header-dialog">
         <ModalDarkHeader
           icon={<AlertTriangle className="w-5 h-5 text-accent-foreground" />}
           title="Possible Duplicates Found"
