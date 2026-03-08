@@ -18,6 +18,7 @@ import {
   Tag, Star, Shield, Activity, Clock, Plane,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { FileAttachments } from "@/components/FileAttachments";
 
 const PREFERENCE_COLORS: Record<string, string> = {
   Luxury: "bg-amber-100 text-amber-800 border-amber-200",
