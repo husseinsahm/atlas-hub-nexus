@@ -34,6 +34,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { InternalComments } from "@/components/InternalComments";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
