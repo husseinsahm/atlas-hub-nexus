@@ -223,8 +223,9 @@ export default function BookingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <div className="space-y-6">
+        <StatsGridLoadingState count={5} className="grid-cols-5" />
+        <TableLoadingState rows={6} columns={5} />
       </div>
     );
   }
