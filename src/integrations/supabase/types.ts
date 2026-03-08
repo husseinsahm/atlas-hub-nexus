@@ -968,6 +968,7 @@ export type Database = {
           adults: number
           assigned_to: string | null
           children: number
+          client_notes: string | null
           company_id: string
           cover_image_url: string | null
           created_at: string
@@ -976,10 +977,15 @@ export type Database = {
           customer_id: string | null
           deleted_at: string | null
           description: string | null
+          discount_type: string
+          discount_value: number | null
           end_date: string | null
           id: string
           internal_notes: string | null
           lead_id: string | null
+          markup_type: string
+          markup_value: number | null
+          pricing_notes: string | null
           profit_margin: number | null
           selling_price: number | null
           share_token: string | null
@@ -995,6 +1001,7 @@ export type Database = {
           adults?: number
           assigned_to?: string | null
           children?: number
+          client_notes?: string | null
           company_id: string
           cover_image_url?: string | null
           created_at?: string
@@ -1003,10 +1010,15 @@ export type Database = {
           customer_id?: string | null
           deleted_at?: string | null
           description?: string | null
+          discount_type?: string
+          discount_value?: number | null
           end_date?: string | null
           id?: string
           internal_notes?: string | null
           lead_id?: string | null
+          markup_type?: string
+          markup_value?: number | null
+          pricing_notes?: string | null
           profit_margin?: number | null
           selling_price?: number | null
           share_token?: string | null
@@ -1022,6 +1034,7 @@ export type Database = {
           adults?: number
           assigned_to?: string | null
           children?: number
+          client_notes?: string | null
           company_id?: string
           cover_image_url?: string | null
           created_at?: string
@@ -1030,10 +1043,15 @@ export type Database = {
           customer_id?: string | null
           deleted_at?: string | null
           description?: string | null
+          discount_type?: string
+          discount_value?: number | null
           end_date?: string | null
           id?: string
           internal_notes?: string | null
           lead_id?: string | null
+          markup_type?: string
+          markup_value?: number | null
+          pricing_notes?: string | null
           profit_margin?: number | null
           selling_price?: number | null
           share_token?: string | null
