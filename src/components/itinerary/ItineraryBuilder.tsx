@@ -469,11 +469,11 @@ function DayCard({
                 </h4>
               )}
 
-              {day.city && (
-                <Badge variant="outline" className="text-[9px] gap-0.5 shrink-0">
-                  <MapPin className="w-2.5 h-2.5" /> {day.city}
+              {day.city && day.city.split(",").map(c => c.trim()).filter(Boolean).map((city) => (
+                <Badge key={city} variant="outline" className="text-[9px] gap-0.5 shrink-0">
+                  <MapPin className="w-2.5 h-2.5" /> {city}
                 </Badge>
-              )}
+              ))}
               {day.date && (
                 <Badge variant="secondary" className="text-[9px] shrink-0">
                   <Calendar className="w-2.5 h-2.5 mr-0.5" />
