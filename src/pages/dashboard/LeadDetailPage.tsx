@@ -645,6 +645,15 @@ export default function LeadDetailPage() {
                   )}
                 </TabsContent>
 
+                {/* Attachments Tab */}
+                <TabsContent value="attachments" className="mt-0">
+                  <FileAttachments
+                    entityType="lead"
+                    entityId={lead.id}
+                    companyId={companyId || ""}
+                  />
+                </TabsContent>
+
                 {/* All Activity Timeline */}
                 <TabsContent value="timeline" className="mt-0">
                   {renderActivityList(activities)}
