@@ -12,9 +12,11 @@ import {
   Compass,
   ChevronLeft,
   ChevronRight,
+  DollarSign,
+  Cog,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,30 +27,40 @@ interface NavItem {
   translationKey: string;
   url: string;
   icon: React.ElementType;
-  roles: UserRole[];
-  section?: string;
+  roles: AppRole[];
 }
 
 const navItems: NavItem[] = [
-  { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "staff"] },
+  { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"] },
   { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] },
   { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] },
   { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] },
-  { title: "Trips", translationKey: "nav.trips", url: "/dashboard/trips", icon: Map, roles: ["company_admin", "staff"] },
-  { title: "Itineraries", translationKey: "nav.itineraries", url: "/dashboard/itineraries", icon: FileText, roles: ["company_admin", "staff"] },
-  { title: "Clients", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "staff"] },
+  { title: "Trips", translationKey: "nav.trips", url: "/dashboard/trips", icon: Map, roles: ["company_admin", "agent", "operations"] },
+  { title: "Itineraries", translationKey: "nav.itineraries", url: "/dashboard/itineraries", icon: FileText, roles: ["company_admin", "agent", "operations"] },
+  { title: "Clients", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
   { title: "Staff", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] },
-  { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin"] },
+  { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] },
   { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] },
 ];
+
+function getUserRole(user: ReturnType<typeof useAuth>["user"]): AppRole | null {
+  if (!user) return null;
+  if (user.isSuperAdmin) return "super_admin";
+  return user.activeMembership?.role || null;
+}
 
 export function DashboardSidebar() {
   const { user } = useAuth();
   const { t, direction } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
 
-  const filteredItems = navItems.filter((item) => user && item.roles.includes(user.role));
+  const currentRole = getUserRole(user);
+  const filteredItems = navItems.filter((item) => currentRole && item.roles.includes(currentRole));
   const isRtl = direction === "rtl";
+
+  const displayName = user?.profile.fullName || user?.email || "User";
+  const roleLabel = currentRole?.replace("_", " ") || "";
+  const companyName = user?.activeMembership?.companyName;
 
   return (
     <motion.aside
@@ -82,6 +94,15 @@ export function DashboardSidebar() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Company badge */}
+      {companyName && !collapsed && (
+        <div className="px-4 pb-3">
+          <div className="px-3 py-1.5 rounded-md bg-sidebar-accent text-sidebar-accent-foreground text-xs font-medium truncate">
+            {companyName}
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
@@ -118,7 +139,7 @@ export function DashboardSidebar() {
       <div className="p-3 border-t border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
           <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-primary shrink-0">
-            {user?.name?.charAt(0) || "U"}
+            {displayName.charAt(0).toUpperCase()}
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -128,8 +149,8 @@ export function DashboardSidebar() {
                 exit={{ opacity: 0 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{user?.name}</p>
-                <p className="text-[10px] text-sidebar-foreground/60 capitalize truncate">{user?.role?.replace("_", " ")}</p>
+                <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{displayName}</p>
+                <p className="text-[10px] text-sidebar-foreground/60 capitalize truncate">{roleLabel}</p>
               </motion.div>
             )}
           </AnimatePresence>
