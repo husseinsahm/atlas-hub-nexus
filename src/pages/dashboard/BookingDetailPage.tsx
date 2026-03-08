@@ -753,6 +753,107 @@ export default function BookingDetailPage() {
           )}
         </div>
       )}
+      {/* Traveler Add/Edit Dialog */}
+      <Dialog open={showTravelerDialog} onOpenChange={v => { if (!v) { setShowTravelerDialog(false); setEditingTraveler(null); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+              <User className="w-4 h-4 text-accent" />
+              {editingTraveler && travelers.find(t => t.id === editingTraveler.id) ? "Edit Traveler" : "Add Traveler"}
+            </DialogTitle>
+          </DialogHeader>
+          {editingTraveler && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs">Full Name *</Label>
+                  <Input
+                    value={editingTraveler.full_name}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, full_name: e.target.value })}
+                    placeholder="Full name as in passport"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Gender</Label>
+                  <Select value={editingTraveler.gender} onValueChange={v => setEditingTraveler({ ...editingTraveler, gender: v })}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={editingTraveler.date_of_birth}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, date_of_birth: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Nationality</Label>
+                  <Input
+                    value={editingTraveler.nationality}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, nationality: e.target.value })}
+                    placeholder="e.g. Saudi"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Passport Number</Label>
+                  <Input
+                    value={editingTraveler.passport_number}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_number: e.target.value })}
+                    placeholder="Passport number"
+                    className="h-9 text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Passport Expiry</Label>
+                  <Input
+                    type="date"
+                    value={editingTraveler.passport_expiry}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_expiry: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Room Assignment Notes</Label>
+                  <Input
+                    value={editingTraveler.room_notes}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, room_notes: e.target.value })}
+                    placeholder="e.g. Room 201, sharing with traveler 2"
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => { setShowTravelerDialog(false); setEditingTraveler(null); }}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!editingTraveler?.full_name?.trim()}
+              onClick={() => {
+                if (editingTraveler) {
+                  const existing = travelers.find(t => t.id === editingTraveler.id);
+                  const updated = existing
+                    ? travelers.map(t => t.id === editingTraveler.id ? editingTraveler : t)
+                    : [...travelers, editingTraveler];
+                  updateBooking.mutate({ travelers: updated });
+                  setShowTravelerDialog(false);
+                  setEditingTraveler(null);
+                  toast({ title: existing ? "Traveler updated" : "Traveler added" });
+                }
+              }}
+            >
+              {travelers.find(t => t.id === editingTraveler?.id) ? "Save Changes" : "Add Traveler"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
