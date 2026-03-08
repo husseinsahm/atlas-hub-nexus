@@ -168,6 +168,8 @@ export default function LeadsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Lead | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Duplicate detection
   const [duplicateOpen, setDuplicateOpen] = useState(false);
