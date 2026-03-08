@@ -434,59 +434,12 @@ export default function CustomerDetailPage() {
             </TabsContent>
 
             {/* Attachments Tab */}
-            <TabsContent value="attachments" className="mt-0 space-y-4">
-              {isAdminOrAgent && (
-                <Card className="border border-dashed border-border bg-card">
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Upload className="w-4 h-4" /> Upload passport, documents, or files (max 10MB)
-                    </div>
-                    <Button variant="outline" size="sm" className="relative gap-1.5">
-                      <Paperclip className="w-3.5 h-3.5" /> Upload
-                      <input
-                        type="file"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        onChange={handleFileUpload}
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                      />
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              {attachments.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Paperclip className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">No attachments yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {attachments.map((att) => (
-                    <Card key={att.id} className="border border-border bg-card">
-                      <CardContent className="p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                          <div className="min-w-0">
-                            <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:text-accent truncate block">
-                              {att.file_name}
-                            </a>
-                            <p className="text-xs text-muted-foreground">
-                              {att.file_size ? `${(att.file_size / 1024).toFixed(0)} KB` : ""} · {format(new Date(att.created_at), "MMM d, yyyy")}
-                            </p>
-                          </div>
-                        </div>
-                        {isAdminOrAgent && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteAttachment(att)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+            <TabsContent value="attachments" className="mt-0">
+              <FileAttachments
+                entityType="customer"
+                entityId={customer.id}
+                companyId={companyId || ""}
+              />
             </TabsContent>
           </Tabs>
         </div>

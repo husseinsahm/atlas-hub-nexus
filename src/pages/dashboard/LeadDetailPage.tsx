@@ -555,6 +555,9 @@ export default function LeadDetailPage() {
                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-destructive" />
                     )}
                   </TabsTrigger>
+                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Attachments
+                  </TabsTrigger>
                   <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
                     All Activity ({activities.length})
                   </TabsTrigger>
