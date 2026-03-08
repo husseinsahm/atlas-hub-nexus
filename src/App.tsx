@@ -29,6 +29,7 @@ import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
+import OperationsPage from "./pages/dashboard/OperationsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import NotFound from "./pages/NotFound";
