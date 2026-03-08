@@ -229,10 +229,12 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
           pickup_time: day.pickup_time || null,
         };
 
+        let dayId: string;
+
         if (existingDay) {
           await supabase.from("booking_days").update(updatePayload).eq("id", existingDay.id);
+          dayId = existingDay.id;
         } else {
-          // Calculate date for this day based on arrival date
           let dayDate: string | null = null;
           if (booking?.arrival_date || booking?.start_date) {
             const startDate = new Date(booking.arrival_date || booking.start_date);
@@ -240,16 +242,31 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
             dayDate = startDate.toISOString().split("T")[0];
           }
 
-          await supabase.from("booking_days").insert({
+          const { data: newDay } = await supabase.from("booking_days").insert({
             booking_id: bookingId,
             day_number: day.day_number,
             date: dayDate,
             ...updatePayload,
-          });
+          }).select("id").single();
+
+          dayId = newDay?.id;
+        }
+
+        // Insert suggested services as booking_day_items
+        if (dayId && day.services?.length) {
+          const itemsToInsert = day.services.map((svc: any, idx: number) => ({
+            booking_day_id: dayId,
+            category: svc.category === "meal" ? "activity" : svc.category,
+            custom_title: svc.title,
+            notes: svc.notes || null,
+            sort_order: idx,
+            currency: booking?.currency || "USD",
+          }));
+          await supabase.from("booking_day_items").insert(itemsToInsert);
         }
       }
       queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
-      toast({ title: isArabic ? "تم تطبيق اقتراحات الذكاء الاصطناعي" : "AI suggestions applied" });
+      toast({ title: isArabic ? "تم تطبيق اقتراحات الذكاء الاصطناعي مع الخدمات" : "AI suggestions with services applied" });
       setAiSuggestions(null);
     } catch (err: any) {
       console.error("Error applying suggestions:", err);
