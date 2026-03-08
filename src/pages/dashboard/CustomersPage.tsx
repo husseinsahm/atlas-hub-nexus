@@ -16,6 +16,11 @@ import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail, Globe,
   MapPin, Tag, Heart, Star, Calendar,
 } from "lucide-react";
+import { CountrySelect, NationalitySelect } from "@/components/ui/country-select";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { NoCustomersEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { TableLoadingState, StatsGridLoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 const PREFERENCE_OPTIONS = [
@@ -297,15 +302,13 @@ export default function CustomersPage() {
       <Card className="border border-border bg-card">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
+            <TableLoadingState rows={5} columns={6} className="p-4" />
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Users className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm font-medium">No customers found</p>
-              <p className="text-xs mt-1">Add your first customer or convert a lead</p>
-            </div>
+            search.trim() ? (
+              <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} className="m-8" />
+            ) : (
+              <NoCustomersEmptyState onAction={isAdminOrAgent ? openCreate : undefined} className="m-8" />
+            )
           ) : (
             <Table>
               <TableHeader>
@@ -407,15 +410,28 @@ export default function CustomersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555 123 4567" maxLength={30} />
+              <PhoneInput
+                value={form.phone}
+                onValueChange={(v) => setForm({ ...form, phone: v })}
+                defaultCountry="AE"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Secondary Phone</Label>
-              <Input value={form.secondary_phone} onChange={(e) => setForm({ ...form, secondary_phone: e.target.value })} placeholder="Optional" maxLength={30} />
+              <PhoneInput
+                value={form.secondary_phone}
+                onValueChange={(v) => setForm({ ...form, secondary_phone: v })}
+                defaultCountry="AE"
+                placeholder="Optional"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Nationality</Label>
-              <Input value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })} placeholder="American" maxLength={100} />
+              <NationalitySelect
+                value={form.nationality}
+                onValueChange={(v) => setForm({ ...form, nationality: v })}
+                placeholder="Select nationality"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Date of Birth</Label>
@@ -445,11 +461,20 @@ export default function CustomersPage() {
             </div>
             <div className="space-y-1.5">
               <Label>City</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} maxLength={100} />
+              <CityAutocomplete
+                value={form.city}
+                onValueChange={(v) => setForm({ ...form, city: v })}
+                filterByCountry={form.country}
+                placeholder="Select city"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Country</Label>
-              <Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} maxLength={100} />
+              <CountrySelect
+                value={form.country}
+                onValueChange={(v) => setForm({ ...form, country: v })}
+                placeholder="Select country"
+              />
             </div>
 
             {/* Preferences */}

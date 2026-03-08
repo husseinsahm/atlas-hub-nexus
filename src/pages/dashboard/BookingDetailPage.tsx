@@ -16,6 +16,10 @@ import {
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash,
 } from "lucide-react";
+import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { DetailPageLoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -370,11 +374,7 @@ export default function BookingDetailPage() {
   , [services]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
+    return <DetailPageLoadingState />;
   }
 
   if (!booking) {

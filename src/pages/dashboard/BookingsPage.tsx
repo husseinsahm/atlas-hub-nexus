@@ -9,6 +9,10 @@ import {
   Loader2, Briefcase, ChevronRight, Clock, Plane, X,
   User, Phone, Mail, Globe, MapPin,
 } from "lucide-react";
+import { NationalitySelect } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { NoBookingsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { StatsGridLoadingState, TableLoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -223,8 +227,9 @@ export default function BookingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <div className="space-y-6">
+        <StatsGridLoadingState count={5} className="grid-cols-5" />
+        <TableLoadingState rows={6} columns={5} />
       </div>
     );
   }
@@ -296,22 +301,11 @@ export default function BookingsPage() {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Briefcase className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-foreground">
-            {isArabic ? "لا توجد حجوزات" : "No booking files yet"}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-            {isArabic 
-              ? "اضغط على 'حجز جديد' لإنشاء ملف حجز جديد"
-              : "Click 'New Booking' to create your first booking file"
-            }
-          </p>
-          <Button onClick={() => setShowNewDialog(true)} variant="outline" className="mt-4 gap-2">
-            <Plus className="w-4 h-4" />
-            {isArabic ? "إنشاء حجز" : "Create Booking"}
-          </Button>
-        </div>
+        search.trim() ? (
+          <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} />
+        ) : (
+          <NoBookingsEmptyState onAction={() => setShowNewDialog(true)} />
+        )
       ) : (
         <div className="space-y-2">
           {filtered.map((booking: any, idx: number) => {
@@ -451,19 +445,20 @@ export default function BookingsPage() {
                 </div>
                 <div>
                   <Label className="text-xs">{isArabic ? "رقم الهاتف" : "Phone"}</Label>
-                  <Input
+                  <PhoneInput
                     value={newBooking.customer_phone}
-                    onChange={e => setNewBooking({ ...newBooking, customer_phone: e.target.value })}
-                    placeholder="+971..."
+                    onValueChange={v => setNewBooking({ ...newBooking, customer_phone: v })}
+                    defaultCountry="AE"
                     className="mt-1"
                   />
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                  <Input
+                  <NationalitySelect
                     value={newBooking.customer_nationality}
-                    onChange={e => setNewBooking({ ...newBooking, customer_nationality: e.target.value })}
-                    placeholder={isArabic ? "الجنسية" : "Nationality"}
+                    onValueChange={v => setNewBooking({ ...newBooking, customer_nationality: v })}
+                    placeholder={isArabic ? "اختر الجنسية" : "Select nationality"}
+                    isRtl={isArabic}
                     className="mt-1"
                   />
                 </div>

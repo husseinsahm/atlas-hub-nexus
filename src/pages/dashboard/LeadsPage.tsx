@@ -18,6 +18,11 @@ import {
   MapPin, Calendar, DollarSign, TrendingUp, UserCheck, Clock,
   Trophy, XCircle, MessageSquare, Sparkles,
 } from "lucide-react";
+import { NationalitySelect } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { NoLeadsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { TableLoadingState, StatsGridLoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
@@ -421,15 +426,13 @@ export default function LeadsPage() {
       <Card className="border border-border bg-card">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
+            <TableLoadingState rows={5} columns={7} />
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-              <Users className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-sm font-medium">No leads found</p>
-              <p className="text-xs mt-1">Create your first lead or adjust the filters</p>
-            </div>
+            search.trim() ? (
+              <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} className="m-8" />
+            ) : (
+              <NoLeadsEmptyState onAction={isAdminOrAgent ? openCreate : undefined} className="m-8" />
+            )
           ) : (
             <Table>
               <TableHeader>
@@ -571,21 +574,19 @@ export default function LeadsPage() {
             {/* Phone */}
             <div className="space-y-1.5">
               <Label>Phone</Label>
-              <Input
+              <PhoneInput
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+1 555 123 4567"
-                maxLength={30}
+                onValueChange={(v) => setForm({ ...form, phone: v })}
+                defaultCountry="AE"
               />
             </div>
             {/* Nationality */}
             <div className="space-y-1.5">
               <Label>Nationality</Label>
-              <Input
+              <NationalitySelect
                 value={form.nationality}
-                onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                placeholder="American"
-                maxLength={100}
+                onValueChange={(v) => setForm({ ...form, nationality: v })}
+                placeholder="Select nationality"
               />
             </div>
             {/* Travel Date */}
