@@ -645,6 +645,20 @@ function DayCard({
           <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-accent/70 hover:text-accent"
+                  onClick={onAiEnhanceDay}
+                  disabled={isAiGenerating}
+                >
+                  {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">{isArabic ? "اقتراح ذكاء اصطناعي" : "AI Enhance this day"}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onToggleEdit}>
                   <Pencil className="w-3 h-3" />
                 </Button>
