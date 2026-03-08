@@ -47,6 +47,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
   const [newPayment, setNewPayment] = useState({
     amount: "",
     payment_method: "cash",
