@@ -14,6 +14,7 @@ import {
   ArrowUpDown, StickyNote, Image as ImageIcon,
   MoveUp, MoveDown, CopyPlus, MessageSquare,
   Eye, EyeOff, Percent, Tag, Receipt,
+  MessageCircle, CheckCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
