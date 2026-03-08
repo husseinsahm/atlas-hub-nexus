@@ -460,7 +460,8 @@ interface DayCardProps {
 function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
-  onAddItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
+  onAddItem, onUpdateItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
+  editingItemId, onSetEditingItemId,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
