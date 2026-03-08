@@ -391,95 +391,128 @@ export default function CustomersPage() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display">{editingId ? "Edit Customer" : "New Customer"}</DialogTitle>
-            <DialogDescription>
-              {editingId ? "Update customer information" : "Add a new customer to your CRM"}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+          {/* Premium header */}
+          <div className="relative px-6 pt-6 pb-4 navy-gradient">
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+            <div className="relative flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+                <UserPlus className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-white font-display">
+                  {editingId ? "Edit Customer" : "New Customer"}
+                </h2>
+                <p className="text-[11px] text-white/60">
+                  {editingId ? "Update customer profile" : "Add a new customer to your database"}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Full Name *</Label>
-              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" maxLength={200} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" maxLength={255} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <PhoneInput
-                value={form.phone}
-                onValueChange={(v) => setForm({ ...form, phone: v })}
-                defaultCountry="AE"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Secondary Phone</Label>
-              <PhoneInput
-                value={form.secondary_phone}
-                onValueChange={(v) => setForm({ ...form, secondary_phone: v })}
-                defaultCountry="AE"
-                placeholder="Optional"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nationality</Label>
-              <NationalitySelect
-                value={form.nationality}
-                onValueChange={(v) => setForm({ ...form, nationality: v })}
-                placeholder="Select nationality"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Date of Birth</Label>
-              <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Passport Number</Label>
-              <Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} placeholder="Optional" maxLength={30} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Source</Label>
-              <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="direct">Direct</SelectItem>
-                  <SelectItem value="lead">From Lead</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="partner">Partner</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label>Address</Label>
-              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address" maxLength={300} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>City</Label>
-              <CityAutocomplete
-                value={form.city}
-                onValueChange={(v) => setForm({ ...form, city: v })}
-                filterByCountry={form.country}
-                placeholder="Select city"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Country</Label>
-              <CountrySelect
-                value={form.country}
-                onValueChange={(v) => setForm({ ...form, country: v })}
-                placeholder="Select country"
-              />
+          <div className="px-6 py-5 space-y-5 max-h-[65vh] overflow-y-auto">
+            {/* ─── Personal Info ─── */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Users className="w-3 h-3" /> Personal Information
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label className="text-xs">Full Name <span className="text-destructive">*</span></Label>
+                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" maxLength={200} className="h-11" autoFocus />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nationality</Label>
+                  <NationalitySelect
+                    value={form.nationality}
+                    onValueChange={(v) => setForm({ ...form, nationality: v })}
+                    placeholder="Select nationality"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Date of Birth</Label>
+                  <Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className="h-11" />
+                </div>
+              </div>
             </div>
 
-            {/* Preferences */}
-            <div className="sm:col-span-2 space-y-2">
-              <Label className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Preferences & Tags</Label>
+            {/* ─── Contact ─── */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Phone className="w-3 h-3" /> Contact Details
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label className="text-xs">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" maxLength={255} className="h-11 pl-10" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Phone</Label>
+                  <PhoneInput value={form.phone} onValueChange={(v) => setForm({ ...form, phone: v })} defaultCountry="AE" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Secondary Phone</Label>
+                  <PhoneInput value={form.secondary_phone} onValueChange={(v) => setForm({ ...form, secondary_phone: v })} defaultCountry="AE" placeholder="Optional" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Travel Profile ─── */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Globe className="w-3 h-3" /> Travel Profile
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Passport Number</Label>
+                  <Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} placeholder="Optional" maxLength={30} className="h-11" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Source</Label>
+                  <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
+                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="direct">Direct</SelectItem>
+                      <SelectItem value="lead">From Lead</SelectItem>
+                      <SelectItem value="referral">Referral</SelectItem>
+                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Address ─── */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <MapPin className="w-3 h-3" /> Address
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label className="text-xs">Street Address</Label>
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address" maxLength={300} className="h-11" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Country</Label>
+                  <CountrySelect value={form.country} onValueChange={(v) => setForm({ ...form, country: v })} placeholder="Select country" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">City</Label>
+                  <CityAutocomplete value={form.city} onValueChange={(v) => setForm({ ...form, city: v })} filterByCountry={form.country} placeholder="Select city" />
+                </div>
+              </div>
+            </div>
+
+            {/* ─── Preferences ─── */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Tag className="w-3 h-3" /> Preferences & Tags
+              </p>
               <div className="flex flex-wrap gap-2">
                 {PREFERENCE_OPTIONS.map((pref) => {
                   const selected = form.selectedPrefs.includes(pref);
@@ -488,11 +521,12 @@ export default function CustomersPage() {
                       key={pref}
                       type="button"
                       onClick={() => togglePref(pref)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
                         selected
-                          ? `${getTagColor(pref)} ring-1 ring-accent/30`
-                          : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-                      }`}
+                          ? `${getTagColor(pref)} ring-1 ring-accent/30 shadow-sm`
+                          : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                      )}
                     >
                       {selected && <span className="mr-1">✓</span>}
                       {pref}
@@ -502,18 +536,26 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes..." rows={3} maxLength={2000} />
+            {/* ─── Notes ─── */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes</Label>
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes about this customer..." rows={3} maxLength={2000} className="resize-none" />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving} className="gold-gradient text-accent-foreground">
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={() => setFormOpen(false)} className="text-xs">Cancel</Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
+            >
+              {saving && <div className="w-3.5 h-3.5 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin" />}
               {saving ? "Saving..." : editingId ? "Update Customer" : "Create Customer"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

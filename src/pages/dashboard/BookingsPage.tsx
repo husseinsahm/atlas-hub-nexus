@@ -402,159 +402,287 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* New Booking Dialog */}
-      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-accent" />
-              {isArabic ? "ملف حجز جديد" : "New Booking File"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Booking Title */}
-            <div>
-              <Label className="text-xs">{isArabic ? "عنوان الحجز" : "Booking Title"}</Label>
-              <Input
-                value={newBooking.title}
-                onChange={e => setNewBooking({ ...newBooking, title: e.target.value })}
-                placeholder={isArabic ? "مثال: رحلة عائلة أحمد إلى دبي" : "e.g., Ahmed Family Dubai Trip"}
-                className="mt-1"
-              />
-            </div>
-
-            {/* Customer Info */}
-            <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-3">
-              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-accent" />
-                {isArabic ? "معلومات العميل" : "Customer Information"}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <Label className="text-xs">{isArabic ? "اسم العميل" : "Customer Name"} *</Label>
-                  <Input
-                    value={newBooking.customer_name}
-                    onChange={e => setNewBooking({ ...newBooking, customer_name: e.target.value })}
-                    placeholder={isArabic ? "الاسم الكامل" : "Full name"}
-                    className="mt-1"
-                  />
+      {/* New Booking Dialog — Multi-step wizard */}
+      <Dialog open={showNewDialog} onOpenChange={(open) => { setShowNewDialog(open); if (!open) setStep(0); }}>
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+          {/* Header with gradient */}
+          <div className="relative px-6 pt-6 pb-4 navy-gradient">
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+                  <Briefcase className="w-5 h-5 text-accent-foreground" />
                 </div>
                 <div>
-                  <Label className="text-xs">{isArabic ? "البريد الإلكتروني" : "Email"}</Label>
-                  <Input
-                    type="email"
-                    value={newBooking.customer_email}
-                    onChange={e => setNewBooking({ ...newBooking, customer_email: e.target.value })}
-                    placeholder="email@example.com"
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">{isArabic ? "رقم الهاتف" : "Phone"}</Label>
-                  <PhoneInput
-                    value={newBooking.customer_phone}
-                    onValueChange={v => setNewBooking({ ...newBooking, customer_phone: v })}
-                    defaultCountry="AE"
-                    className="mt-1"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                  <NationalitySelect
-                    value={newBooking.customer_nationality}
-                    onValueChange={v => setNewBooking({ ...newBooking, customer_nationality: v })}
-                    placeholder={isArabic ? "اختر الجنسية" : "Select nationality"}
-                    isRtl={isArabic}
-                    className="mt-1"
-                  />
+                  <h2 className="text-base font-bold text-white font-display">
+                    {isArabic ? "ملف حجز جديد" : "New Booking File"}
+                  </h2>
+                  <p className="text-[11px] text-white/60">
+                    {isArabic ? STEPS[step].labelAr : STEPS[step].label} — {isArabic ? `الخطوة ${step + 1} من 3` : `Step ${step + 1} of 3`}
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* Travel Details */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">{isArabic ? "تاريخ الوصول" : "Arrival Date"}</Label>
-                <Input
-                  type="date"
-                  value={newBooking.arrival_date}
-                  onChange={e => setNewBooking({ ...newBooking, arrival_date: e.target.value })}
-                  className="mt-1"
-                />
+              {/* Step indicator */}
+              <div className="flex gap-1.5">
+                {STEPS.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => setStep(s.id)}
+                    className={cn(
+                      "flex-1 h-1.5 rounded-full transition-all duration-300",
+                      s.id <= step ? "bg-accent" : "bg-white/20"
+                    )}
+                  />
+                ))}
               </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "تاريخ المغادرة" : "Departure Date"}</Label>
-                <Input
-                  type="date"
-                  value={newBooking.departure_date}
-                  onChange={e => setNewBooking({ ...newBooking, departure_date: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "عدد الكبار" : "Adults"}</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={newBooking.adults}
-                  onChange={e => setNewBooking({ ...newBooking, adults: parseInt(e.target.value) || 1 })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "عدد الأطفال" : "Children"}</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={newBooking.children}
-                  onChange={e => setNewBooking({ ...newBooking, children: parseInt(e.target.value) || 0 })}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            {/* Source */}
-            <div>
-              <Label className="text-xs">{isArabic ? "مصدر الحجز" : "Booking Source"}</Label>
-              <Select value={newBooking.source} onValueChange={v => setNewBooking({ ...newBooking, source: v })}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SOURCES.map(s => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Notes */}
-            <div>
-              <Label className="text-xs">{isArabic ? "ملاحظات" : "Initial Notes"}</Label>
-              <Textarea
-                value={newBooking.notes}
-                onChange={e => setNewBooking({ ...newBooking, notes: e.target.value })}
-                placeholder={isArabic ? "أي ملاحظات أو متطلبات خاصة..." : "Any notes or special requirements..."}
-                rows={3}
-                className="mt-1 text-xs"
-              />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
-              {isArabic ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button 
-              onClick={() => createBookingMutation.mutate()} 
-              disabled={!newBooking.customer_name.trim() || createBookingMutation.isPending}
-              className="gold-gradient text-accent-foreground gap-2"
+          <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                {/* ──── Step 0: Client ──── */}
+                {step === 0 && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-foreground">{isArabic ? "اسم العميل" : "Customer Name"} <span className="text-destructive">*</span></Label>
+                      <Input
+                        value={newBooking.customer_name}
+                        onChange={e => setNewBooking({ ...newBooking, customer_name: e.target.value })}
+                        placeholder={isArabic ? "الاسم الكامل" : "Full name"}
+                        className="h-11"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{isArabic ? "البريد الإلكتروني" : "Email"}</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            value={newBooking.customer_email}
+                            onChange={e => setNewBooking({ ...newBooking, customer_email: e.target.value })}
+                            placeholder="email@example.com"
+                            className="h-11 pl-10"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{isArabic ? "رقم الهاتف" : "Phone"}</Label>
+                        <PhoneInput
+                          value={newBooking.customer_phone}
+                          onValueChange={v => setNewBooking({ ...newBooking, customer_phone: v })}
+                          defaultCountry="AE"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{isArabic ? "الجنسية" : "Nationality"}</Label>
+                        <NationalitySelect
+                          value={newBooking.customer_nationality}
+                          onValueChange={v => setNewBooking({ ...newBooking, customer_nationality: v })}
+                          placeholder={isArabic ? "اختر الجنسية" : "Select nationality"}
+                          isRtl={isArabic}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ──── Step 1: Trip ──── */}
+                {step === 1 && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">{isArabic ? "عنوان الحجز" : "Booking Title"}</Label>
+                      <Input
+                        value={newBooking.title}
+                        onChange={e => setNewBooking({ ...newBooking, title: e.target.value })}
+                        placeholder={isArabic ? "رحلة عائلة أحمد - دبي" : "Ahmed Family — Dubai Trip"}
+                        className="h-11"
+                        autoFocus
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        {isArabic ? "اختياري — سيتم إنشاء عنوان تلقائياً إن تُرك فارغاً" : "Optional — auto-generated if left empty"}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium flex items-center gap-1.5">
+                          <Plane className="w-3 h-3 text-accent" />
+                          {isArabic ? "الوصول" : "Arrival"}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={newBooking.arrival_date}
+                          onChange={e => setNewBooking({ ...newBooking, arrival_date: e.target.value })}
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium flex items-center gap-1.5">
+                          <Plane className="w-3 h-3 text-muted-foreground rotate-90" />
+                          {isArabic ? "المغادرة" : "Departure"}
+                        </Label>
+                        <Input
+                          type="date"
+                          value={newBooking.departure_date}
+                          onChange={e => setNewBooking({ ...newBooking, departure_date: e.target.value })}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+                    {/* Pax — styled counters */}
+                    <div className="rounded-xl border border-border bg-muted/30 p-4">
+                      <p className="text-xs font-semibold text-foreground mb-3 flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-accent" />
+                        {isArabic ? "المسافرون" : "Travelers"}
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-background p-3">
+                          <div>
+                            <p className="text-xs font-medium text-foreground">{isArabic ? "كبار" : "Adults"}</p>
+                            <p className="text-[10px] text-muted-foreground">{isArabic ? "12+ سنة" : "12+ years"}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setNewBooking({ ...newBooking, adults: Math.max(1, newBooking.adults - 1) })}
+                              className="w-7 h-7 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                            >−</button>
+                            <span className="text-sm font-bold text-foreground w-5 text-center">{newBooking.adults}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewBooking({ ...newBooking, adults: newBooking.adults + 1 })}
+                              className="w-7 h-7 rounded-full border border-accent bg-accent/10 flex items-center justify-center text-accent hover:bg-accent/20 transition-colors"
+                            >+</button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-background p-3">
+                          <div>
+                            <p className="text-xs font-medium text-foreground">{isArabic ? "أطفال" : "Children"}</p>
+                            <p className="text-[10px] text-muted-foreground">{isArabic ? "2-11 سنة" : "2-11 years"}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setNewBooking({ ...newBooking, children: Math.max(0, newBooking.children - 1) })}
+                              className="w-7 h-7 rounded-full border border-border bg-background flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                            >−</button>
+                            <span className="text-sm font-bold text-foreground w-5 text-center">{newBooking.children}</span>
+                            <button
+                              type="button"
+                              onClick={() => setNewBooking({ ...newBooking, children: newBooking.children + 1 })}
+                              className="w-7 h-7 rounded-full border border-accent bg-accent/10 flex items-center justify-center text-accent hover:bg-accent/20 transition-colors"
+                            >+</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ──── Step 2: Details ──── */}
+                {step === 2 && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">{isArabic ? "مصدر الحجز" : "Booking Source"}</Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {SOURCES.map(s => (
+                          <button
+                            key={s.value}
+                            type="button"
+                            onClick={() => setNewBooking({ ...newBooking, source: s.value })}
+                            className={cn(
+                              "rounded-lg border px-2 py-2.5 text-[10px] font-medium transition-all text-center",
+                              newBooking.source === s.value
+                                ? "border-accent bg-accent/10 text-accent"
+                                : "border-border bg-background text-muted-foreground hover:bg-muted"
+                            )}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium">{isArabic ? "ملاحظات" : "Notes"}</Label>
+                      <Textarea
+                        value={newBooking.notes}
+                        onChange={e => setNewBooking({ ...newBooking, notes: e.target.value })}
+                        placeholder={isArabic ? "أي ملاحظات أو متطلبات خاصة..." : "Special requirements, preferences, or initial notes..."}
+                        rows={4}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                    {/* Summary preview */}
+                    <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {isArabic ? "ملخص" : "Summary"}
+                      </p>
+                      <div className="space-y-1.5 text-xs">
+                        {newBooking.customer_name && (
+                          <div className="flex items-center gap-2 text-foreground">
+                            <User className="w-3 h-3 text-muted-foreground" />
+                            <span className="font-medium">{newBooking.customer_name}</span>
+                          </div>
+                        )}
+                        {(newBooking.arrival_date || newBooking.departure_date) && (
+                          <div className="flex items-center gap-2 text-foreground">
+                            <Calendar className="w-3 h-3 text-muted-foreground" />
+                            <span>{newBooking.arrival_date && format(new Date(newBooking.arrival_date), "MMM d")} → {newBooking.departure_date && format(new Date(newBooking.departure_date), "MMM d, yyyy")}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-foreground">
+                          <Users className="w-3 h-3 text-muted-foreground" />
+                          <span>{newBooking.adults} {isArabic ? "كبار" : "Adults"}{newBooking.children > 0 ? ` · ${newBooking.children} ${isArabic ? "أطفال" : "Children"}` : ""}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => step === 0 ? setShowNewDialog(false) : setStep(step - 1)}
+              className="text-xs"
             >
-              {createBookingMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isArabic ? "إنشاء الحجز" : "Create Booking"}
+              {step === 0 ? (isArabic ? "إلغاء" : "Cancel") : (isArabic ? "السابق" : "Back")}
             </Button>
-          </DialogFooter>
+            {step < 2 ? (
+              <Button
+                size="sm"
+                onClick={() => setStep(step + 1)}
+                disabled={step === 0 && !newBooking.customer_name.trim()}
+                className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
+              >
+                {isArabic ? "التالي" : "Next"}
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => createBookingMutation.mutate()}
+                disabled={!newBooking.customer_name.trim() || createBookingMutation.isPending}
+                className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
+              >
+                {createBookingMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isArabic ? "إنشاء الحجز" : "Create Booking"}
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
