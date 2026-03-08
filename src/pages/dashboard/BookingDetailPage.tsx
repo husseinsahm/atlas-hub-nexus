@@ -72,6 +72,9 @@ export default function BookingDetailPage() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "services" | "timeline">("overview");
   const [commentText, setCommentText] = useState("");
+  const [expandedTraveler, setExpandedTraveler] = useState<string | null>(null);
+  const [showTravelerDialog, setShowTravelerDialog] = useState(false);
+  const [editingTraveler, setEditingTraveler] = useState<Traveler | null>(null);
 
   // Fetch booking
   const { data: booking, isLoading } = useQuery({
