@@ -21,6 +21,8 @@ import SettingsPage from "./pages/dashboard/SettingsPage";
 import TeamPage from "./pages/dashboard/TeamPage";
 import LeadsPage from "./pages/dashboard/LeadsPage";
 import LeadDetailPage from "./pages/dashboard/LeadDetailPage";
+import CustomersPage from "./pages/dashboard/CustomersPage";
+import CustomerDetailPage from "./pages/dashboard/CustomerDetailPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -77,6 +79,8 @@ function AppRoutes() {
         <Route path="itineraries" element={<PlaceholderPage />} />
         <Route path="clients" element={<LeadsPage />} />
         <Route path="leads/:id" element={<LeadDetailPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="customers/:id" element={<CustomerDetailPage />} />
         <Route path="staff" element={<TeamPage />} />
         <Route path="invoices" element={<PlaceholderPage />} />
         <Route path="settings" element={<SettingsPage />} />

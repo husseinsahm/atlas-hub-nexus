@@ -14,6 +14,7 @@ import {
   ChevronRight,
   DollarSign,
   Cog,
+  Heart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { title: "Trips", translationKey: "nav.trips", url: "/dashboard/trips", icon: Map, roles: ["company_admin", "agent", "operations"] },
   { title: "Itineraries", translationKey: "nav.itineraries", url: "/dashboard/itineraries", icon: FileText, roles: ["company_admin", "agent", "operations"] },
   { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
+  { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] },
   { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] },
   { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] },
   { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] },
