@@ -1253,10 +1253,14 @@ export type Database = {
           nationality: string | null
           notes: string | null
           phone: string | null
+          preferred_language: string | null
           source: Database["public"]["Enums"]["lead_source"]
           status: Database["public"]["Enums"]["lead_status"]
           travel_date: string | null
+          trip_type: string | null
           updated_at: string
+          urgency: string | null
+          whatsapp: string | null
         }
         Insert: {
           adults?: number
@@ -1276,10 +1280,14 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone?: string | null
+          preferred_language?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           travel_date?: string | null
+          trip_type?: string | null
           updated_at?: string
+          urgency?: string | null
+          whatsapp?: string | null
         }
         Update: {
           adults?: number
@@ -1299,10 +1307,14 @@ export type Database = {
           nationality?: string | null
           notes?: string | null
           phone?: string | null
+          preferred_language?: string | null
           source?: Database["public"]["Enums"]["lead_source"]
           status?: Database["public"]["Enums"]["lead_status"]
           travel_date?: string | null
+          trip_type?: string | null
           updated_at?: string
+          urgency?: string | null
+          whatsapp?: string | null
         }
         Relationships: [
           {
