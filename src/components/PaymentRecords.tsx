@@ -323,13 +323,13 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
 
       {/* Add Payment Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(v) => { if (!v) resetForm(); setShowAddDialog(v); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-accent" /> Record Payment
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
+          <ModalDarkHeader
+            icon={<DollarSign className="w-5 h-5 text-accent-foreground" />}
+            title="Record Payment"
+            description={`Add a payment record in ${currency}`}
+          />
+          <div className="px-6 py-5 space-y-4">
             <div>
               <Label className="text-xs">Amount ({currency}) <span className="text-destructive">*</span></Label>
               <Input
