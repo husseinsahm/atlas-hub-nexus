@@ -625,6 +625,17 @@ export default function BookingDetailPage() {
               </CardContent>
             </Card>
 
+            {/* Attachments */}
+            <Card>
+              <CardContent className="p-4">
+                <FileAttachments
+                  entityType="booking"
+                  entityId={booking.id}
+                  companyId={booking.company_id}
+                />
+              </CardContent>
+            </Card>
+
             {booking.trip_id && (
               <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => navigate(`/dashboard/trips/${booking.trip_id}`)}>
                 <FileText className="w-3.5 h-3.5 mr-1.5" /> View Original Trip
