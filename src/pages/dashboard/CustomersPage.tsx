@@ -49,7 +49,13 @@ interface Customer {
   full_name: string;
   email: string | null;
   phone: string | null;
+  secondary_phone: string | null;
   nationality: string | null;
+  date_of_birth: string | null;
+  passport_number: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
   preferences: string[];
   tags: string[];
   source: string;
@@ -135,13 +141,13 @@ export default function CustomersPage() {
       full_name: c.full_name,
       email: c.email || "",
       phone: c.phone || "",
-      secondary_phone: "",
+      secondary_phone: c.secondary_phone || "",
       nationality: c.nationality || "",
-      date_of_birth: "",
-      passport_number: "",
-      address: "",
-      city: "",
-      country: "",
+      date_of_birth: c.date_of_birth || "",
+      passport_number: c.passport_number || "",
+      address: c.address || "",
+      city: c.city || "",
+      country: c.country || "",
       source: c.source || "direct",
       notes: c.notes || "",
       selectedPrefs: c.preferences,
@@ -158,20 +164,41 @@ export default function CustomersPage() {
     }));
   }
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  function validateForm(): boolean {
+    const errors: Record<string, string> = {};
+
+    if (!form.full_name.trim()) {
+      errors.full_name = "Full name is required";
+    } else if (form.full_name.trim().length > 200) {
+      errors.full_name = "Name must be less than 200 characters";
+    }
+
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    if (form.phone && form.phone.replace(/[\s\-\(\)]/g, "").length < 7) {
+      errors.phone = "Phone number is too short";
+    }
+
+    if (form.passport_number && form.passport_number.trim().length > 30) {
+      errors.passport_number = "Passport number is too long";
+    }
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0];
+      toast({ title: "Validation Error", description: firstError, variant: "destructive" });
+      return false;
+    }
+    return true;
+  }
+
   async function handleSave() {
     if (!companyId || !user) return;
-    if (!form.full_name.trim()) {
-      toast({ title: "Name is required", variant: "destructive" });
-      return;
-    }
-    if (form.full_name.trim().length > 200) {
-      toast({ title: "Name too long", variant: "destructive" });
-      return;
-    }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      toast({ title: "Invalid email", variant: "destructive" });
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
     const payload = {
@@ -203,9 +230,10 @@ export default function CustomersPage() {
         toast({ title: "Customer created" });
       }
       setFormOpen(false);
+      setFormErrors({});
       fetchCustomers();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error saving customer", description: err.message || "Please check your connection and try again", variant: "destructive" });
     } finally {
       setSaving(false);
     }
@@ -424,7 +452,8 @@ export default function CustomersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-2 space-y-1.5">
                   <Label className="text-xs">Full Name <span className="text-destructive">*</span></Label>
-                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" maxLength={200} className="h-11" autoFocus />
+                  <Input value={form.full_name} onChange={(e) => { setForm({ ...form, full_name: e.target.value }); setFormErrors(prev => ({ ...prev, full_name: "" })); }} placeholder="John Smith" maxLength={200} className={cn("h-11", formErrors.full_name && "border-destructive ring-1 ring-destructive/30")} autoFocus />
+                  {formErrors.full_name && <p className="text-[11px] text-destructive">{formErrors.full_name}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Date of Birth</Label>
@@ -460,12 +489,14 @@ export default function CustomersPage() {
                   <Label className="text-xs">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@example.com" maxLength={255} className="h-11 pl-10" />
+                    <Input type="email" value={form.email} onChange={(e) => { setForm({ ...form, email: e.target.value }); setFormErrors(prev => ({ ...prev, email: "" })); }} placeholder="john@example.com" maxLength={255} className={cn("h-11 pl-10", formErrors.email && "border-destructive ring-1 ring-destructive/30")} />
                   </div>
+                  {formErrors.email && <p className="text-[11px] text-destructive">{formErrors.email}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Phone</Label>
-                  <PhoneInput value={form.phone} onValueChange={(v) => setForm({ ...form, phone: v })} defaultCountry="AE" />
+                  <PhoneInput value={form.phone} onValueChange={(v) => { setForm({ ...form, phone: v }); setFormErrors(prev => ({ ...prev, phone: "" })); }} defaultCountry="AE" />
+                  {formErrors.phone && <p className="text-[11px] text-destructive">{formErrors.phone}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Secondary Phone</Label>
