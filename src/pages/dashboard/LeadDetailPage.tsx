@@ -225,7 +225,7 @@ export default function LeadDetailPage() {
             : `${lead.adults} adults${lead.children ? `, ${lead.children} children` : ""}`,
           entityType: "lead",
           entityId: lead.id,
-          metadata: { assignedBy: user.activeMembership?.profile?.fullName || "Team member", leadName: lead.full_name },
+          metadata: { assignedBy: user.profile?.fullName || "Team member", leadName: lead.full_name },
         });
       }
 
