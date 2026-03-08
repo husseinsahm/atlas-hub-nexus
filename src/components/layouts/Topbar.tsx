@@ -1,7 +1,8 @@
-import { Search, Bell, Globe, LogOut } from "lucide-react";
+import { Search, Globe, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export function Topbar() {
   const { user, logout } = useAuth();
