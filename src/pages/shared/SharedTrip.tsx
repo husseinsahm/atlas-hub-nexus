@@ -1,17 +1,24 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass, MapPin, Calendar, Users, Clock, Globe,
   Hotel, Landmark, Bike, Car, UtensilsCrossed, UserCheck,
-  FileText, ChevronDown, ChevronRight, Loader2, AlertCircle,
+  FileText, ChevronDown, Loader2, AlertCircle,
   Sun, Moon, Sunrise, Sunset,
+  MessageCircle, CheckCircle, RefreshCw, Send, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 /* ====== TYPES ====== */
 interface TripDay {
@@ -37,6 +44,17 @@ interface TripDayItem {
   duration_minutes: number | null;
   start_time: string | null;
   notes: string | null;
+}
+
+interface TripFeedback {
+  id: string;
+  trip_id: string;
+  feedback_type: string;
+  client_name: string;
+  client_email: string | null;
+  message: string | null;
+  status: string;
+  created_at: string;
 }
 
 /* ====== CONSTANTS ====== */
@@ -67,30 +85,100 @@ const formatDuration = (m: number | null) => {
   return r ? `${h}h ${r}m` : `${h}h`;
 };
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number) => ({
-    opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  }),
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } },
+const FEEDBACK_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  comment:         { icon: MessageCircle, color: "text-blue-600", bg: "bg-blue-50" },
+  approval:        { icon: CheckCircle,   color: "text-emerald-600", bg: "bg-emerald-50" },
+  change_request:  { icon: RefreshCw,     color: "text-amber-600", bg: "bg-amber-50" },
 };
 
 /* ====== COMPONENT ====== */
 export default function SharedTrip() {
   const { token } = useParams<{ token: string }>();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<"comment" | "approval" | "change_request">("comment");
+  const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
   const isRtl = lang === "ar";
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? "rtl" : "ltr";
     return () => { document.documentElement.dir = "ltr"; };
   }, [isRtl]);
+
+  const t = useMemo(() => {
+    const strings = {
+      en: {
+        itinerary: "Your Itinerary",
+        days: "days",
+        adults: "Adults",
+        children: "Children",
+        day: "Day",
+        totalPrice: "Trip Total",
+        perPerson: "per person",
+        duration: "Duration",
+        loading: "Loading your itinerary...",
+        notFound: "Itinerary Not Found",
+        notFoundDesc: "This itinerary link may have expired or is invalid.",
+        services: "Services",
+        noServices: "Free day — explore at your leisure",
+        feedback: "Share Your Feedback",
+        approve: "Approve Itinerary",
+        requestChanges: "Request Changes",
+        comment: "Leave a Comment",
+        yourName: "Your Name",
+        yourEmail: "Email (optional)",
+        yourMessage: "Your message...",
+        send: "Send",
+        sending: "Sending...",
+        feedbackSent: "Thank you! Your feedback has been submitted.",
+        approvalSent: "Trip approved! Thank you for your confirmation.",
+        changesSent: "Change request sent. Your agent will review it shortly.",
+        feedbackTimeline: "Conversation",
+        noFeedback: "No comments yet",
+        approveDesc: "Confirm that you're happy with this itinerary",
+        changesDesc: "Let your agent know what you'd like changed",
+        commentDesc: "Share any thoughts or questions",
+      },
+      ar: {
+        itinerary: "برنامج رحلتك",
+        days: "أيام",
+        adults: "بالغين",
+        children: "أطفال",
+        day: "اليوم",
+        totalPrice: "إجمالي الرحلة",
+        perPerson: "للشخص",
+        duration: "المدة",
+        loading: "جاري تحميل برنامج رحلتك...",
+        notFound: "لم يتم العثور على البرنامج",
+        notFoundDesc: "قد يكون رابط البرنامج منتهي الصلاحية أو غير صالح.",
+        services: "الخدمات",
+        noServices: "يوم حر — استمتع بوقتك",
+        feedback: "شاركنا رأيك",
+        approve: "الموافقة على البرنامج",
+        requestChanges: "طلب تعديلات",
+        comment: "أضف تعليقاً",
+        yourName: "اسمك",
+        yourEmail: "البريد الإلكتروني (اختياري)",
+        yourMessage: "رسالتك...",
+        send: "إرسال",
+        sending: "جاري الإرسال...",
+        feedbackSent: "شكراً! تم إرسال ملاحظاتك.",
+        approvalSent: "تمت الموافقة! شكراً لتأكيدك.",
+        changesSent: "تم إرسال طلب التعديل. سيراجعه وكيلك قريباً.",
+        feedbackTimeline: "المحادثة",
+        noFeedback: "لا توجد تعليقات بعد",
+        approveDesc: "أكد أنك راضٍ عن هذا البرنامج",
+        changesDesc: "أخبر وكيلك بما تريد تغييره",
+        commentDesc: "شارك أي أفكار أو أسئلة",
+      },
+    };
+    return strings[lang];
+  }, [lang]);
 
   // Fetch trip by share_token
   const { data: trip, isLoading, error } = useQuery({
@@ -107,7 +195,6 @@ export default function SharedTrip() {
     enabled: !!token,
   });
 
-  // Fetch company info
   const { data: company } = useQuery({
     queryKey: ["shared-trip-company", trip?.company_id],
     queryFn: async () => {
@@ -121,7 +208,6 @@ export default function SharedTrip() {
     enabled: !!trip?.company_id,
   });
 
-  // Fetch company settings for branding
   const { data: settings } = useQuery({
     queryKey: ["shared-trip-settings", trip?.company_id],
     queryFn: async () => {
@@ -135,7 +221,6 @@ export default function SharedTrip() {
     enabled: !!trip?.company_id,
   });
 
-  // Fetch days
   const { data: days = [] } = useQuery({
     queryKey: ["shared-trip-days", trip?.id],
     queryFn: async () => {
@@ -150,7 +235,6 @@ export default function SharedTrip() {
     enabled: !!trip?.id,
   });
 
-  // Fetch all items
   const { data: allItems = [] } = useQuery({
     queryKey: ["shared-trip-items", trip?.id],
     queryFn: async () => {
@@ -165,6 +249,45 @@ export default function SharedTrip() {
       return data as TripDayItem[];
     },
     enabled: days.length > 0,
+  });
+
+  // Feedback
+  const { data: feedbackList = [] } = useQuery({
+    queryKey: ["shared-trip-feedback", trip?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trip_feedback")
+        .select("*")
+        .eq("trip_id", trip!.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as TripFeedback[];
+    },
+    enabled: !!trip?.id,
+  });
+
+  const submitFeedback = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("trip_feedback").insert({
+        trip_id: trip!.id,
+        feedback_type: feedbackType,
+        client_name: clientName.trim(),
+        client_email: clientEmail.trim() || null,
+        message: feedbackMessage.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shared-trip-feedback", trip?.id] });
+      const msg = feedbackType === "approval" ? t.approvalSent : feedbackType === "change_request" ? t.changesSent : t.feedbackSent;
+      toast({ title: msg });
+      setFeedbackMessage("");
+      setFeedbackType("comment");
+      setFeedbackOpen(false);
+    },
+    onError: (e: any) => {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    },
   });
 
   // Expand all days on first load
@@ -187,53 +310,11 @@ export default function SharedTrip() {
   const companyName = company?.name;
   const tagline = settings?.tagline;
 
-  const t = useMemo(() => {
-    const strings = {
-      en: {
-        itinerary: "Your Itinerary",
-        days: "days",
-        adults: "Adults",
-        children: "Children",
-        day: "Day",
-        totalPrice: "Trip Total",
-        perPerson: "per person",
-        duration: "Duration",
-        poweredBy: "Powered by",
-        loading: "Loading your itinerary...",
-        notFound: "Itinerary Not Found",
-        notFoundDesc: "This itinerary link may have expired or is invalid.",
-        services: "Services",
-        noServices: "Free day — explore at your leisure",
-      },
-      ar: {
-        itinerary: "برنامج رحلتك",
-        days: "أيام",
-        adults: "بالغين",
-        children: "أطفال",
-        day: "اليوم",
-        totalPrice: "إجمالي الرحلة",
-        perPerson: "للشخص",
-        duration: "المدة",
-        poweredBy: "مدعوم من",
-        loading: "جاري تحميل برنامج رحلتك...",
-        notFound: "لم يتم العثور على البرنامج",
-        notFoundDesc: "قد يكون رابط البرنامج منتهي الصلاحية أو غير صالح.",
-        services: "الخدمات",
-        noServices: "يوم حر — استمتع بوقتك",
-      },
-    };
-    return strings[lang];
-  }, [lang]);
-
-  /* ====== LOADING STATE ====== */
+  /* ====== LOADING ====== */
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="relative w-16 h-16 mx-auto mb-6">
             <div className="absolute inset-0 rounded-2xl gold-gradient animate-pulse" />
             <div className="absolute inset-0 flex items-center justify-center">
@@ -246,15 +327,11 @@ export default function SharedTrip() {
     );
   }
 
-  /* ====== ERROR / NOT FOUND ====== */
+  /* ====== NOT FOUND ====== */
   if (error || !trip) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-sm"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center max-w-sm">
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="w-8 h-8 text-muted-foreground" />
           </div>
@@ -268,21 +345,20 @@ export default function SharedTrip() {
   const sellingPrice = trip.selling_price || 0;
   const totalPax = (trip.adults || 1) + (trip.children || 0);
   const perPerson = totalPax > 0 ? Math.round(sellingPrice / totalPax) : 0;
+  const hasApproval = feedbackList.some(f => f.feedback_type === "approval");
 
-  /* ====== MAIN RENDER ====== */
+  /* ====== RENDER ====== */
   return (
     <div className={cn("min-h-screen bg-background", isRtl && "font-display")}>
 
       {/* ===== HERO HEADER ===== */}
       <header className="relative overflow-hidden">
-        {/* Background gradient */}
         <div className="absolute inset-0 navy-gradient" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
 
         <div className="relative max-w-4xl mx-auto px-6 pt-8 pb-12 md:pt-12 md:pb-16">
-          {/* Language toggle + Company branding */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -313,7 +389,6 @@ export default function SharedTrip() {
             </button>
           </motion.div>
 
-          {/* Trip title & meta */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -329,7 +404,6 @@ export default function SharedTrip() {
             )}
           </motion.div>
 
-          {/* Meta chips */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -341,10 +415,12 @@ export default function SharedTrip() {
             {trip.start_date && (
               <MetaChip icon={Calendar} text={`${format(new Date(trip.start_date), "MMM d")}${trip.end_date ? ` → ${format(new Date(trip.end_date), "MMM d, yyyy")}` : ""}`} />
             )}
+            {hasApproval && (
+              <MetaChip icon={CheckCircle} text={lang === "en" ? "Approved" : "تمت الموافقة"} />
+            )}
           </motion.div>
         </div>
 
-        {/* Decorative wave bottom */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 48" fill="none" className="w-full h-8 md:h-12" preserveAspectRatio="none">
             <path d="M0 48h1440V16C1200 40 960 0 720 24S240 56 0 16v32z" fill="hsl(var(--background))" />
@@ -354,12 +430,7 @@ export default function SharedTrip() {
 
       {/* ===== ITINERARY BODY ===== */}
       <main className="max-w-4xl mx-auto px-6 py-8 md:py-12">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-6"
-        >
+        <div className="space-y-6">
           {days.map((day, dayIdx) => {
             const dayItemsList = allItems.filter(i => i.trip_day_id === day.id).sort((a, b) => a.sort_order - b.sort_order);
             const isExpanded = expandedDays.has(day.id);
@@ -367,18 +438,16 @@ export default function SharedTrip() {
             return (
               <motion.div
                 key={day.id}
-                variants={fadeUp}
-                custom={dayIdx}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: dayIdx * 0.08, duration: 0.5 }}
                 className="group"
               >
-                {/* Day Card */}
                 <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-                  {/* Day Header */}
                   <button
                     onClick={() => toggleDay(day.id)}
                     className="w-full text-left p-5 md:p-6 flex items-start gap-4 transition-colors hover:bg-muted/30"
                   >
-                    {/* Day number badge */}
                     <div className="shrink-0">
                       <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl gold-gradient flex flex-col items-center justify-center shadow-lg">
                         <span className="text-[10px] uppercase tracking-widest text-accent-foreground/70 font-medium">{t.day}</span>
@@ -392,18 +461,12 @@ export default function SharedTrip() {
                       </h2>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {day.city && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" /> {day.city}
-                          </span>
+                          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {day.city}</span>
                         )}
                         {day.date && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" /> {format(new Date(day.date), "EEEE, MMM d")}
-                          </span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {format(new Date(day.date), "EEEE, MMM d")}</span>
                         )}
-                        <span className="flex items-center gap-1">
-                          {dayItemsList.length} {t.services}
-                        </span>
+                        <span>{dayItemsList.length} {t.services}</span>
                       </div>
                       {day.description && (
                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{day.description}</p>
@@ -411,30 +474,24 @@ export default function SharedTrip() {
                     </div>
 
                     <div className="shrink-0 pt-2">
-                      <motion.div
-                        animate={{ rotate: isExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.25 }}
-                      >
+                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
                         <ChevronDown className="w-5 h-5 text-muted-foreground" />
                       </motion.div>
                     </div>
                   </button>
 
-                  {/* Day Items */}
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.35, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
                         <div className="px-5 pb-5 md:px-6 md:pb-6">
                           {dayItemsList.length === 0 ? (
-                            <div className="text-center py-6 text-sm text-muted-foreground italic">
-                              {t.noServices}
-                            </div>
+                            <div className="text-center py-6 text-sm text-muted-foreground italic">{t.noServices}</div>
                           ) : (
                             <div className="space-y-3">
                               {dayItemsList.map((item, itemIdx) => {
@@ -450,12 +507,8 @@ export default function SharedTrip() {
                                     transition={{ delay: itemIdx * 0.05, duration: 0.35 }}
                                     className="flex gap-3 md:gap-4"
                                   >
-                                    {/* Timeline connector */}
                                     <div className="flex flex-col items-center shrink-0 pt-1">
-                                      <div className={cn(
-                                        "w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm",
-                                        meta.gradient
-                                      )}>
+                                      <div className={cn("w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm", meta.gradient)}>
                                         <Icon className="w-4 h-4 text-white" />
                                       </div>
                                       {itemIdx < dayItemsList.length - 1 && (
@@ -463,26 +516,19 @@ export default function SharedTrip() {
                                       )}
                                     </div>
 
-                                    {/* Item content */}
                                     <div className="flex-1 min-w-0 pb-4">
                                       <div className="rounded-xl border border-border bg-background p-4 hover:border-accent/30 transition-colors duration-200">
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="min-w-0">
-                                            <h3 className="text-sm font-semibold text-foreground">
-                                              {item.custom_title}
-                                            </h3>
+                                            <h3 className="text-sm font-semibold text-foreground">{item.custom_title}</h3>
                                             {item.custom_description && (
-                                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-3">
-                                                {item.custom_description}
-                                              </p>
+                                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-3">{item.custom_description}</p>
                                             )}
                                           </div>
                                           <Badge variant="outline" className="shrink-0 text-[10px] capitalize border-border">
                                             {lang === "ar" ? meta.labelAr : meta.label}
                                           </Badge>
                                         </div>
-
-                                        {/* Time / Duration row */}
                                         {(item.start_time || item.duration_minutes) && (
                                           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
                                             {item.start_time && (
@@ -512,9 +558,9 @@ export default function SharedTrip() {
               </motion.div>
             );
           })}
-        </motion.div>
+        </div>
 
-        {/* ===== PRICING SUMMARY ===== */}
+        {/* ===== PRICING ===== */}
         {sellingPrice > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -524,21 +570,13 @@ export default function SharedTrip() {
           >
             <div className="rounded-2xl border border-border overflow-hidden">
               <div className="navy-gradient p-8 md:p-10 text-center">
-                <span className="text-xs uppercase tracking-[0.2em] text-primary-foreground/50 font-medium">
-                  {t.totalPrice}
-                </span>
+                <span className="text-xs uppercase tracking-[0.2em] text-primary-foreground/50 font-medium">{t.totalPrice}</span>
                 <div className="mt-3 flex items-baseline justify-center gap-2">
-                  <span className="text-4xl md:text-5xl font-bold font-display text-primary-foreground">
-                    {sellingPrice.toLocaleString()}
-                  </span>
-                  <span className="text-lg text-primary-foreground/50 font-medium">
-                    {trip.currency}
-                  </span>
+                  <span className="text-4xl md:text-5xl font-bold font-display text-primary-foreground">{sellingPrice.toLocaleString()}</span>
+                  <span className="text-lg text-primary-foreground/50 font-medium">{trip.currency}</span>
                 </div>
                 {perPerson > 0 && totalPax > 1 && (
-                  <p className="mt-2 text-xs text-primary-foreground/40">
-                    {perPerson.toLocaleString()} {trip.currency} {t.perPerson}
-                  </p>
+                  <p className="mt-2 text-xs text-primary-foreground/40">{perPerson.toLocaleString()} {trip.currency} {t.perPerson}</p>
                 )}
               </div>
             </div>
@@ -553,11 +591,211 @@ export default function SharedTrip() {
             transition={{ delay: 0.5, duration: 0.5 }}
             className="mt-8 rounded-2xl border border-border bg-card p-6 md:p-8"
           >
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-              {(trip as any).client_notes}
-            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{(trip as any).client_notes}</p>
           </motion.div>
         )}
+
+        {/* ===== CLIENT FEEDBACK SECTION ===== */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.5 }}
+          className="mt-12"
+        >
+          <Separator className="mb-10" />
+
+          {/* Action Buttons */}
+          <div className="text-center mb-8">
+            <h2 className="text-xl md:text-2xl font-bold font-display text-foreground mb-2">{t.feedback}</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {lang === "en" ? "Review the itinerary above and let us know your thoughts" : "راجع البرنامج أعلاه وأخبرنا برأيك"}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
+            {/* Approve */}
+            <button
+              onClick={() => { setFeedbackType("approval"); setFeedbackOpen(true); }}
+              className={cn(
+                "rounded-xl border-2 p-5 text-center transition-all duration-200 hover:shadow-md group",
+                hasApproval
+                  ? "border-emerald-300 bg-emerald-50/50"
+                  : "border-border hover:border-emerald-300 bg-card"
+              )}
+            >
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t.approve}</h3>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{t.approveDesc}</p>
+            </button>
+
+            {/* Request Changes */}
+            <button
+              onClick={() => { setFeedbackType("change_request"); setFeedbackOpen(true); }}
+              className="rounded-xl border-2 border-border hover:border-amber-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <RefreshCw className="w-5 h-5 text-amber-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t.requestChanges}</h3>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{t.changesDesc}</p>
+            </button>
+
+            {/* Comment */}
+            <button
+              onClick={() => { setFeedbackType("comment"); setFeedbackOpen(true); }}
+              className="rounded-xl border-2 border-border hover:border-blue-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <MessageCircle className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">{t.comment}</h3>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{t.commentDesc}</p>
+            </button>
+          </div>
+
+          {/* Feedback Form */}
+          <AnimatePresence>
+            {feedbackOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className="max-w-lg mx-auto rounded-2xl border border-border bg-card p-6 mb-8 shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    {(() => {
+                      const fb = FEEDBACK_ICONS[feedbackType] || FEEDBACK_ICONS.comment;
+                      const FbIcon = fb.icon;
+                      return (
+                        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", fb.bg)}>
+                          <FbIcon className={cn("w-4 h-4", fb.color)} />
+                        </div>
+                      );
+                    })()}
+                    <h3 className="text-sm font-semibold text-foreground">
+                      {feedbackType === "approval" ? t.approve : feedbackType === "change_request" ? t.requestChanges : t.comment}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{t.yourName} *</Label>
+                        <Input
+                          value={clientName}
+                          onChange={e => setClientName(e.target.value)}
+                          placeholder={lang === "en" ? "John Doe" : "محمد أحمد"}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{t.yourEmail}</Label>
+                        <Input
+                          type="email"
+                          value={clientEmail}
+                          onChange={e => setClientEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                    {feedbackType !== "approval" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium">{lang === "en" ? "Message" : "الرسالة"} *</Label>
+                        <Textarea
+                          value={feedbackMessage}
+                          onChange={e => setFeedbackMessage(e.target.value)}
+                          placeholder={t.yourMessage}
+                          rows={3}
+                          className="text-sm resize-none"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 pt-1">
+                      <Button
+                        onClick={() => submitFeedback.mutate()}
+                        disabled={
+                          !clientName.trim() ||
+                          (feedbackType !== "approval" && !feedbackMessage.trim()) ||
+                          submitFeedback.isPending
+                        }
+                        className="gold-gradient text-accent-foreground gap-2"
+                      >
+                        {submitFeedback.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                        {submitFeedback.isPending ? t.sending : t.send}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setFeedbackOpen(false)}>
+                        {lang === "en" ? "Cancel" : "إلغاء"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Feedback Timeline */}
+          {feedbackList.length > 0 && (
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4 text-center">
+                {t.feedbackTimeline}
+              </h3>
+              <div className="space-y-3">
+                {feedbackList.map((fb, fbIdx) => {
+                  const meta = FEEDBACK_ICONS[fb.feedback_type] || FEEDBACK_ICONS.comment;
+                  const FbIcon = meta.icon;
+
+                  return (
+                    <motion.div
+                      key={fb.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: fbIdx * 0.05, duration: 0.3 }}
+                      className="flex gap-3"
+                    >
+                      <div className="flex flex-col items-center shrink-0">
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", meta.bg)}>
+                          <FbIcon className={cn("w-3.5 h-3.5", meta.color)} />
+                        </div>
+                        {fbIdx < feedbackList.length - 1 && (
+                          <div className="w-px flex-1 bg-border mt-2" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pb-4">
+                        <div className="rounded-xl border border-border bg-card p-4">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-foreground">{fb.client_name}</span>
+                              <Badge variant="outline" className="text-[10px] capitalize">
+                                {fb.feedback_type === "change_request" ? (lang === "en" ? "Change Request" : "طلب تعديل") :
+                                 fb.feedback_type === "approval" ? (lang === "en" ? "Approved" : "موافقة") :
+                                 (lang === "en" ? "Comment" : "تعليق")}
+                              </Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0">
+                              {format(new Date(fb.created_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                          {fb.message && (
+                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line mt-1">{fb.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </motion.div>
       </main>
 
       {/* ===== FOOTER ===== */}
@@ -575,17 +813,12 @@ export default function SharedTrip() {
           </div>
           {(company?.email || company?.phone) && (
             <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground/40">
-              {company.email && <span>{company.email}</span>}
-              {company.phone && <span>{company.phone}</span>}
+              {company?.email && <span>{company.email}</span>}
+              {company?.phone && <span>{company.phone}</span>}
             </div>
           )}
           {settings?.website && (
-            <a
-              href={settings.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-accent/50 hover:text-accent transition-colors mt-2 inline-block"
-            >
+            <a href={settings.website} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent/50 hover:text-accent transition-colors mt-2 inline-block">
               {settings.website.replace(/^https?:\/\//, "")}
             </a>
           )}
