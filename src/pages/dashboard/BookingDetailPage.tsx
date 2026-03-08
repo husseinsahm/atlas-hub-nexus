@@ -4,15 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Calendar, Users, DollarSign, MapPin,
   Loader2, Briefcase, CheckCircle2, Clock,
   FileText, StickyNote, Pencil, Upload,
   UserCheck, Phone, Mail, Globe,
-  Plus, Trash2, Download, MessageSquare,
-  TrendingUp, CreditCard, Send, ChevronDown, ChevronUp,
-  User, Shield,
+  Plus, Trash2, MessageSquare, Send,
+  ChevronDown, ChevronUp, User, Shield,
+  CreditCard, Plane, Hotel, Car, Eye,
+  Route, Paperclip, Activity, Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -32,61 +33,62 @@ import { FileAttachments } from "@/components/FileAttachments";
 import { PaymentRecords } from "@/components/PaymentRecords";
 import { createNotification } from "@/hooks/useNotifications";
 
-interface Traveler {
-  id: string;
-  full_name: string;
-  gender: string;
-  date_of_birth: string;
-  nationality: string;
-  passport_number: string;
-  passport_expiry: string;
-  room_notes: string;
-}
-
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: string; next?: BookingStatus }> = {
-  tentative: { label: "Tentative", color: "text-slate-700", bg: "bg-slate-100", next: "confirmed" },
-  confirmed: { label: "Confirmed", color: "text-blue-700", bg: "bg-blue-50", next: "in_operation" },
-  in_operation: { label: "In Operation", color: "text-amber-700", bg: "bg-amber-50", next: "completed" },
-  completed: { label: "Completed", color: "text-emerald-700", bg: "bg-emerald-50" },
-  cancelled: { label: "Cancelled", color: "text-red-700", bg: "bg-red-50" },
+const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; next?: BookingStatus }> = {
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-slate-700", bg: "bg-slate-100", next: "confirmed" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700", bg: "bg-blue-50", next: "in_operation" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-amber-700", bg: "bg-amber-50", next: "completed" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-emerald-700", bg: "bg-emerald-50" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700", bg: "bg-red-50" },
 };
 
-const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"];
-const GENDERS = ["male", "female", "other"];
+const SERVICE_TYPES = [
+  { value: "hotel", label: "Hotel", icon: Hotel },
+  { value: "transfer", label: "Transfer", icon: Car },
+  { value: "tour", label: "Tour", icon: MapPin },
+  { value: "guide", label: "Guide", icon: User },
+  { value: "meal", label: "Meal", icon: FileText },
+  { value: "activity", label: "Activity", icon: Activity },
+  { value: "other", label: "Other", icon: FileText },
+];
 
-const emptyTraveler = (): Traveler => ({
-  id: crypto.randomUUID(),
-  full_name: "",
-  gender: "",
-  date_of_birth: "",
-  nationality: "",
-  passport_number: "",
-  passport_expiry: "",
-  room_notes: "",
-});
+const GENDERS = ["male", "female"];
+const TABS = [
+  { value: "summary", label: "Summary", labelAr: "الملخص", icon: Briefcase },
+  { value: "customer", label: "Customer", labelAr: "العميل", icon: UserCheck },
+  { value: "travelers", label: "Travelers", labelAr: "المسافرون", icon: Users },
+  { value: "itinerary", label: "Itinerary", labelAr: "البرنامج", icon: Route },
+  { value: "services", label: "Services", labelAr: "الخدمات", icon: Hotel },
+  { value: "financials", label: "Financials", labelAr: "المالية", icon: DollarSign },
+  { value: "attachments", label: "Attachments", labelAr: "المرفقات", icon: Paperclip },
+  { value: "comments", label: "Comments", labelAr: "التعليقات", icon: MessageSquare },
+  { value: "timeline", label: "Timeline", labelAr: "السجل", icon: Clock },
+];
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const isArabic = language === "ar";
+  const companyId = user?.activeMembership?.companyId;
 
-  const [activeTab, setActiveTab] = useState<"overview" | "services" | "timeline">("overview");
-  const [commentText, setCommentText] = useState("");
-  const [expandedTraveler, setExpandedTraveler] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("summary");
   const [showTravelerDialog, setShowTravelerDialog] = useState(false);
-  const [editingTraveler, setEditingTraveler] = useState<Traveler | null>(null);
+  const [editingTraveler, setEditingTraveler] = useState<any>(null);
+  const [showServiceDialog, setShowServiceDialog] = useState(false);
+  const [editingService, setEditingService] = useState<any>(null);
 
-  // Fetch booking
+  // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, customers(full_name, email, phone, nationality, passport_number)")
+        .select("*, customers(id, full_name, email, phone, nationality, passport_number, address, city, country, date_of_birth)")
         .eq("id", id!)
         .single();
       if (error) throw error;
@@ -95,22 +97,54 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
-  // Fetch trip days & items if linked
-  const { data: tripDays = [] } = useQuery({
-    queryKey: ["booking-trip-days", booking?.trip_id],
+  // ─── Fetch travelers ───
+  const { data: travelers = [] } = useQuery({
+    queryKey: ["booking-travelers", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("trip_days")
-        .select("*, trip_day_items(*)")
-        .eq("trip_id", booking!.trip_id!)
+        .from("booking_travelers")
+        .select("*")
+        .eq("booking_id", id!)
+        .order("is_lead_traveler", { ascending: false })
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // ─── Fetch services ───
+  const { data: services = [] } = useQuery({
+    queryKey: ["booking-services", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_services")
+        .select("*")
+        .eq("booking_id", id!)
+        .order("service_date", { ascending: true })
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // ─── Fetch itinerary days ───
+  const { data: itineraryDays = [] } = useQuery({
+    queryKey: ["booking-days", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_days")
+        .select("*, booking_day_items(*)")
+        .eq("booking_id", id!)
         .order("day_number");
       if (error) throw error;
       return data;
     },
-    enabled: !!booking?.trip_id,
+    enabled: !!id,
   });
 
-  // Fetch activities
+  // ─── Fetch activities ───
   const { data: activities = [] } = useQuery({
     queryKey: ["booking-activities", id],
     queryFn: async () => {
@@ -125,8 +159,7 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
-  // Fetch profiles for user names
-  const companyId = user?.activeMembership?.companyId;
+  // ─── Fetch profiles ───
   const { data: profiles = [] } = useQuery({
     queryKey: ["company-profiles-booking", companyId],
     queryFn: async () => {
@@ -151,35 +184,31 @@ export default function BookingDetailPage() {
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
   }, [profiles]);
 
-  // Mutations
+  // ─── Mutations ───
   const updateBooking = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
       const { error } = await supabase.from("bookings").update(updates).eq("id", id!);
       if (error) throw error;
-      // Track activity for status changes
-      if (updates.status) {
+      if (updates.status && booking) {
         await supabase.from("booking_activities").insert({
           booking_id: id!,
           activity_type: "status_change",
           title: `Status changed to ${STATUS_CONFIG[updates.status as BookingStatus]?.label || updates.status}`,
           user_id: user?.id,
         });
-        // Notify assigned agent and creator about status change
-        if (booking) {
-          const notifyUserIds = new Set<string>();
-          if (booking.assigned_to && booking.assigned_to !== user?.id) notifyUserIds.add(booking.assigned_to);
-          if (booking.created_by && booking.created_by !== user?.id) notifyUserIds.add(booking.created_by);
-          for (const uid of notifyUserIds) {
-            createNotification({
-              userId: uid,
-              companyId: booking.company_id,
-              type: "booking_status_change",
-              title: `Booking status changed`,
-              message: `"${booking.title}" → ${STATUS_CONFIG[updates.status as BookingStatus]?.label || updates.status}`,
-              entityType: "booking",
-              entityId: id!,
-            });
-          }
+        const notifyUserIds = new Set<string>();
+        if (booking.assigned_to && booking.assigned_to !== user?.id) notifyUserIds.add(booking.assigned_to);
+        if (booking.created_by && booking.created_by !== user?.id) notifyUserIds.add(booking.created_by);
+        for (const uid of notifyUserIds) {
+          createNotification({
+            userId: uid,
+            companyId: booking.company_id,
+            type: "booking_status_change",
+            title: "Booking status changed",
+            message: `"${booking.title}" → ${STATUS_CONFIG[updates.status as BookingStatus]?.label || updates.status}`,
+            entityType: "booking",
+            entityId: id!,
+          });
         }
       }
     },
@@ -189,21 +218,140 @@ export default function BookingDetailPage() {
     },
   });
 
-  const addComment = useMutation({
+  const saveTraveler = useMutation({
+    mutationFn: async (traveler: any) => {
+      if (traveler.id && !traveler._isNew) {
+        const { error } = await supabase.from("booking_travelers").update({
+          full_name: traveler.full_name,
+          date_of_birth: traveler.date_of_birth || null,
+          gender: traveler.gender || null,
+          nationality: traveler.nationality || null,
+          email: traveler.email || null,
+          phone: traveler.phone || null,
+          passport_number: traveler.passport_number || null,
+          passport_expiry: traveler.passport_expiry || null,
+          passport_country: traveler.passport_country || null,
+          is_lead_traveler: traveler.is_lead_traveler || false,
+          is_adult: traveler.is_adult !== false,
+          special_requirements: traveler.special_requirements || null,
+          room_preference: traveler.room_preference || null,
+        }).eq("id", traveler.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("booking_travelers").insert({
+          booking_id: id!,
+          company_id: booking!.company_id,
+          full_name: traveler.full_name,
+          date_of_birth: traveler.date_of_birth || null,
+          gender: traveler.gender || null,
+          nationality: traveler.nationality || null,
+          email: traveler.email || null,
+          phone: traveler.phone || null,
+          passport_number: traveler.passport_number || null,
+          passport_expiry: traveler.passport_expiry || null,
+          passport_country: traveler.passport_country || null,
+          is_lead_traveler: traveler.is_lead_traveler || false,
+          is_adult: traveler.is_adult !== false,
+          special_requirements: traveler.special_requirements || null,
+          room_preference: traveler.room_preference || null,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-travelers", id] });
+      setShowTravelerDialog(false);
+      setEditingTraveler(null);
+      toast({ title: isArabic ? "تم حفظ المسافر" : "Traveler saved" });
+    },
+  });
+
+  const deleteTraveler = useMutation({
+    mutationFn: async (travelerId: string) => {
+      await supabase.from("booking_travelers").delete().eq("id", travelerId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-travelers", id] });
+      toast({ title: isArabic ? "تم حذف المسافر" : "Traveler removed" });
+    },
+  });
+
+  const saveService = useMutation({
+    mutationFn: async (service: any) => {
+      const payload = {
+        booking_id: id!,
+        company_id: booking!.company_id,
+        service_type: service.service_type,
+        title: service.title,
+        description: service.description || null,
+        supplier_name: service.supplier_name || null,
+        supplier_contact: service.supplier_contact || null,
+        confirmation_number: service.confirmation_number || null,
+        service_date: service.service_date || null,
+        location: service.location || null,
+        quantity: service.quantity || 1,
+        unit_price: service.unit_price || 0,
+        total_cost: (service.quantity || 1) * (service.unit_price || 0),
+        currency: booking?.currency || "USD",
+        status: service.status || "pending",
+        notes: service.notes || null,
+        created_by: user?.id,
+      };
+      if (service.id && !service._isNew) {
+        const { error } = await supabase.from("booking_services").update(payload).eq("id", service.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("booking_services").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-services", id] });
+      setShowServiceDialog(false);
+      setEditingService(null);
+      toast({ title: isArabic ? "تم حفظ الخدمة" : "Service saved" });
+    },
+  });
+
+  const deleteService = useMutation({
+    mutationFn: async (serviceId: string) => {
+      await supabase.from("booking_services").delete().eq("id", serviceId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-services", id] });
+      toast({ title: isArabic ? "تم حذف الخدمة" : "Service removed" });
+    },
+  });
+
+  const addItineraryDay = useMutation({
     mutationFn: async () => {
+      const nextDay = itineraryDays.length + 1;
+      const { error } = await supabase.from("booking_days").insert({
+        booking_id: id!,
+        day_number: nextDay,
+        title: `Day ${nextDay}`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", id] });
+    },
+  });
+
+  const addComment = useMutation({
+    mutationFn: async (text: string) => {
       const { error } = await supabase.from("booking_activities").insert({
         booking_id: id!,
         activity_type: "comment",
         title: "Internal comment",
-        description: commentText.trim(),
+        description: text.trim(),
         user_id: user?.id,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking-activities", id] });
-      setCommentText("");
-      toast({ title: "Comment added" });
+      toast({ title: isArabic ? "تم إضافة التعليق" : "Comment added" });
     },
   });
 
@@ -212,25 +360,14 @@ export default function BookingDetailPage() {
     const next = STATUS_CONFIG[booking.status as BookingStatus]?.next;
     if (next) {
       updateBooking.mutate({ status: next });
-      toast({ title: `Status updated to ${STATUS_CONFIG[next].label}` });
+      toast({ title: `Status → ${STATUS_CONFIG[next].label}` });
     }
   }, [booking, updateBooking, toast]);
 
-  // Services summary
-  const servicesSummary = useMemo(() => {
-    if (!tripDays.length) return { total: 0, byCategory: {} as Record<string, number>, items: [] as any[] };
-    const items: any[] = [];
-    const byCategory: Record<string, number> = {};
-    let total = 0;
-    tripDays.forEach((day: any) => {
-      (day.trip_day_items || []).forEach((item: any) => {
-        items.push({ ...item, day_number: day.day_number, day_title: day.title });
-        total += item.total_price || 0;
-        byCategory[item.category] = (byCategory[item.category] || 0) + (item.total_price || 0);
-      });
-    });
-    return { total, byCategory, items };
-  }, [tripDays]);
+  // ─── Computed values ───
+  const servicesTotalCost = useMemo(() => 
+    services.reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
+  , [services]);
 
   if (isLoading) {
     return (
@@ -243,9 +380,9 @@ export default function BookingDetailPage() {
   if (!booking) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-lg font-semibold">Booking not found</h2>
+        <h2 className="text-lg font-semibold">{isArabic ? "الحجز غير موجود" : "Booking not found"}</h2>
         <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard/bookings")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to bookings
+          <ArrowLeft className="w-4 h-4 mr-2" /> {isArabic ? "العودة" : "Back"}
         </Button>
       </div>
     );
@@ -254,20 +391,24 @@ export default function BookingDetailPage() {
   const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
   const customer = (booking as any).customers;
   const balance = (booking.selling_price || 0) - (booking.amount_paid || 0);
-  const travelers: Traveler[] = Array.isArray(booking.travelers) ? (booking.travelers as unknown as Traveler[]) : [];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* ─── Header ─── */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/bookings")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-mono text-muted-foreground">{booking.booking_number}</span>
-              <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>{sc.label}</Badge>
+              <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
+                {isArabic ? sc.labelAr : sc.label}
+              </Badge>
+              {(booking as any).source && (
+                <Badge variant="outline" className="text-[9px] capitalize">{(booking as any).source}</Badge>
+              )}
             </div>
             <h1 className="text-xl font-bold font-display text-foreground truncate">{booking.title}</h1>
           </div>
@@ -276,23 +417,27 @@ export default function BookingDetailPage() {
           {sc.next && (
             <Button size="sm" onClick={advanceStatus} className="gold-gradient text-accent-foreground text-xs gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              {STATUS_CONFIG[sc.next].label}
+              {isArabic ? STATUS_CONFIG[sc.next].labelAr : STATUS_CONFIG[sc.next].label}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* ─── Quick Stats ─── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border-border">
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-accent" />
+              <Plane className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Duration</p>
-              <p className="text-sm font-bold text-foreground">{booking.total_days} days</p>
-              {booking.start_date && <p className="text-[10px] text-muted-foreground">{format(new Date(booking.start_date), "MMM d")} → {booking.end_date ? format(new Date(booking.end_date), "MMM d") : "..."}</p>}
+              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المدة" : "Duration"}</p>
+              <p className="text-sm font-bold text-foreground">{booking.total_days} {isArabic ? "يوم" : "days"}</p>
+              {(booking as any).arrival_date && (
+                <p className="text-[10px] text-muted-foreground">
+                  {format(new Date((booking as any).arrival_date || booking.start_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date || booking.end_date), "MMM d") : "..."}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -302,8 +447,9 @@ export default function BookingDetailPage() {
               <Users className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Travelers</p>
+              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المسافرون" : "Travelers"}</p>
               <p className="text-sm font-bold text-foreground">{booking.adults}A {booking.children > 0 ? `${booking.children}C` : ""}</p>
+              <p className="text-[10px] text-muted-foreground">{travelers.length} {isArabic ? "مسجل" : "registered"}</p>
             </div>
           </CardContent>
         </Card>
@@ -313,7 +459,7 @@ export default function BookingDetailPage() {
               <DollarSign className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Total Price</p>
+              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "السعر" : "Price"}</p>
               <p className="text-sm font-bold text-foreground">{Number(booking.selling_price || 0).toLocaleString()} {booking.currency}</p>
             </div>
           </CardContent>
@@ -324,360 +470,283 @@ export default function BookingDetailPage() {
               <CreditCard className={cn("w-5 h-5", balance > 0 ? "text-amber-600" : "text-emerald-600")} />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase">Balance</p>
+              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الرصيد" : "Balance"}</p>
               <p className={cn("text-sm font-bold", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
-                {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : "Paid"}
+                {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : isArabic ? "مدفوع" : "Paid"}
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={v => setActiveTab(v as any)}>
-        <TabsList>
-          <TabsTrigger value="overview" className="gap-1.5">
-            <Briefcase className="w-3.5 h-3.5" /> Overview
-          </TabsTrigger>
-          <TabsTrigger value="services" className="gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> Services
-          </TabsTrigger>
-          <TabsTrigger value="timeline" className="gap-1.5">
-            <Clock className="w-3.5 h-3.5" /> Timeline
-          </TabsTrigger>
+      {/* ─── Tab Navigation ─── */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
+          {TABS.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5 text-xs whitespace-nowrap">
+              <tab.icon className="w-3.5 h-3.5" />
+              {isArabic ? tab.labelAr : tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </Tabs>
 
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-3 gap-6">
-          {/* Left col: Customer + Financial */}
-          <div className="col-span-2 space-y-6">
-            {/* Customer Info */}
-            {customer && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-accent" /> Customer Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Full Name</Label>
-                      <p className="text-sm font-medium text-foreground">{customer.full_name}</p>
-                    </div>
-                    {customer.email && (
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Email</Label>
-                        <p className="text-sm text-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</p>
-                      </div>
-                    )}
-                    {customer.phone && (
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Phone</Label>
-                        <p className="text-sm text-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</p>
-                      </div>
-                    )}
-                    {customer.nationality && (
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Nationality</Label>
-                        <p className="text-sm text-foreground">{customer.nationality}</p>
-                      </div>
-                    )}
-                    {customer.passport_number && (
-                      <div>
-                        <Label className="text-[10px] text-muted-foreground uppercase">Passport</Label>
-                        <p className="text-sm text-foreground font-mono">{customer.passport_number}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Financial Summary */}
+      {/* ─── TAB: Summary ─── */}
+      {activeTab === "summary" && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-accent" /> Financial Summary
+                  <Briefcase className="w-4 h-4 text-accent" /> {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-4">
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">Total Cost</Label>
-                    <p className="text-sm font-mono font-semibold text-foreground">{Number(booking.total_cost || 0).toLocaleString()} {booking.currency}</p>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "رقم الحجز" : "Booking #"}</Label>
+                    <p className="text-sm font-mono font-medium text-foreground">{booking.booking_number}</p>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">Selling Price</Label>
-                    <p className="text-lg font-mono font-bold text-foreground">{Number(booking.selling_price || 0).toLocaleString()} {booking.currency}</p>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الحالة" : "Status"}</Label>
+                    <Select 
+                      value={booking.status} 
+                      onValueChange={v => updateBooking.mutate({ status: v })}
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">Profit</Label>
-                    <p className={cn("text-sm font-mono font-bold", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
-                      {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
-                    </p>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs mt-1"
+                      defaultValue={(booking as any).arrival_date || booking.start_date || ""}
+                      onBlur={e => updateBooking.mutate({ arrival_date: e.target.value || null, start_date: e.target.value || null })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs mt-1"
+                      defaultValue={(booking as any).departure_date || booking.end_date || ""}
+                      onBlur={e => updateBooking.mutate({ departure_date: e.target.value || null, end_date: e.target.value || null })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المصدر" : "Source"}</Label>
+                    <Select 
+                      value={(booking as any).source || "email"} 
+                      onValueChange={v => updateBooking.mutate({ source: v })}
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["email","phone","walk_in","website","referral","social_media","partner","other"].map(s => (
+                          <SelectItem key={s} value={s} className="capitalize">{s.replace("_"," ")}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
+                    <Select 
+                      value={booking.assigned_to || ""} 
+                      onValueChange={v => updateBooking.mutate({ assigned_to: v })}
+                    >
+                      <SelectTrigger className="h-8 text-xs mt-1">
+                        <SelectValue placeholder={isArabic ? "اختر..." : "Select..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {profiles.map((p: any) => (
+                          <SelectItem key={p.id} value={p.id}>{p.full_name || "Unnamed"}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <Separator className="mb-4" />
-                <PaymentRecords
-                  bookingId={booking.id}
-                  companyId={booking.company_id}
-                  currency={booking.currency}
-                  sellingPrice={Number(booking.selling_price || 0)}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Travelers */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Users className="w-4 h-4 text-accent" /> Travelers
-                    {travelers.length > 0 && (
-                      <Badge variant="secondary" className="text-[10px]">{travelers.length}</Badge>
-                    )}
-                  </CardTitle>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[10px] gap-1"
-                    onClick={() => { setEditingTraveler(emptyTraveler()); setShowTravelerDialog(true); }}
-                  >
-                    <Plus className="w-3 h-3" /> Add Traveler
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {travelers.length > 0 ? (
-                  <div className="space-y-2">
-                    <AnimatePresence>
-                      {travelers.map((t, i) => {
-                        const isExpanded = expandedTraveler === t.id;
-                        return (
-                          <motion.div
-                            key={t.id}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ delay: i * 0.03 }}
-                            className="rounded-lg border border-border overflow-hidden"
-                          >
-                            <div
-                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
-                              onClick={() => setExpandedTraveler(isExpanded ? null : t.id)}
-                            >
-                              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
-                                {i + 1}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground truncate">{t.full_name || `Traveler ${i + 1}`}</p>
-                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                  {t.nationality && <span className="flex items-center gap-0.5"><Globe className="w-2.5 h-2.5" />{t.nationality}</span>}
-                                  {t.passport_number && <span className="font-mono">{t.passport_number}</span>}
-                                  {t.gender && <span className="capitalize">{t.gender}</span>}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6"
-                                  onClick={e => { e.stopPropagation(); setEditingTraveler(t); setShowTravelerDialog(true); }}
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-6 w-6 text-destructive hover:text-destructive"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    const updated = travelers.filter(tr => tr.id !== t.id);
-                                    updateBooking.mutate({ travelers: updated });
-                                  }}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
-                              </div>
-                            </div>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="border-t border-border bg-muted/20 px-3 py-3"
-                              >
-                                <div className="grid grid-cols-3 gap-3">
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Full Name</Label>
-                                    <p className="text-xs font-medium text-foreground">{t.full_name || "—"}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Gender</Label>
-                                    <p className="text-xs text-foreground capitalize">{t.gender || "—"}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Date of Birth</Label>
-                                    <p className="text-xs text-foreground">{t.date_of_birth || "—"}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Nationality</Label>
-                                    <p className="text-xs text-foreground">{t.nationality || "—"}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Number</Label>
-                                    <p className="text-xs font-mono text-foreground">{t.passport_number || "—"}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Expiry</Label>
-                                    <p className="text-xs text-foreground">{t.passport_expiry || "—"}</p>
-                                  </div>
-                                  {t.room_notes && (
-                                    <div className="col-span-3">
-                                      <Label className="text-[10px] text-muted-foreground uppercase">Room Assignment</Label>
-                                      <p className="text-xs text-foreground">{t.room_notes}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </motion.div>
-                            )}
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 space-y-2">
-                    <Users className="w-8 h-8 text-muted-foreground/30 mx-auto" />
-                    <p className="text-xs text-muted-foreground">
-                      {booking.adults} adult{booking.adults > 1 ? "s" : ""}{booking.children > 0 ? `, ${booking.children} child${booking.children > 1 ? "ren" : ""}` : ""}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Click "Add Traveler" to enter individual traveler details</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Right col: Notes */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <StickyNote className="w-4 h-4 text-accent" /> Operations Notes
+                  <StickyNote className="w-4 h-4 text-accent" /> {isArabic ? "ملاحظات" : "Notes"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={booking.operations_notes || ""}
-                  onChange={e => updateBooking.mutate({ operations_notes: e.target.value })}
-                  placeholder="Operations notes — driver assignments, hotel confirmations, supplier contacts..."
-                  rows={4}
-                  className="text-xs"
-                />
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات داخلية" : "Internal Notes"}</Label>
+                  <Textarea
+                    defaultValue={booking.internal_notes || ""}
+                    onBlur={e => updateBooking.mutate({ internal_notes: e.target.value })}
+                    placeholder={isArabic ? "ملاحظات داخلية..." : "Internal notes..."}
+                    rows={3}
+                    className="text-xs mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العمليات" : "Operations Notes"}</Label>
+                  <Textarea
+                    defaultValue={booking.operations_notes || ""}
+                    onBlur={e => updateBooking.mutate({ operations_notes: e.target.value })}
+                    placeholder={isArabic ? "ملاحظات العمليات..." : "Operations notes..."}
+                    rows={3}
+                    className="text-xs mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العميل" : "Client Notes"}</Label>
+                  <Textarea
+                    defaultValue={booking.client_notes || ""}
+                    onBlur={e => updateBooking.mutate({ client_notes: e.target.value })}
+                    placeholder={isArabic ? "ملاحظات للعميل..." : "Notes for client..."}
+                    rows={3}
+                    className="text-xs mt-1"
+                  />
+                </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-accent" /> Internal Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={booking.internal_notes || ""}
-                  onChange={e => updateBooking.mutate({ internal_notes: e.target.value })}
-                  placeholder="Internal notes..."
-                  rows={4}
-                  className="text-xs"
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-accent" /> Client Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={booking.client_notes || ""}
-                  onChange={e => updateBooking.mutate({ client_notes: e.target.value })}
-                  placeholder="Notes for the client..."
-                  rows={3}
-                  className="text-xs"
-                />
-              </CardContent>
-            </Card>
-
-            {/* Internal Comments */}
-            <Card>
-              <CardContent className="p-4">
-                <InternalComments
-                  entityType="booking"
-                  entityId={booking.id}
-                  companyId={booking.company_id}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Attachments */}
-            <Card>
-              <CardContent className="p-4">
-                <FileAttachments
-                  entityType="booking"
-                  entityId={booking.id}
-                  companyId={booking.company_id}
-                />
-              </CardContent>
-            </Card>
-
-            {booking.trip_id && (
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => navigate(`/dashboard/trips/${booking.trip_id}`)}>
-                <FileText className="w-3.5 h-3.5 mr-1.5" /> View Original Trip
-              </Button>
-            )}
           </div>
         </div>
       )}
 
-      {activeTab === "services" && (
+      {/* ─── TAB: Customer ─── */}
+      {activeTab === "customer" && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-accent" /> {isArabic ? "معلومات العميل" : "Customer Information"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {customer ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الاسم" : "Full Name"}</Label>
+                  <p className="text-sm font-medium text-foreground">{customer.full_name}</p>
+                </div>
+                {customer.email && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البريد" : "Email"}</Label>
+                    <p className="text-sm text-foreground flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</p>
+                  </div>
+                )}
+                {customer.phone && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الهاتف" : "Phone"}</Label>
+                    <p className="text-sm text-foreground flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</p>
+                  </div>
+                )}
+                {customer.nationality && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الجنسية" : "Nationality"}</Label>
+                    <p className="text-sm text-foreground flex items-center gap-1"><Globe className="w-3 h-3" /> {customer.nationality}</p>
+                  </div>
+                )}
+                {customer.country && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "البلد" : "Country"}</Label>
+                    <p className="text-sm text-foreground">{customer.country}</p>
+                  </div>
+                )}
+                {customer.city && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المدينة" : "City"}</Label>
+                    <p className="text-sm text-foreground">{customer.city}</p>
+                  </div>
+                )}
+                {customer.passport_number && (
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "جواز السفر" : "Passport"}</Label>
+                    <p className="text-sm text-foreground font-mono">{customer.passport_number}</p>
+                  </div>
+                )}
+                <div className="col-span-full">
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
+                    <Eye className="w-3.5 h-3.5 mr-1.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <UserCheck className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── TAB: Travelers ─── */}
+      {activeTab === "travelers" && (
+        <TravelersTab
+          travelers={travelers}
+          isArabic={isArabic}
+          onAdd={() => { setEditingTraveler({ _isNew: true, full_name: "", is_adult: true }); setShowTravelerDialog(true); }}
+          onEdit={(t: any) => { setEditingTraveler(t); setShowTravelerDialog(true); }}
+          onDelete={(tId: string) => deleteTraveler.mutate(tId)}
+          adultsCount={booking.adults}
+          childrenCount={booking.children}
+        />
+      )}
+
+      {/* ─── TAB: Itinerary ─── */}
+      {activeTab === "itinerary" && (
         <div className="space-y-4">
-          {tripDays.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {itineraryDays.length} {isArabic ? "يوم" : "days"} {isArabic ? "في البرنامج" : "in itinerary"}
+            </p>
+            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => addItineraryDay.mutate()}>
+              <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة يوم" : "Add Day"}
+            </Button>
+          </div>
+
+          {itineraryDays.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No linked trip services found</p>
+              <Route className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">{isArabic ? "لا يوجد برنامج بعد" : "No itinerary days yet"}</p>
+              <Button size="sm" variant="outline" className="mt-3 text-xs gap-1.5" onClick={() => addItineraryDay.mutate()}>
+                <Plus className="w-3.5 h-3.5" /> {isArabic ? "ابدأ البرنامج" : "Start Itinerary"}
+              </Button>
             </div>
           ) : (
-            tripDays.map((day: any) => (
+            itineraryDays.map((day: any) => (
               <Card key={day.id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center text-accent-foreground font-bold text-sm">
                       {day.day_number}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-sm">{day.title || `Day ${day.day_number}`}</CardTitle>
                       {day.city && <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /> {day.city}</p>}
                     </div>
+                    {day.date && <Badge variant="secondary" className="text-[10px]">{format(new Date(day.date), "MMM d")}</Badge>}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {(day.trip_day_items || []).length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No services</p>
+                  {(day.booking_day_items || []).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">{isArabic ? "لا توجد عناصر" : "No items yet"}</p>
                   ) : (
                     <div className="space-y-1.5">
-                      {(day.trip_day_items as any[]).sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
+                      {(day.booking_day_items as any[]).sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
                         <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border">
                           <div className="flex items-center gap-2 min-w-0">
                             <Badge variant="outline" className="text-[9px] capitalize shrink-0">{item.category}</Badge>
-                            <span className="text-xs font-medium text-foreground truncate">{item.custom_title}</span>
-                            {item.start_time && <span className="text-[10px] text-muted-foreground font-mono shrink-0">{item.start_time}</span>}
+                            <span className="text-xs font-medium text-foreground truncate">{item.custom_title || "Untitled"}</span>
                           </div>
                           <span className="text-xs font-mono font-semibold text-foreground shrink-0 ml-2">
                             {Number(item.total_price || 0).toLocaleString()} {item.currency}
@@ -690,194 +759,536 @@ export default function BookingDetailPage() {
               </Card>
             ))
           )}
-
-          {/* Services total */}
-          {servicesSummary.total > 0 && (
-            <Card className="border-accent/20">
-              <CardContent className="p-4 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Services Total</span>
-                <span className="text-lg font-bold font-mono text-foreground">{servicesSummary.total.toLocaleString()} {booking.currency}</span>
-              </CardContent>
-            </Card>
-          )}
         </div>
       )}
 
-      {activeTab === "timeline" && (
+      {/* ─── TAB: Services ─── */}
+      {activeTab === "services" && (
         <div className="space-y-4">
-          {/* Add comment */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex gap-2">
-                <Textarea
-                  value={commentText}
-                  onChange={e => setCommentText(e.target.value)}
-                  placeholder="Add an internal comment or update..."
-                  rows={2}
-                  className="text-xs flex-1"
-                />
-                <Button
-                  size="sm"
-                  className="h-auto self-end"
-                  disabled={!commentText.trim() || addComment.isPending}
-                  onClick={() => addComment.mutate()}
-                >
-                  {addComment.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {services.length} {isArabic ? "خدمة" : "services"} · {isArabic ? "الإجمالي" : "Total"}: {servicesTotalCost.toLocaleString()} {booking.currency}
+            </p>
+            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={() => {
+              setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: 1, unit_price: 0, status: "pending" });
+              setShowServiceDialog(true);
+            }}>
+              <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة خدمة" : "Add Service"}
+            </Button>
+          </div>
 
-          {/* Activity timeline */}
-          {activities.length === 0 ? (
+          {services.length === 0 ? (
             <div className="text-center py-12">
-              <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No activity yet</p>
+              <Hotel className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
             </div>
           ) : (
-            <div className="relative ml-3">
-              <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
-              <div className="space-y-4">
-                {activities.map((act: any, idx: number) => {
-                  const typeIcons: Record<string, { icon: React.ElementType; color: string }> = {
-                    status_change: { icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
-                    comment: { icon: MessageSquare, color: "bg-blue-100 text-blue-600" },
-                    created: { icon: Plus, color: "bg-accent/20 text-accent" },
-                    note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
-                  };
-                  const cfg = typeIcons[act.activity_type] || typeIcons.note;
-                  const Icon = cfg.icon;
-
-                  return (
-                    <motion.div
-                      key={act.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      className="relative pl-8"
-                    >
-                      <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-card", cfg.color)}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-foreground">{act.title}</p>
-                        {act.description && (
-                          <p className="text-[10px] text-muted-foreground bg-muted/30 rounded px-2 py-1 whitespace-pre-line">{act.description}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                          <span>{format(new Date(act.created_at), "MMM d, h:mm a")}</span>
-                          <span>· {getProfileName(act.user_id)}</span>
+            <div className="space-y-2">
+              {services.map((service: any) => {
+                const typeConfig = SERVICE_TYPES.find(st => st.value === service.service_type);
+                const Icon = typeConfig?.icon || FileText;
+                return (
+                  <Card key={service.id} className="border-border">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                          <Icon className="w-5 h-5 text-accent" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[9px] capitalize">{service.service_type}</Badge>
+                            <Badge variant={service.status === "confirmed" ? "default" : "secondary"} className="text-[9px]">
+                              {service.status}
+                            </Badge>
+                          </div>
+                          <h4 className="text-sm font-semibold text-foreground truncate mt-0.5">{service.title}</h4>
+                          <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+                            {service.supplier_name && <span>{service.supplier_name}</span>}
+                            {service.service_date && <span>{format(new Date(service.service_date), "MMM d")}</span>}
+                            {service.location && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{service.location}</span>}
+                            {service.confirmation_number && <span className="font-mono">#{service.confirmation_number}</span>}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold font-mono text-foreground">
+                            {Number(service.total_cost || 0).toLocaleString()} {service.currency}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{service.quantity} × {Number(service.unit_price || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService(service); setShowServiceDialog(true); }}>
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteService.mutate(service.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {/* Services total */}
+              <Card className="border-accent/20 bg-accent/5">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
+                  <span className="text-lg font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
       )}
-      {/* Traveler Add/Edit Dialog */}
-      <Dialog open={showTravelerDialog} onOpenChange={v => { if (!v) { setShowTravelerDialog(false); setEditingTraveler(null); } }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-base font-semibold flex items-center gap-2">
-              <User className="w-4 h-4 text-accent" />
-              {editingTraveler && travelers.find(t => t.id === editingTraveler.id) ? "Edit Traveler" : "Add Traveler"}
-            </DialogTitle>
-          </DialogHeader>
-          {editingTraveler && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <Label className="text-xs">Full Name *</Label>
+
+      {/* ─── TAB: Financials ─── */}
+      {activeTab === "financials" && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-accent" /> {isArabic ? "الملخص المالي" : "Financial Summary"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "التكلفة" : "Total Cost"}</Label>
                   <Input
-                    value={editingTraveler.full_name}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, full_name: e.target.value })}
-                    placeholder="Full name as in passport"
-                    className="h-9 text-sm"
+                    type="number"
+                    className="h-8 text-xs mt-1 font-mono"
+                    defaultValue={booking.total_cost || 0}
+                    onBlur={e => updateBooking.mutate({ total_cost: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Gender</Label>
-                  <Select value={editingTraveler.gender} onValueChange={v => setEditingTraveler({ ...editingTraveler, gender: v })}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Date of Birth</Label>
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "سعر البيع" : "Selling Price"}</Label>
                   <Input
-                    type="date"
-                    value={editingTraveler.date_of_birth}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, date_of_birth: e.target.value })}
-                    className="h-9 text-sm"
+                    type="number"
+                    className="h-8 text-xs mt-1 font-mono"
+                    defaultValue={booking.selling_price || 0}
+                    onBlur={e => updateBooking.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
-                  <Label className="text-xs">Nationality</Label>
-                  <Input
-                    value={editingTraveler.nationality}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, nationality: e.target.value })}
-                    placeholder="e.g. Saudi"
-                    className="h-9 text-sm"
-                  />
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الربح" : "Profit"}</Label>
+                  <p className={cn("text-lg font-mono font-bold mt-1", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
+                    {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-xs">Passport Number</Label>
-                  <Input
-                    value={editingTraveler.passport_number}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_number: e.target.value })}
-                    placeholder="Passport number"
-                    className="h-9 text-sm font-mono"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Passport Expiry</Label>
-                  <Input
-                    type="date"
-                    value={editingTraveler.passport_expiry}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_expiry: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label className="text-xs">Room Assignment Notes</Label>
-                  <Input
-                    value={editingTraveler.room_notes}
-                    onChange={e => setEditingTraveler({ ...editingTraveler, room_notes: e.target.value })}
-                    placeholder="e.g. Room 201, sharing with traveler 2"
-                    className="h-9 text-sm"
-                  />
+                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الرصيد المتبقي" : "Balance"}</Label>
+                  <p className={cn("text-lg font-mono font-bold mt-1", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
+                    {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : isArabic ? "مدفوع بالكامل" : "Fully Paid"}
+                  </p>
                 </div>
               </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowTravelerDialog(false); setEditingTraveler(null); }}>Cancel</Button>
+              <Separator className="my-4" />
+              <PaymentRecords
+                bookingId={booking.id}
+                companyId={booking.company_id}
+                currency={booking.currency}
+                sellingPrice={Number(booking.selling_price || 0)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ─── TAB: Attachments ─── */}
+      {activeTab === "attachments" && (
+        <Card>
+          <CardContent className="p-4">
+            <FileAttachments
+              entityType="booking"
+              entityId={booking.id}
+              companyId={booking.company_id}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── TAB: Comments ─── */}
+      {activeTab === "comments" && (
+        <Card>
+          <CardContent className="p-4">
+            <InternalComments
+              entityType="booking"
+              entityId={booking.id}
+              companyId={booking.company_id}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── TAB: Timeline ─── */}
+      {activeTab === "timeline" && (
+        <TimelineTab
+          activities={activities}
+          isArabic={isArabic}
+          getProfileName={getProfileName}
+          onAddComment={(text: string) => addComment.mutate(text)}
+          isAddingComment={addComment.isPending}
+        />
+      )}
+
+      {/* ─── Traveler Dialog ─── */}
+      {showTravelerDialog && editingTraveler && (
+        <TravelerDialog
+          traveler={editingTraveler}
+          isArabic={isArabic}
+          open={showTravelerDialog}
+          onClose={() => { setShowTravelerDialog(false); setEditingTraveler(null); }}
+          onSave={(t: any) => saveTraveler.mutate(t)}
+          isSaving={saveTraveler.isPending}
+        />
+      )}
+
+      {/* ─── Service Dialog ─── */}
+      {showServiceDialog && editingService && (
+        <ServiceDialog
+          service={editingService}
+          isArabic={isArabic}
+          open={showServiceDialog}
+          onClose={() => { setShowServiceDialog(false); setEditingService(null); }}
+          onSave={(s: any) => saveService.mutate(s)}
+          isSaving={saveService.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-Components ───
+
+function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCount, childrenCount }: any) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {travelers.length} {isArabic ? "مسافر مسجل" : "registered"} · {adultsCount}A {childrenCount > 0 ? `${childrenCount}C` : ""}
+        </p>
+        <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={onAdd}>
+          <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة مسافر" : "Add Traveler"}
+        </Button>
+      </div>
+
+      {travelers.length === 0 ? (
+        <div className="text-center py-12">
+          <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">{isArabic ? "لا يوجد مسافرون مسجلون" : "No travelers registered"}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {travelers.map((t: any, i: number) => {
+            const isExpanded = expanded === t.id;
+            return (
+              <Card key={t.id} className="border-border">
+                <CardContent className="p-0">
+                  <div
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                    onClick={() => setExpanded(isExpanded ? null : t.id)}
+                  >
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-medium text-foreground truncate">{t.full_name}</p>
+                        {t.is_lead_traveler && <Badge className="text-[9px] bg-accent/10 text-accent border-0">{isArabic ? "رئيسي" : "Lead"}</Badge>}
+                        {!t.is_adult && <Badge variant="secondary" className="text-[9px]">{isArabic ? "طفل" : "Child"}</Badge>}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                        {t.nationality && <span><Globe className="w-2.5 h-2.5 inline mr-0.5" />{t.nationality}</span>}
+                        {t.passport_number && <span className="font-mono">{t.passport_number}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); onEdit(t); }}>
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={e => { e.stopPropagation(); onDelete(t.id); }}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="border-t border-border bg-muted/20 px-3 py-3 overflow-hidden"
+                      >
+                        <div className="grid grid-cols-3 gap-3">
+                          {[
+                            { label: isArabic ? "الجنس" : "Gender", val: t.gender },
+                            { label: isArabic ? "تاريخ الميلاد" : "Date of Birth", val: t.date_of_birth },
+                            { label: isArabic ? "البريد" : "Email", val: t.email },
+                            { label: isArabic ? "الهاتف" : "Phone", val: t.phone },
+                            { label: isArabic ? "جواز السفر" : "Passport #", val: t.passport_number, mono: true },
+                            { label: isArabic ? "انتهاء الجواز" : "Passport Expiry", val: t.passport_expiry },
+                            { label: isArabic ? "بلد الجواز" : "Passport Country", val: t.passport_country },
+                            { label: isArabic ? "تفضيل الغرفة" : "Room Preference", val: t.room_preference },
+                            { label: isArabic ? "متطلبات خاصة" : "Special Requirements", val: t.special_requirements },
+                          ].filter(f => f.val).map((field, idx) => (
+                            <div key={idx}>
+                              <Label className="text-[10px] text-muted-foreground uppercase">{field.label}</Label>
+                              <p className={cn("text-xs text-foreground", field.mono && "font-mono")}>{field.val}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }: any) {
+  const [form, setForm] = useState({ ...traveler });
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-accent" />
+            {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-4">
+          <div className="col-span-2">
+            <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} *</Label>
+            <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
+            <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
+            <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
+            <Input value={form.nationality || ""} onChange={e => setForm({ ...form, nationality: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
+            <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
+            <Input value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
+            <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Passport Expiry"}</Label>
+            <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "بلد الجواز" : "Passport Country"}</Label>
+            <Input value={form.passport_country || ""} onChange={e => setForm({ ...form, passport_country: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Preference"}</Label>
+            <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1" />
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs">{isArabic ? "متطلبات خاصة" : "Special Requirements"}</Label>
+            <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-xs" />
+          </div>
+          <div className="flex items-center gap-4 col-span-2">
+            <label className="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} />
+              {isArabic ? "المسافر الرئيسي" : "Lead Traveler"}
+            </label>
+            <label className="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} />
+              {isArabic ? "بالغ" : "Adult"}
+            </label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+          <Button
+            disabled={!form.full_name?.trim() || isSaving}
+            onClick={() => onSave(form)}
+            className="gold-gradient text-accent-foreground gap-2"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isArabic ? "حفظ" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: any) {
+  const [form, setForm] = useState({ ...service });
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Hotel className="w-5 h-5 text-accent" />
+            {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3 py-4">
+          <div>
+            <Label className="text-xs">{isArabic ? "نوع الخدمة" : "Service Type"} *</Label>
+            <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SERVICE_TYPES.map(st => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
+            <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs">{isArabic ? "العنوان" : "Title"} *</Label>
+            <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
+            <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
+            <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
+            <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
+            <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "الكمية" : "Quantity"}</Label>
+            <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
+            <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1" />
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
+            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-xs" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+          <Button
+            disabled={!form.title?.trim() || isSaving}
+            onClick={() => onSave(form)}
+            className="gold-gradient text-accent-foreground gap-2"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isArabic ? "حفظ" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TimelineTab({ activities, isArabic, getProfileName, onAddComment, isAddingComment }: any) {
+  const [commentText, setCommentText] = useState("");
+  const typeIcons: Record<string, { icon: any; color: string }> = {
+    status_change: { icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
+    comment: { icon: MessageSquare, color: "bg-blue-100 text-blue-600" },
+    created: { icon: Plus, color: "bg-accent/20 text-accent" },
+    note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex gap-2">
+            <Textarea
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder={isArabic ? "أضف تعليق أو ملاحظة..." : "Add a comment or update..."}
+              rows={2}
+              className="text-xs flex-1"
+            />
             <Button
               size="sm"
-              disabled={!editingTraveler?.full_name?.trim()}
-              onClick={() => {
-                if (editingTraveler) {
-                  const existing = travelers.find(t => t.id === editingTraveler.id);
-                  const updated = existing
-                    ? travelers.map(t => t.id === editingTraveler.id ? editingTraveler : t)
-                    : [...travelers, editingTraveler];
-                  updateBooking.mutate({ travelers: updated });
-                  setShowTravelerDialog(false);
-                  setEditingTraveler(null);
-                  toast({ title: existing ? "Traveler updated" : "Traveler added" });
-                }
-              }}
+              className="h-auto self-end"
+              disabled={!commentText.trim() || isAddingComment}
+              onClick={() => { onAddComment(commentText); setCommentText(""); }}
             >
-              {travelers.find(t => t.id === editingTraveler?.id) ? "Save Changes" : "Add Traveler"}
+              {isAddingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </CardContent>
+      </Card>
+
+      {activities.length === 0 ? (
+        <div className="text-center py-12">
+          <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">{isArabic ? "لا يوجد نشاط بعد" : "No activity yet"}</p>
+        </div>
+      ) : (
+        <div className="relative ml-3">
+          <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
+          <div className="space-y-4">
+            {activities.map((act: any, idx: number) => {
+              const cfg = typeIcons[act.activity_type] || typeIcons.note;
+              const Icon = cfg.icon;
+              return (
+                <motion.div
+                  key={act.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  className="relative pl-8"
+                >
+                  <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-card", cfg.color)}>
+                    <Icon className="w-3 h-3" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-foreground">{act.title}</p>
+                    {act.description && <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">{act.description}</p>}
+                    <p className="text-[10px] text-muted-foreground">
+                      {getProfileName(act.user_id)} · {format(new Date(act.created_at), "MMM d, HH:mm")}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
