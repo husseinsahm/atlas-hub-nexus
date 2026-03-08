@@ -153,9 +153,13 @@
     background: hsl(var(--background) / 0.8);
   }
 
-  /* Dark header modals: close button should be white */
-  [data-state] > .bg-primary ~ button[class*="absolute"] {
+  /* Dark-header modals: make the dialog close button white */
+  .dark-header-dialog > button[class*="absolute"] {
     color: hsl(var(--primary-foreground));
+    opacity: 0.7;
+  }
+  .dark-header-dialog > button[class*="absolute"]:hover {
+    opacity: 1;
   }
 }
 
