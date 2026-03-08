@@ -1593,6 +1593,14 @@ export default function TripBuilderPage() {
                   </div>
                 )}
               </div>
+            ) : pricingView === "comments" ? (
+              <div className="p-4">
+                <InternalComments
+                  entityType="trip"
+                  entityId={trip.id}
+                  companyId={trip.company_id}
+                />
+              </div>
             ) : pricingView === "history" ? (
               /* ===== UNIFIED BOOKING FILE TIMELINE ===== */
               <div className="p-4 space-y-4">
