@@ -420,7 +420,7 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
           size="sm"
           variant="outline"
           className="h-8 text-[11px] gap-1.5 flex-1"
-          disabled={uploading}
+          disabled={uploading || !user}
           onClick={() => fileInputRef.current?.click()}
         >
           {uploading ? (
