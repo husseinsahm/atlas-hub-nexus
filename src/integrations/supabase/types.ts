@@ -1052,6 +1052,63 @@ export type Database = {
           },
         ]
       }
+      payment_records: {
+        Row: {
+          amount: number
+          booking_id: string
+          company_id: string
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          recorded_by: string | null
+          reference_number: string | null
+        }
+        Insert: {
+          amount?: number
+          booking_id: string
+          company_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          company_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string

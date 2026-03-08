@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
+import { PaymentRecords } from "@/components/PaymentRecords";
 import { createNotification } from "@/hooks/useNotifications";
 
 interface Traveler {
@@ -402,48 +403,29 @@ export default function BookingDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Total Cost</Label>
-                      <p className="text-sm font-mono font-semibold text-foreground">{Number(booking.total_cost || 0).toLocaleString()} {booking.currency}</p>
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Selling Price</Label>
-                      <p className="text-lg font-mono font-bold text-foreground">{Number(booking.selling_price || 0).toLocaleString()} {booking.currency}</p>
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Profit</Label>
-                      <p className={cn("text-sm font-mono font-bold", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
-                        {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
-                      </p>
-                    </div>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">Total Cost</Label>
+                    <p className="text-sm font-mono font-semibold text-foreground">{Number(booking.total_cost || 0).toLocaleString()} {booking.currency}</p>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Amount Paid</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={booking.amount_paid || ""}
-                        onChange={e => updateBooking.mutate({ amount_paid: parseFloat(e.target.value) || 0 })}
-                        className="font-mono text-sm h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-[10px] text-muted-foreground uppercase">Payment Status</Label>
-                      <Select value={booking.payment_status} onValueChange={v => updateBooking.mutate({ payment_status: v })}>
-                        <SelectTrigger className="h-9 text-sm capitalize"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {PAYMENT_STATUSES.map(s => (
-                            <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">Selling Price</Label>
+                    <p className="text-lg font-mono font-bold text-foreground">{Number(booking.selling_price || 0).toLocaleString()} {booking.currency}</p>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] text-muted-foreground uppercase">Profit</Label>
+                    <p className={cn("text-sm font-mono font-bold", (booking.selling_price || 0) - (booking.total_cost || 0) >= 0 ? "text-emerald-600" : "text-destructive")}>
+                      {((booking.selling_price || 0) - (booking.total_cost || 0)).toLocaleString()} {booking.currency}
+                    </p>
                   </div>
                 </div>
+                <Separator className="mb-4" />
+                <PaymentRecords
+                  bookingId={booking.id}
+                  companyId={booking.company_id}
+                  currency={booking.currency}
+                  sellingPrice={Number(booking.selling_price || 0)}
+                />
               </CardContent>
             </Card>
 
