@@ -394,17 +394,21 @@ export default function BookingDetailPage() {
 
   return (
     <div className="space-y-0">
-      {/* ─── Premium Header with navy gradient ─── */}
-      <div className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-6 navy-gradient overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.4),transparent_60%)]" />
+      {/* ─── Premium Header ─── */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-6 mb-0 overflow-hidden border-b border-border bg-gradient-to-br from-card via-background to-secondary/30">
+        {/* Decorative accent line */}
+        <div className="absolute top-0 left-0 right-0 h-1 gold-gradient" />
+        {/* Subtle radial glow */}
+        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-[0.07] bg-[radial-gradient(circle,hsl(var(--gold)),transparent_70%)]" />
+
         <div className="relative">
           {/* Top row: Back + Actions */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-5">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/dashboard/bookings")}
-              className="text-white/70 hover:text-white hover:bg-white/10 gap-1.5 text-xs -ml-2"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5 text-xs -ml-2"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               {isArabic ? "الحجوزات" : "Bookings"}
@@ -414,7 +418,7 @@ export default function BookingDetailPage() {
                 <Button
                   size="sm"
                   onClick={advanceStatus}
-                  className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-lg"
+                  className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
@@ -424,8 +428,8 @@ export default function BookingDetailPage() {
                 value={booking.status}
                 onValueChange={v => updateBooking.mutate({ status: v })}
               >
-                <SelectTrigger className="h-8 w-auto border-white/20 bg-white/10 text-white text-xs gap-2">
-                  <div className={cn("w-2 h-2 rounded-full", sc.bg.replace("bg-", "bg-"))} />
+                <SelectTrigger className="h-8 w-auto border-border bg-background text-foreground text-xs gap-2">
+                  <div className={cn("w-2 h-2 rounded-full", sc.bg)} />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,22 +443,22 @@ export default function BookingDetailPage() {
 
           {/* Booking identity */}
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center shadow-lg shrink-0">
-              <Briefcase className="w-6 h-6 text-accent-foreground" />
+            <div className="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center shadow-lg shrink-0 ring-4 ring-background">
+              <Briefcase className="w-7 h-7 text-accent-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-xs font-mono text-white/50">{booking.booking_number}</span>
-                <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{booking.booking_number}</span>
+                <Badge className={cn("border-0 text-[10px] font-semibold", sc.bg, sc.color)}>
                   {isArabic ? sc.labelAr : sc.label}
                 </Badge>
                 {(booking as any).source && (
-                  <Badge variant="outline" className="text-[9px] capitalize border-white/20 text-white/70">{(booking as any).source}</Badge>
+                  <Badge variant="outline" className="text-[9px] capitalize">{(booking as any).source}</Badge>
                 )}
               </div>
-              <h1 className="text-lg font-bold font-display text-white truncate">{booking.title}</h1>
+              <h1 className="text-xl font-bold font-display text-foreground truncate">{booking.title}</h1>
               {customer?.full_name && (
-                <p className="text-xs text-white/50 flex items-center gap-1 mt-0.5">
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
                   <User className="w-3 h-3" /> {customer.full_name}
                   {customer?.phone && <span className="ml-2 flex items-center gap-0.5"><Phone className="w-2.5 h-2.5" />{customer.phone}</span>}
                 </p>
@@ -463,40 +467,56 @@ export default function BookingDetailPage() {
           </div>
 
           {/* Quick stat pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
-              <Plane className="w-3 h-3 text-white/50" />
-              <span className="font-medium">{booking.total_days} {isArabic ? "يوم" : "days"}</span>
-              {(booking as any).arrival_date && (
-                <span className="text-white/40 ml-1">
-                  {format(new Date((booking as any).arrival_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}
-                </span>
-              )}
+          <div className="flex flex-wrap gap-2.5 mt-5">
+            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Plane className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">{booking.total_days} {isArabic ? "يوم" : "days"}</span>
+                {(booking as any).arrival_date && (
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    {format(new Date((booking as any).arrival_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
-              <Users className="w-3 h-3 text-white/50" />
-              <span className="font-medium">{booking.adults}A{booking.children > 0 ? ` ${booking.children}C` : ""}</span>
-              <span className="text-white/40">· {travelers.length} {isArabic ? "مسجل" : "reg."}</span>
+            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <span className="font-semibold text-foreground">{booking.adults}A{booking.children > 0 ? ` · ${booking.children}C` : ""}</span>
+                <p className="text-[10px] text-muted-foreground leading-tight">{travelers.length} {isArabic ? "مسجل" : "registered"}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
-              <DollarSign className="w-3 h-3 text-white/50" />
-              <span className="font-medium font-mono">{Number(booking.selling_price || 0).toLocaleString()}</span>
-              <span className="text-white/40">{booking.currency}</span>
+            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                <DollarSign className="w-3.5 h-3.5 text-accent" />
+              </div>
+              <div>
+                <span className="font-semibold font-mono text-foreground">{Number(booking.selling_price || 0).toLocaleString()}</span>
+                <p className="text-[10px] text-muted-foreground leading-tight">{booking.currency}</p>
+              </div>
             </div>
             {balance > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-amber-500/20 backdrop-blur-sm px-3 py-1.5 text-xs text-amber-200">
-                <CreditCard className="w-3 h-3" />
-                <span className="font-medium font-mono">{balance.toLocaleString()}</span>
-                <span className="text-amber-200/60">{isArabic ? "متبقي" : "remaining"}</span>
+              <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-2.5 text-xs shadow-sm">
+                <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                  <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <span className="font-semibold font-mono text-amber-700 dark:text-amber-300">{balance.toLocaleString()}</span>
+                  <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 leading-tight">{isArabic ? "متبقي" : "remaining"}</p>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ─── Tab Navigation — horizontal scroll, pill style ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-background/95 backdrop-blur-sm border-b border-border pb-0 mb-6">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide py-2">
+      {/* ─── Tab Navigation — underline style ─── */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-background/95 backdrop-blur-md border-b border-border">
+        <div className="flex gap-0 overflow-x-auto scrollbar-hide">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
             return (
@@ -504,14 +524,21 @@ export default function BookingDetailPage() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  "relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-medium whitespace-nowrap transition-all shrink-0",
                   isActive
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <tab.icon className="w-3.5 h-3.5" />
+                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
                 {isArabic ? tab.labelAr : tab.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeBookingTab"
+                    className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-accent"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                  />
+                )}
               </button>
             );
           })}
@@ -519,23 +546,27 @@ export default function BookingDetailPage() {
       </div>
 
       {/* ─── Tab Content ─── */}
+      <div className="pt-6">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.2 }}
         >
 
       {/* ─── TAB: Summary ─── */}
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
+          <div className="md:col-span-2 space-y-5">
+            <Card className="border-border/60 shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-accent" /> {isArabic ? "تفاصيل الحجز" : "Booking Details"}
+                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                    <Briefcase className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -599,11 +630,14 @@ export default function BookingDetailPage() {
             </Card>
           </div>
 
-          <div className="space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
+          <div className="space-y-5">
+            <Card className="border-border/60 shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <StickyNote className="w-4 h-4 text-accent" /> {isArabic ? "ملاحظات" : "Notes"}
+                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                    <StickyNote className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  {isArabic ? "ملاحظات" : "Notes"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -645,10 +679,13 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Customer ─── */}
       {activeTab === "customer" && (
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="border-border/60 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-accent" /> {isArabic ? "معلومات العميل" : "Customer Information"}
+              <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                <UserCheck className="w-3.5 h-3.5 text-accent" />
+              </div>
+              {isArabic ? "معلومات العميل" : "Customer Information"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -865,10 +902,13 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-accent" /> {isArabic ? "الملخص المالي" : "Financial Summary"}
+                <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                  <DollarSign className="w-3.5 h-3.5 text-accent" />
+                </div>
+                {isArabic ? "الملخص المالي" : "Financial Summary"}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -955,6 +995,7 @@ export default function BookingDetailPage() {
 
         </motion.div>
       </AnimatePresence>
+      </div>
 
       {/* ─── Traveler Dialog ─── */}
       {showTravelerDialog && editingTraveler && (
