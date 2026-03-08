@@ -8,6 +8,7 @@ import {
   Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
   Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
   Sparkles, Navigation, FileText, Activity, User, Calendar,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -326,7 +328,9 @@ function DayCard({
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
-  const [localCity, setLocalCity] = useState(day.city || "");
+  const [localCities, setLocalCities] = useState<string[]>(
+    day.city ? day.city.split(",").map(c => c.trim()).filter(Boolean) : []
+  );
   const [localPickup, setLocalPickup] = useState(day.pickup_location || "");
   const [localDropoff, setLocalDropoff] = useState(day.dropoff_location || "");
   const [localPickupTime, setLocalPickupTime] = useState(day.pickup_time || "");
@@ -334,15 +338,17 @@ function DayCard({
   const [localEndTime, setLocalEndTime] = useState(day.end_time || "");
   const [localNotes, setLocalNotes] = useState(day.internal_notes || "");
   const [editingTitle, setEditingTitle] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
 
   const items = (day.booking_day_items || []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const itemsTotal = items.reduce((sum: number, i: any) => sum + Number(i.total_price || 0), 0);
 
   const saveAllFields = useCallback(() => {
+    const cityString = localCities.join(", ");
     onUpdateDay({
       title: localTitle || `Day ${day.day_number}`,
       short_description: localDesc || null,
-      city: localCity || null,
+      city: cityString || null,
       pickup_location: showTransportFields ? (localPickup || null) : null,
       dropoff_location: showTransportFields ? (localDropoff || null) : null,
       pickup_time: showTransportFields ? (localPickupTime || null) : null,
@@ -351,7 +357,32 @@ function DayCard({
       internal_notes: localNotes || null,
     });
     onToggleEdit();
-  }, [localTitle, localDesc, localCity, localPickup, localDropoff, localPickupTime, localStartTime, localEndTime, localNotes, showTransportFields, day.day_number, onUpdateDay, onToggleEdit]);
+  }, [localTitle, localDesc, localCities, localPickup, localDropoff, localPickupTime, localStartTime, localEndTime, localNotes, showTransportFields, day.day_number, onUpdateDay, onToggleEdit]);
+
+  const generateDescription = useCallback(async () => {
+    setIsGeneratingDesc(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-day-description", {
+        body: {
+          dayTitle: localTitle || day.title,
+          dayNumber: day.day_number,
+          cities: localCities.join(", ") || day.city,
+          pickupLocation: localPickup || day.pickup_location,
+          dropoffLocation: localDropoff || day.dropoff_location,
+          items: items.map((i: any) => ({ category: i.category, custom_title: i.custom_title })),
+          tripTitle: "",
+        },
+      });
+      if (error) throw error;
+      if (data?.description) {
+        setLocalDesc(data.description);
+      }
+    } catch (err: any) {
+      console.error("AI description error:", err);
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  }, [localTitle, day, localCities, localPickup, localDropoff, items]);
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -438,11 +469,11 @@ function DayCard({
                 </h4>
               )}
 
-              {day.city && (
-                <Badge variant="outline" className="text-[9px] gap-0.5 shrink-0">
-                  <MapPin className="w-2.5 h-2.5" /> {day.city}
+              {day.city && day.city.split(",").map(c => c.trim()).filter(Boolean).map((city) => (
+                <Badge key={city} variant="outline" className="text-[9px] gap-0.5 shrink-0">
+                  <MapPin className="w-2.5 h-2.5" /> {city}
                 </Badge>
-              )}
+              ))}
               {day.date && (
                 <Badge variant="secondary" className="text-[9px] shrink-0">
                   <Calendar className="w-2.5 h-2.5 mr-0.5" />
@@ -530,12 +561,35 @@ function DayCard({
                     </div>
                     <div>
                       <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "المدينة / الوجهة" : "City / Destination"}</Label>
-                      <Input value={localCity} onChange={e => setLocalCity(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Cairo" />
+                      <div className="mt-1">
+                        <MultiCityAutocomplete
+                          value={localCities}
+                          onValueChange={setLocalCities}
+                          placeholder={isArabic ? "اختر المدن" : "Select cities"}
+                          isRtl={isArabic}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div>
-                    <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وصف مختصر" : "Short Description"}</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وصف مختصر" : "Short Description"}</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1 text-accent hover:text-accent/80 px-2"
+                        onClick={generateDescription}
+                        disabled={isGeneratingDesc}
+                      >
+                        {isGeneratingDesc ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3 h-3" />
+                        )}
+                        {isArabic ? "توليد بالذكاء" : "Generate AI"}
+                      </Button>
+                    </div>
                     <Textarea value={localDesc} onChange={e => setLocalDesc(e.target.value)} className="text-xs mt-1 resize-none" rows={2} placeholder={isArabic ? "وصف مختصر لنشاطات اليوم..." : "Brief overview of the day's activities..."} />
                   </div>
 

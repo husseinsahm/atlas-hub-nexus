@@ -1,1 +1,4 @@
 project_id = "wlcbhnkhvopjpkueplfe"
+
+[functions.generate-day-description]
+verify_jwt = false
