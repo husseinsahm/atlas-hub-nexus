@@ -373,10 +373,10 @@ function SuperAdminDashboard() {
       expiredSubscriptions: expiredSubs.length, totalRevenueMRR: mrr, totalPlans: allPlans.length,
     });
 
-    const subMap = new Map<string, any>();
-    allSubs.forEach((s: any) => subMap.set(s.company_id, s));
-    const countMap = new Map<string, number>();
-    allMemberships.forEach((m: any) => countMap.set(m.company_id, (countMap.get(m.company_id) || 0) + 1));
+    const subMap: Record<string, any> = {};
+    allSubs.forEach((s: any) => { subMap[s.company_id] = s; });
+    const countMap: Record<string, number> = {};
+    allMemberships.forEach((m: any) => { countMap[m.company_id] = (countMap[m.company_id] || 0) + 1; });
 
     setCompanies(allCompanies.map((c: any) => ({
       ...c, subscription: subMap.get(c.id) || null, memberCount: countMap.get(c.id) || 0,
