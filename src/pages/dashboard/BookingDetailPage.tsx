@@ -969,6 +969,9 @@ export default function BookingDetailPage() {
         />
       )}
 
+        </motion.div>
+      </AnimatePresence>
+
       {/* ─── Traveler Dialog ─── */}
       {showTravelerDialog && editingTraveler && (
         <TravelerDialog
