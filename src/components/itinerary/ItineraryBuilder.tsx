@@ -802,28 +802,24 @@ function DayCard({
                 )}
 
                 {/* Quick add buttons */}
-                <div className="flex items-center gap-1.5 pt-1">
-                  <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mr-1">
-                    {isArabic ? "إضافة:" : "Add:"}
-                  </span>
+                <Separator className="my-2" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 pb-1">
                   {QUICK_ACTIONS.map(qa => {
                     const QIcon = qa.icon;
                     return (
-                      <Tooltip key={qa.type}>
-                        <TooltipTrigger asChild>
-                          <button
-                            className={cn(
-                              "flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-all hover:scale-105",
-                              qa.color,
-                            )}
-                            onClick={() => onAddItem(qa.type)}
-                          >
-                            <QIcon className="w-3 h-3" />
-                            {qa.label}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="text-[10px]">Add {qa.type}</TooltipContent>
-                      </Tooltip>
+                      <button
+                        key={qa.type}
+                        className={cn(
+                          "flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-3 py-3 text-xs font-semibold transition-all hover:scale-[1.02] hover:border-solid hover:shadow-sm cursor-pointer",
+                          qa.color,
+                        )}
+                        onClick={() => onAddItem(qa.type)}
+                      >
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", qa.color)}>
+                          <QIcon className="w-4 h-4" />
+                        </div>
+                        <span>{isArabic ? qa.label : `Add ${qa.label}`}</span>
+                      </button>
                     );
                   })}
                 </div>
