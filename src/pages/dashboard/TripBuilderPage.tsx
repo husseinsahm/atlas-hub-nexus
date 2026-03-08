@@ -1341,6 +1341,112 @@ export default function TripBuilderPage() {
                   </div>
                 )}
               </div>
+            ) : pricingView === "history" ? (
+              /* ===== HISTORY VIEW ===== */
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <History className="w-3 h-3" /> Revision History
+                  </h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    {tripRevisions.length} {tripRevisions.length === 1 ? "revision" : "revisions"}
+                  </Badge>
+                </div>
+
+                {/* Add revision note */}
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={revisionNote}
+                      onChange={e => setRevisionNote(e.target.value)}
+                      placeholder="Add a revision note..."
+                      className="text-xs h-8 flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={!revisionNote.trim()}
+                      onClick={() => {
+                        trackRevision("note", revisionNote.trim(), {}, revisionNote.trim());
+                        setRevisionNote("");
+                      }}
+                    >
+                      <GitCommitHorizontal className="w-3 h-3 mr-1" /> Save
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {tripRevisions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No revisions yet</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">Changes will be tracked automatically</p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {/* Timeline line */}
+                    <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
+                    
+                    <div className="space-y-4">
+                      {tripRevisions.map((rev, idx) => {
+                        const actionConfig: Record<string, { icon: React.ElementType; color: string }> = {
+                          status_change: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
+                          pricing: { icon: DollarSign, color: "bg-blue-100 text-blue-600" },
+                          day_added: { icon: Plus, color: "bg-accent/20 text-accent" },
+                          day_removed: { icon: Trash2, color: "bg-destructive/10 text-destructive" },
+                          day_duplicated: { icon: CopyPlus, color: "bg-purple-100 text-purple-600" },
+                          item_added: { icon: Sparkles, color: "bg-amber-100 text-amber-600" },
+                          note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
+                          update: { icon: Pencil, color: "bg-accent/10 text-accent" },
+                        };
+                        const config = actionConfig[rev.action] || actionConfig.update;
+                        const Icon = config.icon;
+                        
+                        return (
+                          <motion.div
+                            key={rev.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="relative pl-8"
+                          >
+                            {/* Timeline dot */}
+                            <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10", config.color)}>
+                              <Icon className="w-3 h-3" />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-xs font-medium text-foreground leading-snug">{rev.summary}</p>
+                                <Badge variant="outline" className="text-[9px] shrink-0 font-mono">
+                                  v{rev.revision_number}
+                                </Badge>
+                              </div>
+                              
+                              {rev.note && (
+                                <p className="text-[10px] text-muted-foreground italic leading-relaxed bg-muted/30 rounded px-2 py-1">
+                                  "{rev.note}"
+                                </p>
+                              )}
+                              
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                <span>{format(new Date(rev.created_at), "MMM d, h:mm a")}</span>
+                                {rev.snapshot && rev.snapshot.status && (
+                                  <Badge variant="outline" className="text-[8px] h-4">
+                                    {STATUS_CONFIG[rev.snapshot.status as TripStatus]?.label || rev.snapshot.status}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </ScrollArea>
         </div>
