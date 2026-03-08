@@ -218,6 +218,7 @@ export default function CustomersPage() {
     }
   }
 
+  async function handleSave() {
     if (!companyId || !user) return;
     if (!validateForm()) return;
 
