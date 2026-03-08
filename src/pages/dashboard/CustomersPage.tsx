@@ -261,8 +261,6 @@ export default function CustomersPage() {
             const delay = 1000 * (attempt + 1);
             console.log(`[CustomerSave] Retrying in ${delay}ms...`);
             await new Promise((r) => setTimeout(r, delay));
-            // Force refresh session before retry
-            await supabase.auth.refreshSession();
             continue;
           }
           throw err;
