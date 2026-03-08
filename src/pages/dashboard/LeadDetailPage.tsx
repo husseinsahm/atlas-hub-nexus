@@ -819,16 +819,16 @@ export default function LeadDetailPage() {
                   </Button>
                 )}
                 {lead.phone && (
-                  <>
-                    <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
-                      <a href={`tel:${lead.phone}`}><Phone className="w-4 h-4" /> Call</a>
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
-                      <a href={`https://wa.me/${encodeURIComponent(lead.phone.replace(/[\s\-()]/g, ""))}`} target="_blank" rel="noopener noreferrer">
-                        <MessageSquare className="w-4 h-4" /> WhatsApp
-                      </a>
-                    </Button>
-                  </>
+                  <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
+                    <a href={`tel:${lead.phone}`}><Phone className="w-4 h-4" /> Call</a>
+                  </Button>
+                )}
+                {(lead.whatsapp || lead.phone) && (
+                  <Button variant="outline" size="sm" className="w-full justify-start gap-2" asChild>
+                    <a href={`https://wa.me/${encodeURIComponent((lead.whatsapp || lead.phone || "").replace(/[\s\-()]/g, ""))}`} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </a>
+                  </Button>
                 )}
               </CardContent>
             </Card>
