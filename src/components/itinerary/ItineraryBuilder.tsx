@@ -623,14 +623,41 @@ function DayCard({
                         exit={{ height: 0, opacity: 0 }}
                         className="space-y-3"
                       >
+                        <div className="flex items-center gap-2 mb-1">
+                          <input
+                            type="checkbox"
+                            id={`same-location-${day.id}`}
+                            checked={localPickup !== "" && localPickup === localDropoff}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setLocalDropoff(localPickup);
+                              }
+                            }}
+                            className="h-3.5 w-3.5 rounded border-border text-accent focus:ring-accent"
+                          />
+                          <label htmlFor={`same-location-${day.id}`} className="text-[10px] text-muted-foreground cursor-pointer select-none">
+                            {isArabic ? "نقطة الإنزال نفس نقطة الالتقاط" : "Drop-off same as Pickup"}
+                          </label>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
                             <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "نقطة الالتقاط" : "Pickup Location"}</Label>
-                            <Input value={localPickup} onChange={e => setLocalPickup(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Hotel lobby" />
+                            <Input value={localPickup} onChange={e => {
+                              setLocalPickup(e.target.value);
+                              if (localPickup === localDropoff || localDropoff === "") {
+                                setLocalDropoff(e.target.value);
+                              }
+                            }} className="h-9 text-sm mt-1" placeholder="e.g., Hotel lobby" />
                           </div>
                           <div>
                             <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "نقطة الإنزال" : "Drop-off Location"}</Label>
-                            <Input value={localDropoff} onChange={e => setLocalDropoff(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Airport Terminal 2" />
+                            <Input
+                              value={localDropoff}
+                              onChange={e => setLocalDropoff(e.target.value)}
+                              className="h-9 text-sm mt-1"
+                              placeholder="e.g., Airport Terminal 2"
+                              disabled={localPickup !== "" && localPickup === localDropoff}
+                            />
                           </div>
                           <div>
                             <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "وقت الالتقاط" : "Pickup Time"}</Label>
