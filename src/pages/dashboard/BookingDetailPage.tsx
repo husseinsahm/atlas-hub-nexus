@@ -287,6 +287,8 @@ export default function BookingDetailPage() {
 
   const saveService = useMutation({
     mutationFn: async (service: any) => {
+      const adultTotal = (service.quantity || 0) * (service.unit_price || 0);
+      const childTotal = (service.child_quantity || 0) * (service.child_unit_price || 0);
       const payload = {
         booking_id: id!,
         company_id: booking!.company_id,
@@ -300,11 +302,15 @@ export default function BookingDetailPage() {
         location: service.location || null,
         quantity: service.quantity || 1,
         unit_price: service.unit_price || 0,
-        total_cost: (service.quantity || 1) * (service.unit_price || 0),
+        total_cost: adultTotal + childTotal,
         currency: booking?.currency || "USD",
         status: service.status || "pending",
         notes: service.notes || null,
         created_by: user?.id,
+        metadata: {
+          child_quantity: service.child_quantity || 0,
+          child_unit_price: service.child_unit_price || 0,
+        },
       };
       if (service.id && !service._isNew) {
         const { error } = await supabase.from("booking_services").update(payload).eq("id", service.id);
