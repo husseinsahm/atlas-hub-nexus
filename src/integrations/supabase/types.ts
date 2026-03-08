@@ -2440,6 +2440,9 @@ export type Database = {
         | "meal"
         | "activity"
         | "other"
+        | "flight"
+        | "visa"
+        | "entrance"
       trip_status:
         | "draft"
         | "under_review"
@@ -2632,6 +2635,9 @@ export const Constants = {
         "meal",
         "activity",
         "other",
+        "flight",
+        "visa",
+        "entrance",
       ],
       trip_status: [
         "draft",

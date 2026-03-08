@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Search, Filter, Calendar, Users, Plane, Hotel, Car, MapPin, User,
   CheckCircle2, Clock, AlertCircle, ChevronRight, Loader2, Eye,
-  FileText, Phone, Mail, CalendarDays, Briefcase, RefreshCw,
+  FileText, Phone, Mail, CalendarDays, Briefcase, RefreshCw, Ticket, Stamp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -436,6 +436,9 @@ export default function OperationsPage() {
                             {service.service_type === "transfer" && <Car className="w-4 h-4 text-purple-600" />}
                             {service.service_type === "tour" && <MapPin className="w-4 h-4 text-emerald-600" />}
                             {service.service_type === "guide" && <User className="w-4 h-4 text-cyan-600" />}
+                            {service.service_type === "flight" && <Plane className="w-4 h-4 text-sky-600" />}
+                            {service.service_type === "visa" && <Stamp className="w-4 h-4 text-orange-600" />}
+                            {service.service_type === "entrance" && <Ticket className="w-4 h-4 text-pink-600" />}
                             <span className="text-sm">{service.title}</span>
                           </div>
                         </TableCell>
