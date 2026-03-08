@@ -203,12 +203,7 @@ export default function CustomersPage() {
     setSaving(true);
 
     try {
-      // Force token refresh to ensure valid auth
       console.log("[CustomerSave] Starting save, editingId:", editingId);
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.error("[CustomerSave] Session refresh failed:", refreshError);
-      }
 
       // Build payload — exclude company_id from updates (it doesn't change and avoids unnecessary RLS checks)
       const basePayload = {
