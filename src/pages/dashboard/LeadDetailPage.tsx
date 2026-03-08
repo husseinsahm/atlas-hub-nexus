@@ -562,10 +562,22 @@ export default function LeadDetailPage() {
                     <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Phone</p><p className="text-sm font-medium text-foreground">{lead.phone}</p></div>
                   </div>
                 )}
+                {lead.whatsapp && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><MessageCircle className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">WhatsApp</p><p className="text-sm font-medium text-foreground">{lead.whatsapp}</p></div>
+                  </div>
+                )}
                 {lead.nationality && (
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><Globe className="w-4 h-4 text-muted-foreground" /></div>
                     <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Nationality</p><p className="text-sm font-medium text-foreground">{lead.nationality}</p></div>
+                  </div>
+                )}
+                {lead.preferred_language && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><Languages className="w-4 h-4 text-muted-foreground" /></div>
+                    <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Language</p><p className="text-sm font-medium text-foreground capitalize">{lead.preferred_language}</p></div>
                   </div>
                 )}
                 {lead.travel_date && (
