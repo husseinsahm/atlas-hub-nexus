@@ -14,7 +14,7 @@ import {
   Plus, Trash2, MessageSquare, Send,
   ChevronDown, ChevronUp, User, Shield,
   CreditCard, Plane, Hotel, Car, Eye,
-  Route, Paperclip, Activity, Hash,
+  Route, Paperclip, Activity, Hash, Ticket, Stamp,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
