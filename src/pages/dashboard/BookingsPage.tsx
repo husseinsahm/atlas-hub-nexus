@@ -1,45 +1,80 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Filter, Plus, Calendar, Users, DollarSign, MapPin,
-  Loader2, Briefcase, ChevronRight, Clock,
+  Search, Filter, Plus, Calendar, Users, DollarSign,
+  Loader2, Briefcase, ChevronRight, Clock, Plane, X,
+  User, Phone, Mail, Globe, MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: string; dot: string }> = {
-  tentative: { label: "Tentative", color: "text-slate-700", bg: "bg-slate-100", dot: "bg-slate-400" },
-  confirmed: { label: "Confirmed", color: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-500" },
-  in_operation: { label: "In Operation", color: "text-amber-700", bg: "bg-amber-50", dot: "bg-amber-500" },
-  completed: { label: "Completed", color: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-  cancelled: { label: "Cancelled", color: "text-red-700", bg: "bg-red-50", dot: "bg-red-500" },
+const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; dot: string }> = {
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-slate-700", bg: "bg-slate-100", dot: "bg-slate-400" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-500" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-amber-700", bg: "bg-amber-50", dot: "bg-amber-500" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700", bg: "bg-red-50", dot: "bg-red-500" },
 };
+
+const SOURCES = [
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "walk_in", label: "Walk-in" },
+  { value: "website", label: "Website" },
+  { value: "referral", label: "Referral" },
+  { value: "social_media", label: "Social Media" },
+  { value: "partner", label: "Partner" },
+  { value: "other", label: "Other" },
+];
 
 export default function BookingsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { language } = useLanguage();
+  const queryClient = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
+  const isArabic = language === "ar";
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showNewDialog, setShowNewDialog] = useState(false);
+  const [newBooking, setNewBooking] = useState({
+    title: "",
+    customer_name: "",
+    customer_email: "",
+    customer_phone: "",
+    customer_nationality: "",
+    source: "email",
+    arrival_date: "",
+    departure_date: "",
+    adults: 1,
+    children: 0,
+    notes: "",
+  });
 
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["bookings", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, customers(full_name, email)")
+        .select("*, customers(full_name, email, phone)")
         .eq("company_id", companyId!)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -47,6 +82,122 @@ export default function BookingsPage() {
       return data;
     },
     enabled: !!companyId,
+  });
+
+  // Fetch company settings for booking number prefix
+  const { data: companySettings } = useQuery({
+    queryKey: ["company-settings", companyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("booking_prefix, booking_next_number")
+        .eq("company_id", companyId!)
+        .single();
+      return data;
+    },
+    enabled: !!companyId,
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("No company");
+
+      // Generate booking number
+      const prefix = companySettings?.booking_prefix || "BKG";
+      const nextNum = companySettings?.booking_next_number || 1;
+      const bookingNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
+
+      // Calculate total days
+      let totalDays = 1;
+      if (newBooking.arrival_date && newBooking.departure_date) {
+        const start = new Date(newBooking.arrival_date);
+        const end = new Date(newBooking.departure_date);
+        totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+
+      // Create customer first if name provided
+      let customerId = null;
+      if (newBooking.customer_name.trim()) {
+        const { data: customer, error: custErr } = await supabase
+          .from("customers")
+          .insert({
+            company_id: companyId,
+            full_name: newBooking.customer_name.trim(),
+            email: newBooking.customer_email.trim() || null,
+            phone: newBooking.customer_phone.trim() || null,
+            nationality: newBooking.customer_nationality.trim() || null,
+            created_by: user?.id,
+          })
+          .select("id")
+          .single();
+        if (custErr) throw custErr;
+        customerId = customer.id;
+      }
+
+      // Create booking
+      const { data: booking, error } = await supabase
+        .from("bookings")
+        .insert({
+          company_id: companyId,
+          booking_number: bookingNumber,
+          title: newBooking.title.trim() || `Booking ${bookingNumber}`,
+          customer_id: customerId,
+          source: newBooking.source,
+          arrival_date: newBooking.arrival_date || null,
+          departure_date: newBooking.departure_date || null,
+          start_date: newBooking.arrival_date || null,
+          end_date: newBooking.departure_date || null,
+          total_days: totalDays,
+          adults: newBooking.adults,
+          children: newBooking.children,
+          internal_notes: newBooking.notes.trim() || null,
+          status: "tentative",
+          created_by: user?.id,
+          assigned_to: user?.id,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      // Increment booking number
+      await supabase
+        .from("company_settings")
+        .update({ booking_next_number: nextNum + 1 })
+        .eq("company_id", companyId);
+
+      // Create booking activity
+      await supabase.from("booking_activities").insert({
+        booking_id: booking.id,
+        activity_type: "created",
+        title: "Booking file created",
+        user_id: user?.id,
+      });
+
+      return booking;
+    },
+    onSuccess: (booking) => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      setShowNewDialog(false);
+      setNewBooking({
+        title: "",
+        customer_name: "",
+        customer_email: "",
+        customer_phone: "",
+        customer_nationality: "",
+        source: "email",
+        arrival_date: "",
+        departure_date: "",
+        adults: 1,
+        children: 0,
+        notes: "",
+      });
+      toast({ title: isArabic ? "تم إنشاء ملف الحجز" : "Booking file created" });
+      navigate(`/dashboard/bookings/${booking.id}`);
+    },
+    onError: () => {
+      toast({ title: isArabic ? "خطأ في الإنشاء" : "Failed to create booking", variant: "destructive" });
+    },
   });
 
   const filtered = useMemo(() => {
@@ -57,7 +208,8 @@ export default function BookingsPage() {
       list = list.filter((b: any) =>
         b.title?.toLowerCase().includes(q) ||
         b.booking_number?.toLowerCase().includes(q) ||
-        (b as any).customers?.full_name?.toLowerCase().includes(q)
+        (b as any).customers?.full_name?.toLowerCase().includes(q) ||
+        (b as any).customers?.email?.toLowerCase().includes(q)
       );
     }
     return list;
@@ -82,9 +234,17 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Bookings</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage confirmed trips and operational bookings</p>
+          <h1 className="text-2xl font-bold font-display text-foreground">
+            {isArabic ? "ملفات الحجز" : "Booking Files"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {isArabic ? "إدارة حجوزات العملاء والعمليات" : "Manage customer bookings and operations"}
+          </p>
         </div>
+        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2">
+          <Plus className="w-4 h-4" />
+          {isArabic ? "حجز جديد" : "New Booking"}
+        </Button>
       </div>
 
       {/* Stats */}
@@ -100,7 +260,9 @@ export default function BookingsPage() {
           >
             <div className="flex items-center gap-2">
               <div className={cn("w-2 h-2 rounded-full", cfg.dot)} />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{cfg.label}</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {isArabic ? cfg.labelAr : cfg.label}
+              </span>
             </div>
             <div className="text-xl font-bold font-display text-foreground mt-1">{stats[key] || 0}</div>
           </button>
@@ -111,17 +273,22 @@ export default function BookingsPage() {
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search bookings..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          <Input 
+            placeholder={isArabic ? "بحث في الحجوزات..." : "Search bookings..."} 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            className="pl-10" 
+          />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-44">
             <Filter className="w-3.5 h-3.5 mr-2" />
-            <SelectValue placeholder="All statuses" />
+            <SelectValue placeholder={isArabic ? "جميع الحالات" : "All statuses"} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">{isArabic ? "جميع الحالات" : "All Statuses"}</SelectItem>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v.label}</SelectItem>
+              <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -131,15 +298,25 @@ export default function BookingsPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-16">
           <Briefcase className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-foreground">No bookings yet</h3>
+          <h3 className="text-sm font-semibold text-foreground">
+            {isArabic ? "لا توجد حجوزات" : "No booking files yet"}
+          </h3>
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-            Bookings are created when you convert an approved trip. Go to Trips → approve a trip → Convert to Booking.
+            {isArabic 
+              ? "اضغط على 'حجز جديد' لإنشاء ملف حجز جديد"
+              : "Click 'New Booking' to create your first booking file"
+            }
           </p>
+          <Button onClick={() => setShowNewDialog(true)} variant="outline" className="mt-4 gap-2">
+            <Plus className="w-4 h-4" />
+            {isArabic ? "إنشاء حجز" : "Create Booking"}
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((booking: any, idx: number) => {
             const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
+            const customer = (booking as any).customers;
             return (
               <motion.div
                 key={booking.id}
@@ -163,9 +340,14 @@ export default function BookingsPage() {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[10px] font-mono text-muted-foreground">{booking.booking_number}</span>
-                          <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>{sc.label}</Badge>
+                          <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
+                            {isArabic ? sc.labelAr : sc.label}
+                          </Badge>
+                          {booking.source && (
+                            <Badge variant="outline" className="text-[9px] capitalize">{booking.source}</Badge>
+                          )}
                           {booking.payment_status !== "unpaid" && (
                             <Badge variant="outline" className="text-[9px]">
                               <DollarSign className="w-2.5 h-2.5 mr-0.5" />
@@ -174,20 +356,26 @@ export default function BookingsPage() {
                           )}
                         </div>
                         <h3 className="text-sm font-semibold text-foreground truncate mt-0.5">{booking.title}</h3>
-                        <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                          {(booking as any).customers?.full_name && (
+                        <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground flex-wrap">
+                          {customer?.full_name && (
                             <span className="flex items-center gap-0.5">
-                              <Users className="w-2.5 h-2.5" /> {(booking as any).customers.full_name}
+                              <User className="w-2.5 h-2.5" /> {customer.full_name}
+                            </span>
+                          )}
+                          {(booking.arrival_date || booking.start_date) && (
+                            <span className="flex items-center gap-0.5">
+                              <Plane className="w-2.5 h-2.5" /> 
+                              {format(new Date(booking.arrival_date || booking.start_date), "MMM d")}
+                              {(booking.departure_date || booking.end_date) && (
+                                <> → {format(new Date(booking.departure_date || booking.end_date), "MMM d")}</>
+                              )}
                             </span>
                           )}
                           <span className="flex items-center gap-0.5">
-                            <Calendar className="w-2.5 h-2.5" /> {booking.total_days} days
-                          </span>
-                          {booking.start_date && (
-                            <span>{format(new Date(booking.start_date), "MMM d")} → {booking.end_date ? format(new Date(booking.end_date), "MMM d") : "..."}</span>
-                          )}
-                          <span className="flex items-center gap-0.5">
                             <Users className="w-2.5 h-2.5" /> {booking.adults}A{booking.children > 0 ? ` ${booking.children}C` : ""}
+                          </span>
+                          <span className="flex items-center gap-0.5">
+                            <Calendar className="w-2.5 h-2.5" /> {booking.total_days} {isArabic ? "يوم" : "days"}
                           </span>
                         </div>
                       </div>
@@ -212,6 +400,161 @@ export default function BookingsPage() {
           })}
         </div>
       )}
+
+      {/* New Booking Dialog */}
+      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-accent" />
+              {isArabic ? "ملف حجز جديد" : "New Booking File"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Booking Title */}
+            <div>
+              <Label className="text-xs">{isArabic ? "عنوان الحجز" : "Booking Title"}</Label>
+              <Input
+                value={newBooking.title}
+                onChange={e => setNewBooking({ ...newBooking, title: e.target.value })}
+                placeholder={isArabic ? "مثال: رحلة عائلة أحمد إلى دبي" : "e.g., Ahmed Family Dubai Trip"}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Customer Info */}
+            <div className="p-3 rounded-lg border border-border bg-muted/30 space-y-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-accent" />
+                {isArabic ? "معلومات العميل" : "Customer Information"}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs">{isArabic ? "اسم العميل" : "Customer Name"} *</Label>
+                  <Input
+                    value={newBooking.customer_name}
+                    onChange={e => setNewBooking({ ...newBooking, customer_name: e.target.value })}
+                    placeholder={isArabic ? "الاسم الكامل" : "Full name"}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{isArabic ? "البريد الإلكتروني" : "Email"}</Label>
+                  <Input
+                    type="email"
+                    value={newBooking.customer_email}
+                    onChange={e => setNewBooking({ ...newBooking, customer_email: e.target.value })}
+                    placeholder="email@example.com"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{isArabic ? "رقم الهاتف" : "Phone"}</Label>
+                  <Input
+                    value={newBooking.customer_phone}
+                    onChange={e => setNewBooking({ ...newBooking, customer_phone: e.target.value })}
+                    placeholder="+971..."
+                    className="mt-1"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
+                  <Input
+                    value={newBooking.customer_nationality}
+                    onChange={e => setNewBooking({ ...newBooking, customer_nationality: e.target.value })}
+                    placeholder={isArabic ? "الجنسية" : "Nationality"}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Travel Details */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "تاريخ الوصول" : "Arrival Date"}</Label>
+                <Input
+                  type="date"
+                  value={newBooking.arrival_date}
+                  onChange={e => setNewBooking({ ...newBooking, arrival_date: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "تاريخ المغادرة" : "Departure Date"}</Label>
+                <Input
+                  type="date"
+                  value={newBooking.departure_date}
+                  onChange={e => setNewBooking({ ...newBooking, departure_date: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "عدد الكبار" : "Adults"}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={newBooking.adults}
+                  onChange={e => setNewBooking({ ...newBooking, adults: parseInt(e.target.value) || 1 })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "عدد الأطفال" : "Children"}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={newBooking.children}
+                  onChange={e => setNewBooking({ ...newBooking, children: parseInt(e.target.value) || 0 })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            {/* Source */}
+            <div>
+              <Label className="text-xs">{isArabic ? "مصدر الحجز" : "Booking Source"}</Label>
+              <Select value={newBooking.source} onValueChange={v => setNewBooking({ ...newBooking, source: v })}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SOURCES.map(s => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Label className="text-xs">{isArabic ? "ملاحظات" : "Initial Notes"}</Label>
+              <Textarea
+                value={newBooking.notes}
+                onChange={e => setNewBooking({ ...newBooking, notes: e.target.value })}
+                placeholder={isArabic ? "أي ملاحظات أو متطلبات خاصة..." : "Any notes or special requirements..."}
+                rows={3}
+                className="mt-1 text-xs"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
+              {isArabic ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button 
+              onClick={() => createBookingMutation.mutate()} 
+              disabled={!newBooking.customer_name.trim() || createBookingMutation.isPending}
+              className="gold-gradient text-accent-foreground gap-2"
+            >
+              {createBookingMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isArabic ? "إنشاء الحجز" : "Create Booking"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
