@@ -284,25 +284,91 @@ export default function LeadDetailPage() {
     }
   }
 
-  async function convertToTripDraft() {
+  async function convertToBooking() {
     if (!lead || !user || !companyId) return;
     setConverting(true);
     try {
+      // Get company settings for booking number
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("booking_prefix, booking_next_number")
+        .eq("company_id", companyId)
+        .single();
+      
+      const prefix = settings?.booking_prefix || "BKG";
+      const nextNum = settings?.booking_next_number || 1;
+      const bookingNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
+
+      // Create customer from lead
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .insert({
+          company_id: companyId,
+          full_name: lead.full_name,
+          email: lead.email,
+          phone: lead.phone,
+          nationality: lead.nationality,
+          lead_id: lead.id,
+          created_by: user.id,
+          source: lead.source,
+        })
+        .select("id")
+        .single();
+      if (custErr) throw custErr;
+
+      // Create booking file
+      const { data: booking, error: bookErr } = await supabase
+        .from("bookings")
+        .insert({
+          company_id: companyId,
+          booking_number: bookingNumber,
+          title: `${lead.full_name} - ${lead.destinations?.join(", ") || "Trip"}`,
+          customer_id: customer.id,
+          lead_id: lead.id,
+          source: lead.source,
+          arrival_date: lead.travel_date,
+          adults: lead.adults,
+          children: lead.children,
+          internal_notes: lead.notes,
+          status: "tentative",
+          created_by: user.id,
+          assigned_to: lead.assigned_to || user.id,
+        })
+        .select("id")
+        .single();
+      if (bookErr) throw bookErr;
+
+      // Update booking number counter
+      await supabase
+        .from("company_settings")
+        .update({ booking_next_number: nextNum + 1 })
+        .eq("company_id", companyId);
+
       // Mark lead as won
       await supabase.from("leads").update({ status: "won" }).eq("id", lead.id);
+      
       // Log the conversion activity
       await supabase.from("lead_activities").insert({
         lead_id: lead.id, user_id: user.id, activity_type: "converted",
-        description: `Lead converted to Trip Draft`,
-        metadata: { converted_at: new Date().toISOString() },
+        description: `Lead converted to Booking File ${bookingNumber}`,
+        metadata: { converted_at: new Date().toISOString(), booking_id: booking.id },
       });
-      setLead({ ...lead, status: "won" });
+
+      // Create booking activity
+      await supabase.from("booking_activities").insert({
+        booking_id: booking.id,
+        activity_type: "created",
+        title: "Booking file created from lead conversion",
+        user_id: user.id,
+      });
+
       toast({
-        title: "Lead converted!",
-        description: `${lead.full_name} has been marked as Won. Trip draft is ready to be created in the Trips module.`,
+        title: "Lead converted to Booking!",
+        description: `Booking file ${bookingNumber} has been created.`,
       });
-      setConvertOpen(false);
-      fetchActivities();
+      
+      // Navigate to the new booking
+      navigate(`/dashboard/bookings/${booking.id}`);
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
