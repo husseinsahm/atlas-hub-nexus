@@ -274,7 +274,7 @@ export default function TemplatesPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" onClick={() => setShowNewDialog(false)}>
               {isArabic ? "إلغاء" : "Cancel"}
             </Button>
@@ -286,7 +286,7 @@ export default function TemplatesPage() {
               {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               {isArabic ? "إنشاء القالب" : "Create Template"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -739,7 +739,7 @@ export default function LibraryPage() {
             </div>
           </div>
 
-          <DialogFooter className="mt-4">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={() => saveMutation.mutate({ ...form, id: editingItem?.id })}
@@ -749,7 +749,7 @@ export default function LibraryPage() {
               {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               {editingItem ? "Update" : "Create"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
