@@ -670,45 +670,36 @@ export default function BookingDetailPage() {
 
           <div className="space-y-5">
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
-                    <StickyNote className="w-3.5 h-3.5 text-accent" />
+                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
+                    <StickyNote className="w-3.5 h-3.5 text-accent-foreground" />
                   </div>
                   {isArabic ? "ملاحظات" : "Notes"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات داخلية" : "Internal Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.internal_notes || ""}
-                    onBlur={e => updateBooking.mutate({ internal_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات داخلية..." : "Internal notes..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العمليات" : "Operations Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.operations_notes || ""}
-                    onBlur={e => updateBooking.mutate({ operations_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات العمليات..." : "Operations notes..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "ملاحظات العميل" : "Client Notes"}</Label>
-                  <Textarea
-                    defaultValue={booking.client_notes || ""}
-                    onBlur={e => updateBooking.mutate({ client_notes: e.target.value })}
-                    placeholder={isArabic ? "ملاحظات للعميل..." : "Notes for client..."}
-                    rows={3}
-                    className="text-xs mt-1"
-                  />
-                </div>
+              <CardContent className="p-4 space-y-4">
+                {[
+                  { key: "internal_notes", label: isArabic ? "ملاحظات داخلية" : "Internal Notes", placeholder: isArabic ? "ملاحظات داخلية..." : "Internal notes...", icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400" },
+                  { key: "operations_notes", label: isArabic ? "ملاحظات العمليات" : "Operations Notes", placeholder: isArabic ? "ملاحظات العمليات..." : "Operations notes...", icon: Activity, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
+                  { key: "client_notes", label: isArabic ? "ملاحظات العميل" : "Client Notes", placeholder: isArabic ? "ملاحظات للعميل..." : "Notes for client...", icon: User, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
+                ].map(note => (
+                  <div key={note.key} className="rounded-xl border border-border/50 p-3 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", note.iconBg)}>
+                        <note.icon className={cn("w-2.5 h-2.5", note.iconText)} />
+                      </div>
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{note.label}</Label>
+                    </div>
+                    <Textarea
+                      defaultValue={(booking as any)[note.key] || ""}
+                      onBlur={e => updateBooking.mutate({ [note.key]: e.target.value })}
+                      placeholder={note.placeholder}
+                      rows={3}
+                      className="text-xs border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 resize-none"
+                    />
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
