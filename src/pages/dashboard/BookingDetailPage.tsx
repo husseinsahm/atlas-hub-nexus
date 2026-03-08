@@ -36,6 +36,7 @@ import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import { PaymentRecords } from "@/components/PaymentRecords";
+import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
