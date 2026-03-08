@@ -31,6 +31,7 @@ import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import SharedTrip from "./pages/shared/SharedTrip";
+import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
