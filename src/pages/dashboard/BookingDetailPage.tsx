@@ -429,27 +429,131 @@ export default function BookingDetailPage() {
             {/* Travelers */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-accent" /> Travelers
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="w-4 h-4 text-accent" /> Travelers
+                    {Array.isArray(booking.travelers) && (booking.travelers as Traveler[]).length > 0 && (
+                      <Badge variant="secondary" className="text-[10px]">{(booking.travelers as Traveler[]).length}</Badge>
+                    )}
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px] gap-1"
+                    onClick={() => { setEditingTraveler(emptyTraveler()); setShowTravelerDialog(true); }}
+                  >
+                    <Plus className="w-3 h-3" /> Add Traveler
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {Array.isArray(booking.travelers) && (booking.travelers as any[]).length > 0 ? (
+                {Array.isArray(booking.travelers) && (booking.travelers as Traveler[]).length > 0 ? (
                   <div className="space-y-2">
-                    {(booking.travelers as any[]).map((t: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border">
-                        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{i + 1}</div>
-                        <div>
-                          <p className="text-xs font-medium text-foreground">{t.name || `Traveler ${i + 1}`}</p>
-                          {t.passport && <p className="text-[10px] text-muted-foreground font-mono">{t.passport}</p>}
-                        </div>
-                      </div>
-                    ))}
+                    <AnimatePresence>
+                      {(booking.travelers as Traveler[]).map((t, i) => {
+                        const isExpanded = expandedTraveler === t.id;
+                        return (
+                          <motion.div
+                            key={t.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className="rounded-lg border border-border overflow-hidden"
+                          >
+                            <div
+                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                              onClick={() => setExpandedTraveler(isExpanded ? null : t.id)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                                {i + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{t.full_name || `Traveler ${i + 1}`}</p>
+                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                  {t.nationality && <span className="flex items-center gap-0.5"><Globe className="w-2.5 h-2.5" />{t.nationality}</span>}
+                                  {t.passport_number && <span className="font-mono">{t.passport_number}</span>}
+                                  {t.gender && <span className="capitalize">{t.gender}</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={e => { e.stopPropagation(); setEditingTraveler(t); setShowTravelerDialog(true); }}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    const updated = (booking.travelers as Traveler[]).filter(tr => tr.id !== t.id);
+                                    updateBooking.mutate({ travelers: updated });
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="border-t border-border bg-muted/20 px-3 py-3"
+                              >
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Full Name</Label>
+                                    <p className="text-xs font-medium text-foreground">{t.full_name || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Gender</Label>
+                                    <p className="text-xs text-foreground capitalize">{t.gender || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Date of Birth</Label>
+                                    <p className="text-xs text-foreground">{t.date_of_birth || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Nationality</Label>
+                                    <p className="text-xs text-foreground">{t.nationality || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Number</Label>
+                                    <p className="text-xs font-mono text-foreground">{t.passport_number || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Expiry</Label>
+                                    <p className="text-xs text-foreground">{t.passport_expiry || "—"}</p>
+                                  </div>
+                                  {t.room_notes && (
+                                    <div className="col-span-3">
+                                      <Label className="text-[10px] text-muted-foreground uppercase">Room Assignment</Label>
+                                      <p className="text-xs text-foreground">{t.room_notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {booking.adults} adult{booking.adults > 1 ? "s" : ""}{booking.children > 0 ? `, ${booking.children} child${booking.children > 1 ? "ren" : ""}` : ""}. No individual traveler details added yet.
-                  </p>
+                  <div className="text-center py-6 space-y-2">
+                    <Users className="w-8 h-8 text-muted-foreground/30 mx-auto" />
+                    <p className="text-xs text-muted-foreground">
+                      {booking.adults} adult{booking.adults > 1 ? "s" : ""}{booking.children > 0 ? `, ${booking.children} child${booking.children > 1 ? "ren" : ""}` : ""}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Click "Add Traveler" to enter individual traveler details</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
