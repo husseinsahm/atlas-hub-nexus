@@ -2384,6 +2384,8 @@ export type Database = {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
       }
+      soft_delete_customer: { Args: { _customer_id: string }; Returns: boolean }
+      soft_delete_lead: { Args: { _lead_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:
