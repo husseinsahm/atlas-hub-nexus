@@ -16,6 +16,11 @@ import {
   Users, UserPlus, Search, Eye, Edit2, Phone, Mail, Globe,
   MapPin, Tag, Heart, Star, Calendar,
 } from "lucide-react";
+import { CountrySelect, NationalitySelect } from "@/components/ui/country-select";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { NoCustomersEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
+import { TableLoadingState, StatsGridLoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 const PREFERENCE_OPTIONS = [
