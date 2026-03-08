@@ -886,6 +886,7 @@ export default function TripBuilderPage() {
     },
   });
 
+  const aiSuggestDay = useCallback(async () => {
     if (!selectedDay || !trip) return;
     setAiLoading(true);
     try {
