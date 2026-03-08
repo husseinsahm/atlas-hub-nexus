@@ -28,6 +28,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
+const STEPS = [
+  { id: 0, label: "Client", labelAr: "العميل", icon: User },
+  { id: 1, label: "Trip", labelAr: "الرحلة", icon: Plane },
+  { id: 2, label: "Details", labelAr: "التفاصيل", icon: Briefcase },
+];
+
 const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; dot: string }> = {
   tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-slate-700", bg: "bg-slate-100", dot: "bg-slate-400" },
   confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-500" },
