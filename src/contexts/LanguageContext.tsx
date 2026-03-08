@@ -70,6 +70,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.analytics": "التحليلات",
     "nav.itineraries": "خطط الرحلات",
     "nav.invoices": "الفواتير",
+    "nav.plans": "الباقات",
     "nav.operations": "العمليات",
     "nav.finance": "المالية",
     "app.name": "سفر",
