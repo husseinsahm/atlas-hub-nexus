@@ -4,14 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Calendar, Users, DollarSign, MapPin,
   Loader2, Briefcase, CheckCircle2, Clock,
   FileText, StickyNote, Pencil, Upload,
   UserCheck, Phone, Mail, Globe,
   Plus, Trash2, Download, MessageSquare,
-  TrendingUp, CreditCard, Send,
+  TrendingUp, CreditCard, Send, ChevronDown, ChevronUp,
+  User, Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+
+interface Traveler {
+  id: string;
+  full_name: string;
+  gender: string;
+  date_of_birth: string;
+  nationality: string;
+  passport_number: string;
+  passport_expiry: string;
+  room_notes: string;
+}
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
