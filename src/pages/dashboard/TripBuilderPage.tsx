@@ -890,80 +890,317 @@ export default function TripBuilderPage() {
         </div>
 
         {/* ===== RIGHT: Pricing Panel ===== */}
-        <div className="w-72 shrink-0 border-l border-border bg-card/50 flex flex-col">
-          <div className="p-4 border-b border-border">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pricing Summary</h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Total Cost</span>
-                <span className="text-sm font-semibold text-foreground">{pricingSummary.totalCost.toLocaleString()} {trip.currency}</span>
-              </div>
-              <Separator />
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Selling Price</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={trip.selling_price || ""}
-                  onChange={e => updateTrip.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
-                  className="text-right font-semibold"
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Profit</span>
-                <span className={cn("text-sm font-bold", pricingSummary.profit >= 0 ? "text-emerald-600" : "text-destructive")}>
-                  {pricingSummary.profit >= 0 ? "+" : ""}{pricingSummary.profit.toLocaleString()} {trip.currency}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Margin</span>
-                <Badge variant="outline" className={cn("text-xs", pricingSummary.margin >= 20 ? "text-emerald-600 border-emerald-200" : pricingSummary.margin >= 0 ? "text-amber-600 border-amber-200" : "text-destructive border-destructive/30")}>
-                  <TrendingUp className="w-3 h-3 mr-1" /> {pricingSummary.margin.toFixed(1)}%
-                </Badge>
-              </div>
-            </div>
+        <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
+          {/* Pricing View Toggle */}
+          <div className="p-3 border-b border-border">
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client")}>
+              <TabsList className="w-full h-8">
+                <TabsTrigger value="internal" className="flex-1 text-[11px] gap-1">
+                  <EyeOff className="w-3 h-3" /> Internal
+                </TabsTrigger>
+                <TabsTrigger value="client" className="flex-1 text-[11px] gap-1">
+                  <Eye className="w-3 h-3" /> Client View
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-2">
-              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Per Day Breakdown</h3>
-              {days.map(day => {
-                const cost = pricingSummary.perDay[day.id] || 0;
-                const items = allDayItems.filter(i => i.trip_day_id === day.id).length;
-                return (
-                  <div
-                    key={day.id}
-                    onClick={() => setSelectedDayId(day.id)}
-                    className={cn(
-                      "flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors",
-                      selectedDayId === day.id ? "bg-muted" : "hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-accent/10 text-accent font-bold">{day.day_number}</span>
-                      <div>
-                        <span className="text-muted-foreground">{items} items</span>
-                        {day.city && <span className="text-[10px] text-muted-foreground ml-1">· {day.city}</span>}
-                      </div>
+            {pricingView === "internal" ? (
+              /* ===== INTERNAL PRICING VIEW ===== */
+              <div className="p-4 space-y-4">
+                {/* Cost Summary */}
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Receipt className="w-3 h-3" /> Cost Breakdown
+                  </h3>
+                  <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Base Cost</span>
+                      <span className="text-sm font-semibold text-foreground font-mono">{pricingSummary.totalCost.toLocaleString()} {trip.currency}</span>
                     </div>
-                    <span className="font-medium text-foreground">{cost > 0 ? `${cost.toLocaleString()}` : "—"}</span>
+                    {pricingSummary.markupAmount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" /> Markup
+                        </span>
+                        <span className="text-xs font-medium text-foreground font-mono">+{pricingSummary.markupAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {pricingSummary.discountAmount > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Tag className="w-3 h-3" /> Discount
+                        </span>
+                        <span className="text-xs font-medium text-destructive font-mono">-{pricingSummary.discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                </div>
 
-          <div className="p-4 border-t border-border">
-            <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Internal Notes</Label>
-            <Textarea
-              value={trip.internal_notes || ""}
-              onChange={e => updateTrip.mutate({ internal_notes: e.target.value })}
-              placeholder="Trip notes..."
-              rows={3}
-              className="mt-1.5 text-xs"
-            />
-          </div>
+                <Separator />
+
+                {/* Markup Controls */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Percent className="w-3 h-3" /> Markup
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={(trip as any)?.markup_type || "percentage"} 
+                      onValueChange={v => updateTrip.mutate({ markup_type: v })}
+                    >
+                      <SelectTrigger className="w-24 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="fixed">Fixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={(trip as any)?.markup_value || ""}
+                      onChange={e => updateTrip.mutate({ markup_value: parseFloat(e.target.value) || 0 })}
+                      className="flex-1 h-8 text-xs text-right font-mono"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                {/* Discount Controls */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Tag className="w-3 h-3" /> Discount
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={(trip as any)?.discount_type || "fixed"} 
+                      onValueChange={v => updateTrip.mutate({ discount_type: v })}
+                    >
+                      <SelectTrigger className="w-24 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Fixed</SelectItem>
+                        <SelectItem value="percentage">%</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={(trip as any)?.discount_value || ""}
+                      onChange={e => updateTrip.mutate({ discount_value: parseFloat(e.target.value) || 0 })}
+                      className="flex-1 h-8 text-xs text-right font-mono"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Selling Price */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">Selling Price</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 text-[10px] text-accent"
+                      onClick={() => updateTrip.mutate({ selling_price: Math.round(pricingSummary.calculatedClientPrice * 100) / 100 })}
+                    >
+                      Auto-fill from calc
+                    </Button>
+                  </div>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={trip.selling_price || ""}
+                    onChange={e => updateTrip.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
+                    className="text-right font-bold text-base font-mono h-10"
+                  />
+                  <div className="text-[10px] text-muted-foreground text-right">
+                    Calculated: {pricingSummary.calculatedClientPrice.toLocaleString()} {trip.currency}
+                  </div>
+                </div>
+
+                {/* Profit & Margin */}
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground font-medium">Profit</span>
+                    <span className={cn("text-sm font-bold font-mono", pricingSummary.profit >= 0 ? "text-emerald-600" : "text-destructive")}>
+                      {pricingSummary.profit >= 0 ? "+" : ""}{pricingSummary.profit.toLocaleString()} {trip.currency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground font-medium">Margin</span>
+                    <Badge variant="outline" className={cn("text-xs font-mono", pricingSummary.margin >= 20 ? "text-emerald-600 border-emerald-200" : pricingSummary.margin >= 0 ? "text-amber-600 border-amber-200" : "text-destructive border-destructive/30")}>
+                      <TrendingUp className="w-3 h-3 mr-1" /> {pricingSummary.margin.toFixed(1)}%
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Per Day Breakdown with item-level details */}
+                <div className="space-y-2">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Per Day Breakdown</h3>
+                  {days.map(day => {
+                    const cost = pricingSummary.perDay[day.id] || 0;
+                    const items = pricingSummary.perDayItems[day.id] || [];
+                    const isSelected = selectedDayId === day.id;
+                    return (
+                      <div key={day.id} className="space-y-1">
+                        <div
+                          onClick={() => setSelectedDayId(day.id)}
+                          className={cn(
+                            "flex items-center justify-between p-2 rounded-lg cursor-pointer text-xs transition-colors",
+                            isSelected ? "bg-accent/10 border border-accent/20" : "hover:bg-muted/50"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded text-[10px] flex items-center justify-center bg-accent/10 text-accent font-bold">{day.day_number}</span>
+                            <div>
+                              <span className="font-medium text-foreground">{day.title || `Day ${day.day_number}`}</span>
+                              {day.city && <span className="text-[10px] text-muted-foreground ml-1">· {day.city}</span>}
+                            </div>
+                          </div>
+                          <span className="font-semibold text-foreground font-mono">{cost > 0 ? `${cost.toLocaleString()}` : "—"}</span>
+                        </div>
+                        {/* Item-level prices under selected day */}
+                        {isSelected && items.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="ml-7 space-y-0.5 pb-1"
+                          >
+                            {items.map(item => (
+                              <div key={item.id} className="flex items-center justify-between text-[10px] text-muted-foreground px-2 py-1 rounded hover:bg-muted/30">
+                                <span className="truncate max-w-[120px]">{item.custom_title}</span>
+                                <span className="font-mono shrink-0 ml-2">{(item.total_price || 0).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Separator />
+
+                {/* Internal Pricing Notes */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <StickyNote className="w-3 h-3" /> Pricing Notes (Internal)
+                  </Label>
+                  <Textarea
+                    value={(trip as any)?.pricing_notes || ""}
+                    onChange={e => updateTrip.mutate({ pricing_notes: e.target.value })}
+                    placeholder="Internal pricing notes — supplier rates, negotiations, cost justification..."
+                    rows={3}
+                    className="text-xs"
+                  />
+                </div>
+
+                {/* Trip Internal Notes */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Internal Notes</Label>
+                  <Textarea
+                    value={trip.internal_notes || ""}
+                    onChange={e => updateTrip.mutate({ internal_notes: e.target.value })}
+                    placeholder="Trip notes..."
+                    rows={3}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* ===== CLIENT-FACING PRICING VIEW ===== */
+              <div className="p-4 space-y-4">
+                <div className="text-center py-3">
+                  <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center mx-auto mb-2">
+                    <Eye className="w-5 h-5 text-accent-foreground" />
+                  </div>
+                  <h3 className="text-sm font-semibold font-display text-foreground">Client View</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Preview what the client sees</p>
+                </div>
+
+                <Separator />
+
+                {/* Client trip summary */}
+                <div className="rounded-xl border border-border bg-background p-4 space-y-4">
+                  <div className="text-center">
+                    <h4 className="text-sm font-bold font-display text-foreground">{trip.title}</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {trip.total_days} days · {trip.adults} adults{trip.children > 0 ? ` · ${trip.children} children` : ""}
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Per-day totals (client sees clean totals, no cost breakdown) */}
+                  <div className="space-y-1.5">
+                    {days.map(day => {
+                      const cost = pricingSummary.perDay[day.id] || 0;
+                      const items = pricingSummary.perDayItems[day.id] || [];
+                      return (
+                        <div key={day.id} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-md gold-gradient text-[10px] flex items-center justify-center text-accent-foreground font-bold">{day.day_number}</span>
+                              <span className="font-medium">{day.title || `Day ${day.day_number}`}</span>
+                            </div>
+                          </div>
+                          <div className="ml-7 space-y-0.5">
+                            {items.map(item => (
+                              <div key={item.id} className="text-[10px] text-muted-foreground px-2 py-0.5 flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-accent shrink-0" />
+                                <span className="truncate">{item.custom_title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Separator />
+
+                  {/* Client total price */}
+                  <div className="text-center py-2">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Price</span>
+                    <div className="text-2xl font-bold font-display text-foreground mt-1">
+                      {(trip.selling_price || 0).toLocaleString()} <span className="text-sm font-normal text-muted-foreground">{trip.currency}</span>
+                    </div>
+                    {trip.adults > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        {Math.round((trip.selling_price || 0) / (trip.adults + trip.children)).toLocaleString()} {trip.currency} per person
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Client Notes */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <MessageSquare className="w-3 h-3" /> Client Notes
+                  </Label>
+                  <Textarea
+                    value={(trip as any)?.client_notes || ""}
+                    onChange={e => updateTrip.mutate({ client_notes: e.target.value })}
+                    placeholder="Notes visible to the client — inclusions, terms, payment info..."
+                    rows={3}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            )}
+          </ScrollArea>
         </div>
       </div>
 
