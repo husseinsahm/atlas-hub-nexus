@@ -1602,6 +1602,14 @@ export default function TripBuilderPage() {
                   companyId={trip.company_id}
                 />
               </div>
+            ) : pricingView === "files" ? (
+              <div className="p-4">
+                <FileAttachments
+                  entityType="trip"
+                  entityId={trip.id}
+                  companyId={trip.company_id}
+                />
+              </div>
             ) : pricingView === "history" ? (
               /* ===== UNIFIED BOOKING FILE TIMELINE ===== */
               <div className="p-4 space-y-4">
