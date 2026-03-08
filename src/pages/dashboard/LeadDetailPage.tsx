@@ -583,25 +583,11 @@ export default function LeadDetailPage() {
 
                 {/* Internal Comments Tab */}
                 <TabsContent value="comments" className="mt-0">
-                  {isAdminOrAgent && (
-                    <div className="mb-4 p-3 rounded-lg border border-dashed border-amber-300 bg-amber-50/30">
-                      <p className="text-xs text-amber-700 mb-2 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> Internal only — not visible to clients
-                      </p>
-                      <Textarea
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="Internal team comment..."
-                        rows={2}
-                        maxLength={1000}
-                        className="mb-2 bg-card"
-                      />
-                      <Button size="sm" onClick={addComment} disabled={!commentText.trim() || addingComment} variant="outline" className="gap-1.5">
-                        <MessageSquare className="w-3.5 h-3.5" /> {addingComment ? "Adding..." : "Add Comment"}
-                      </Button>
-                    </div>
-                  )}
-                  {renderActivityList(commentActivities)}
+                  <InternalComments
+                    entityType="lead"
+                    entityId={lead.id}
+                    companyId={lead.company_id}
+                  />
                 </TabsContent>
 
                 {/* Follow-ups Tab */}
