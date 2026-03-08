@@ -49,7 +49,13 @@ interface Customer {
   full_name: string;
   email: string | null;
   phone: string | null;
+  secondary_phone: string | null;
   nationality: string | null;
+  date_of_birth: string | null;
+  passport_number: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
   preferences: string[];
   tags: string[];
   source: string;
