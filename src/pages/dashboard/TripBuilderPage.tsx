@@ -458,7 +458,7 @@ export default function TripBuilderPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => { invalidateAll(); toast({ title: "Item added" }); },
+    onSuccess: () => { invalidateAll(); trackRevision("item_added", `Item added from library`); toast({ title: "Item added" }); },
   });
 
   const addCustomItem = useMutation({
