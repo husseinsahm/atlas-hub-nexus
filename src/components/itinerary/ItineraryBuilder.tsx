@@ -1,0 +1,699 @@
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
+  Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
+  Sparkles, Navigation, FileText, Activity, User, Calendar,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+
+interface ItineraryDay {
+  id: string;
+  day_number: number;
+  title: string | null;
+  city: string | null;
+  date: string | null;
+  description: string | null;
+  short_description: string | null;
+  pickup_location: string | null;
+  dropoff_location: string | null;
+  pickup_time: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  internal_notes: string | null;
+  booking_day_items: any[];
+}
+
+interface ItineraryBuilderProps {
+  bookingId: string;
+  companyId: string;
+  itineraryDays: ItineraryDay[];
+  booking: any;
+  isArabic: boolean;
+}
+
+const QUICK_ACTIONS = [
+  { type: "activity", label: "Activity", icon: Activity, color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
+  { type: "hotel", label: "Hotel", icon: Hotel, color: "text-blue-600 bg-blue-50 border-blue-200" },
+  { type: "transfer", label: "Transfer", icon: Car, color: "text-amber-600 bg-amber-50 border-amber-200" },
+  { type: "guide", label: "Guide", icon: User, color: "text-purple-600 bg-purple-50 border-purple-200" },
+];
+
+export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking, isArabic }: ItineraryBuilderProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [expandedDay, setExpandedDay] = useState<string | null>(itineraryDays[0]?.id || null);
+  const [editingDayId, setEditingDayId] = useState<string | null>(null);
+  const [showTransport, setShowTransport] = useState<Record<string, boolean>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Initialize transport toggle state from existing data
+  const hasTransport = useCallback((day: ItineraryDay) => {
+    return !!(day.pickup_location || day.dropoff_location || day.pickup_time);
+  }, []);
+
+  const addDay = useMutation({
+    mutationFn: async () => {
+      const nextDay = itineraryDays.length + 1;
+      let date: string | null = null;
+      if (booking?.arrival_date || booking?.start_date) {
+        const startDate = new Date(booking.arrival_date || booking.start_date);
+        startDate.setDate(startDate.getDate() + nextDay - 1);
+        date = startDate.toISOString().split("T")[0];
+      }
+      const { error } = await supabase.from("booking_days").insert({
+        booking_id: bookingId,
+        day_number: nextDay,
+        title: `Day ${nextDay}`,
+        date,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+    },
+  });
+
+  const updateDay = useMutation({
+    mutationFn: async ({ dayId, updates }: { dayId: string; updates: Record<string, any> }) => {
+      const { error } = await supabase.from("booking_days").update(updates).eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+    },
+  });
+
+  const deleteDay = useMutation({
+    mutationFn: async (dayId: string) => {
+      await supabase.from("booking_day_items").delete().eq("booking_day_id", dayId);
+      const { error } = await supabase.from("booking_days").delete().eq("id", dayId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      toast({ title: isArabic ? "تم حذف اليوم" : "Day removed" });
+    },
+  });
+
+  const addDayItem = useMutation({
+    mutationFn: async ({ dayId, category }: { dayId: string; category: string }) => {
+      const items = itineraryDays.find(d => d.id === dayId)?.booking_day_items || [];
+      const { error } = await supabase.from("booking_day_items").insert({
+        booking_day_id: dayId,
+        category,
+        custom_title: `New ${category}`,
+        sort_order: items.length,
+        currency: booking?.currency || "USD",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+    },
+  });
+
+  const deleteDayItem = useMutation({
+    mutationFn: async (itemId: string) => {
+      const { error } = await supabase.from("booking_day_items").delete().eq("id", itemId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+    },
+  });
+
+  const generateItinerary = useCallback(async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-itinerary", {
+        body: {
+          bookingId,
+          title: booking?.title,
+          totalDays: booking?.total_days || itineraryDays.length || 7,
+          arrivalDate: booking?.arrival_date || booking?.start_date,
+          departureDate: booking?.departure_date || booking?.end_date,
+          adults: booking?.adults,
+          children: booking?.children,
+          existingDays: itineraryDays.map(d => ({
+            id: d.id,
+            day_number: d.day_number,
+            city: d.city,
+            title: d.title,
+            date: d.date,
+          })),
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.days) {
+        for (const day of data.days) {
+          const existingDay = itineraryDays.find(d => d.day_number === day.day_number);
+          if (existingDay) {
+            await supabase.from("booking_days").update({
+              title: day.title || existingDay.title,
+              short_description: day.short_description || null,
+              city: day.city || existingDay.city,
+              pickup_location: day.pickup_location || null,
+              dropoff_location: day.dropoff_location || null,
+              pickup_time: day.pickup_time || null,
+            }).eq("id", existingDay.id);
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+        toast({ title: isArabic ? "تم تحديث البرنامج بالذكاء الاصطناعي" : "Itinerary enhanced with AI" });
+      }
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      toast({
+        title: isArabic ? "فشل التوليد" : "Generation failed",
+        description: err?.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [bookingId, booking, itineraryDays, queryClient, toast, isArabic]);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl gold-gradient flex items-center justify-center shadow-md">
+            <Route className="w-4.5 h-4.5 text-accent-foreground" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground font-display">
+              {isArabic ? "برنامج الرحلة" : "Trip Itinerary"}
+            </h3>
+            <p className="text-[10px] text-muted-foreground">
+              {itineraryDays.length} {isArabic ? "يوم" : "days"} 
+              {booking?.arrival_date && ` · ${format(new Date(booking.arrival_date), "MMM d")} → ${booking?.departure_date ? format(new Date(booking.departure_date), "MMM d") : "..."}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {itineraryDays.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-[11px] gap-1.5 h-8 border-accent/30 text-accent hover:bg-accent/10"
+              onClick={generateItinerary}
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              {isGenerating ? (isArabic ? "جاري التوليد..." : "Generating...") : (isArabic ? "توليد بالذكاء الاصطناعي" : "AI Enhance")}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            className="gold-gradient text-accent-foreground text-[11px] gap-1.5 h-8 shadow-md"
+            onClick={() => addDay.mutate()}
+            disabled={addDay.isPending}
+          >
+            <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة يوم" : "Add Day"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {itineraryDays.length === 0 ? (
+        <Card className="border-dashed border-2 border-border">
+          <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-muted/60 flex items-center justify-center">
+              <Route className="w-8 h-8 text-muted-foreground/40" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold text-foreground">
+                {isArabic ? "لا يوجد برنامج بعد" : "No itinerary yet"}
+              </p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                {isArabic
+                  ? "ابدأ ببناء البرنامج اليومي للرحلة"
+                  : "Start building the day-by-day travel plan for this booking"}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="gold-gradient text-accent-foreground text-xs gap-1.5"
+              onClick={() => addDay.mutate()}
+            >
+              <Plus className="w-3.5 h-3.5" /> {isArabic ? "ابدأ البرنامج" : "Start Itinerary"}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Timeline */
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-[23px] top-4 bottom-4 w-px bg-border z-0" />
+
+          <div className="space-y-3 relative z-10">
+            <AnimatePresence>
+              {itineraryDays.map((day, idx) => (
+                <DayCard
+                  key={day.id}
+                  day={day}
+                  index={idx}
+                  isExpanded={expandedDay === day.id}
+                  isEditing={editingDayId === day.id}
+                  showTransportFields={showTransport[day.id] ?? hasTransport(day)}
+                  isArabic={isArabic}
+                  currency={booking?.currency || "USD"}
+                  onToggleExpand={() => setExpandedDay(expandedDay === day.id ? null : day.id)}
+                  onToggleEdit={() => setEditingDayId(editingDayId === day.id ? null : day.id)}
+                  onToggleTransport={(v) => setShowTransport(prev => ({ ...prev, [day.id]: v }))}
+                  onUpdateDay={(updates) => updateDay.mutate({ dayId: day.id, updates })}
+                  onDeleteDay={() => deleteDay.mutate(day.id)}
+                  onAddItem={(category) => addDayItem.mutate({ dayId: day.id, category })}
+                  onDeleteItem={(itemId) => deleteDayItem.mutate(itemId)}
+                  isUpdating={updateDay.isPending}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Day Card ───
+
+interface DayCardProps {
+  day: ItineraryDay;
+  index: number;
+  isExpanded: boolean;
+  isEditing: boolean;
+  showTransportFields: boolean;
+  isArabic: boolean;
+  currency: string;
+  onToggleExpand: () => void;
+  onToggleEdit: () => void;
+  onToggleTransport: (v: boolean) => void;
+  onUpdateDay: (updates: Record<string, any>) => void;
+  onDeleteDay: () => void;
+  onAddItem: (category: string) => void;
+  onDeleteItem: (itemId: string) => void;
+  isUpdating: boolean;
+}
+
+function DayCard({
+  day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
+  onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
+  onAddItem, onDeleteItem, isUpdating,
+}: DayCardProps) {
+  const [localTitle, setLocalTitle] = useState(day.title || "");
+  const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
+  const [localCity, setLocalCity] = useState(day.city || "");
+  const [localPickup, setLocalPickup] = useState(day.pickup_location || "");
+  const [localDropoff, setLocalDropoff] = useState(day.dropoff_location || "");
+  const [localPickupTime, setLocalPickupTime] = useState(day.pickup_time || "");
+  const [localStartTime, setLocalStartTime] = useState(day.start_time || "");
+  const [localEndTime, setLocalEndTime] = useState(day.end_time || "");
+  const [localNotes, setLocalNotes] = useState(day.internal_notes || "");
+  const [editingTitle, setEditingTitle] = useState(false);
+
+  const items = (day.booking_day_items || []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+  const itemsTotal = items.reduce((sum: number, i: any) => sum + Number(i.total_price || 0), 0);
+
+  const saveAllFields = useCallback(() => {
+    onUpdateDay({
+      title: localTitle || `Day ${day.day_number}`,
+      short_description: localDesc || null,
+      city: localCity || null,
+      pickup_location: showTransportFields ? (localPickup || null) : null,
+      dropoff_location: showTransportFields ? (localDropoff || null) : null,
+      pickup_time: showTransportFields ? (localPickupTime || null) : null,
+      start_time: localStartTime || null,
+      end_time: localEndTime || null,
+      internal_notes: localNotes || null,
+    });
+    onToggleEdit();
+  }, [localTitle, localDesc, localCity, localPickup, localDropoff, localPickupTime, localStartTime, localEndTime, localNotes, showTransportFields, day.day_number, onUpdateDay, onToggleEdit]);
+
+  const getCategoryIcon = (cat: string) => {
+    switch (cat) {
+      case "hotel": return Hotel;
+      case "transfer": return Car;
+      case "guide": return User;
+      case "activity": return Activity;
+      default: return FileText;
+    }
+  };
+
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case "hotel": return "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400";
+      case "transfer": return "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400";
+      case "guide": return "bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400";
+      case "activity": return "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400";
+      default: return "bg-muted text-muted-foreground border-border";
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ delay: index * 0.04 }}
+    >
+      <Card className={cn(
+        "border-border/60 shadow-sm transition-all overflow-hidden",
+        isExpanded && "shadow-md border-accent/20",
+      )}>
+        {/* Day header - always visible */}
+        <div
+          className="flex items-start gap-3 p-4 cursor-pointer hover:bg-muted/20 transition-colors"
+          onClick={onToggleExpand}
+        >
+          {/* Day number badge on timeline */}
+          <div className={cn(
+            "w-[46px] h-[46px] rounded-xl flex flex-col items-center justify-center shrink-0 font-display shadow-md ring-2 ring-background transition-colors",
+            isExpanded ? "gold-gradient text-accent-foreground" : "bg-primary text-primary-foreground"
+          )}>
+            <span className="text-[9px] font-bold uppercase leading-none opacity-70">
+              {isArabic ? "يوم" : "DAY"}
+            </span>
+            <span className="text-lg font-extrabold leading-none">{day.day_number}</span>
+          </div>
+
+          {/* Day info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Inline title */}
+              {editingTitle ? (
+                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  <Input
+                    value={localTitle}
+                    onChange={e => setLocalTitle(e.target.value)}
+                    className="h-7 text-sm font-bold w-48"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        onUpdateDay({ title: localTitle || `Day ${day.day_number}` });
+                        setEditingTitle(false);
+                      }
+                      if (e.key === "Escape") setEditingTitle(false);
+                    }}
+                  />
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
+                    onUpdateDay({ title: localTitle || `Day ${day.day_number}` });
+                    setEditingTitle(false);
+                  }}>
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingTitle(false)}>
+                    <X className="w-3 h-3 text-muted-foreground" />
+                  </Button>
+                </div>
+              ) : (
+                <h4
+                  className="text-sm font-bold text-foreground font-display cursor-text hover:text-accent transition-colors"
+                  onClick={e => { e.stopPropagation(); setEditingTitle(true); }}
+                >
+                  {day.title || `Day ${day.day_number}`}
+                </h4>
+              )}
+
+              {day.city && (
+                <Badge variant="outline" className="text-[9px] gap-0.5 shrink-0">
+                  <MapPin className="w-2.5 h-2.5" /> {day.city}
+                </Badge>
+              )}
+              {day.date && (
+                <Badge variant="secondary" className="text-[9px] shrink-0">
+                  <Calendar className="w-2.5 h-2.5 mr-0.5" />
+                  {format(new Date(day.date), "EEE, MMM d")}
+                </Badge>
+              )}
+            </div>
+
+            {/* Short description */}
+            {(day.short_description || day.description) && (
+              <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">
+                {day.short_description || day.description}
+              </p>
+            )}
+
+            {/* Transport summary */}
+            {(day.pickup_location || day.dropoff_location) && (
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
+                <Navigation className="w-3 h-3 text-accent shrink-0" />
+                <span className="truncate">
+                  {day.pickup_location && <span>{day.pickup_location}</span>}
+                  {day.pickup_location && day.dropoff_location && <span className="mx-1">→</span>}
+                  {day.dropoff_location && <span>{day.dropoff_location}</span>}
+                  {day.pickup_time && <span className="ml-1.5 text-accent font-medium">@ {day.pickup_time}</span>}
+                </span>
+              </div>
+            )}
+
+            {/* Items count summary */}
+            <div className="flex items-center gap-3 mt-1.5">
+              {items.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  {items.length} {isArabic ? "عنصر" : "items"}
+                </span>
+              )}
+              {itemsTotal > 0 && (
+                <span className="text-[10px] font-mono font-semibold text-foreground">
+                  {itemsTotal.toLocaleString()} {currency}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onToggleEdit}>
+                  <Pencil className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">{isArabic ? "تعديل" : "Edit day"}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive/60 hover:text-destructive" onClick={onDeleteDay}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">{isArabic ? "حذف اليوم" : "Delete day"}</TooltipContent>
+            </Tooltip>
+            {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </div>
+        </div>
+
+        {/* Expanded content */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <Separator />
+
+              {/* Edit form */}
+              {isEditing && (
+                <div className="px-4 py-4 bg-muted/20 border-b border-border space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "عنوان اليوم" : "Day Title"}</Label>
+                      <Input value={localTitle} onChange={e => setLocalTitle(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Pyramids & Sphinx Tour" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "المدينة / الوجهة" : "City / Destination"}</Label>
+                      <Input value={localCity} onChange={e => setLocalCity(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Cairo" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وصف مختصر" : "Short Description"}</Label>
+                    <Textarea value={localDesc} onChange={e => setLocalDesc(e.target.value)} className="text-xs mt-1 resize-none" rows={2} placeholder={isArabic ? "وصف مختصر لنشاطات اليوم..." : "Brief overview of the day's activities..."} />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وقت البداية" : "Start Time"}</Label>
+                      <Input type="time" value={localStartTime} onChange={e => setLocalStartTime(e.target.value)} className="h-9 text-sm mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] uppercase text-muted-foreground font-medium">{isArabic ? "وقت النهاية" : "End Time"}</Label>
+                      <Input type="time" value={localEndTime} onChange={e => setLocalEndTime(e.target.value)} className="h-9 text-sm mt-1" />
+                    </div>
+                  </div>
+
+                  {/* Transport toggle */}
+                  <div className="rounded-xl border border-border p-3.5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-accent" />
+                        <span className="text-xs font-medium text-foreground">{isArabic ? "تفاصيل النقل" : "Pickup / Drop-off Details"}</span>
+                      </div>
+                      <Switch
+                        checked={showTransportFields}
+                        onCheckedChange={onToggleTransport}
+                      />
+                    </div>
+                    {showTransportFields && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="space-y-3"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "نقطة الالتقاط" : "Pickup Location"}</Label>
+                            <Input value={localPickup} onChange={e => setLocalPickup(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Hotel lobby" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "نقطة الإنزال" : "Drop-off Location"}</Label>
+                            <Input value={localDropoff} onChange={e => setLocalDropoff(e.target.value)} className="h-9 text-sm mt-1" placeholder="e.g., Airport Terminal 2" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] uppercase text-muted-foreground">{isArabic ? "وقت الالتقاط" : "Pickup Time"}</Label>
+                            <Input type="time" value={localPickupTime} onChange={e => setLocalPickupTime(e.target.value)} className="h-9 text-sm mt-1" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Internal notes */}
+                  <div>
+                    <Label className="text-[10px] uppercase text-muted-foreground font-medium flex items-center gap-1">
+                      <StickyNote className="w-3 h-3" /> {isArabic ? "ملاحظات داخلية" : "Internal Notes"}
+                    </Label>
+                    <Textarea value={localNotes} onChange={e => setLocalNotes(e.target.value)} className="text-xs mt-1 resize-none" rows={2} placeholder={isArabic ? "ملاحظات للفريق فقط..." : "Team-only notes..."} />
+                  </div>
+
+                  {/* Save / Cancel */}
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={onToggleEdit}>
+                      {isArabic ? "إلغاء" : "Cancel"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gold-gradient text-accent-foreground text-xs gap-1.5 px-5"
+                      onClick={saveAllFields}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating && <Loader2 className="w-3 h-3 animate-spin" />}
+                      {isArabic ? "حفظ التغييرات" : "Save Changes"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Day items list */}
+              <div className="px-4 py-3 space-y-2">
+                {items.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    {isArabic ? "لا توجد عناصر - أضف نشاط أو خدمة" : "No items yet — add an activity or service below"}
+                  </p>
+                ) : (
+                  items.map((item: any, i: number) => {
+                    const ItemIcon = getCategoryIcon(item.category);
+                    const colorClass = getCategoryColor(item.category);
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="group flex items-center gap-2.5 p-2.5 rounded-lg border border-border hover:bg-muted/20 transition-colors"
+                      >
+                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
+                          <ItemIcon className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-[8px] capitalize shrink-0 px-1.5">{item.category}</Badge>
+                            <span className="text-xs font-medium text-foreground truncate">{item.custom_title || "Untitled"}</span>
+                          </div>
+                          {item.start_time && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
+                              <Clock className="w-2.5 h-2.5" /> {item.start_time}
+                            </p>
+                          )}
+                        </div>
+                        {Number(item.total_price || 0) > 0 && (
+                          <span className="text-[11px] font-mono font-semibold text-foreground shrink-0">
+                            {Number(item.total_price).toLocaleString()} {item.currency}
+                          </span>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive/50 hover:text-destructive shrink-0"
+                          onClick={() => onDeleteItem(item.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </motion.div>
+                    );
+                  })
+                )}
+
+                {/* Quick add buttons */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider mr-1">
+                    {isArabic ? "إضافة:" : "Add:"}
+                  </span>
+                  {QUICK_ACTIONS.map(qa => {
+                    const QIcon = qa.icon;
+                    return (
+                      <Tooltip key={qa.type}>
+                        <TooltipTrigger asChild>
+                          <button
+                            className={cn(
+                              "flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[10px] font-medium transition-all hover:scale-105",
+                              qa.color,
+                            )}
+                            onClick={() => onAddItem(qa.type)}
+                          >
+                            <QIcon className="w-3 h-3" />
+                            {qa.label}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent className="text-[10px]">Add {qa.type}</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+    </motion.div>
+  );
+}

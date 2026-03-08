@@ -229,7 +229,14 @@ export type Database = {
           date: string | null
           day_number: number
           description: string | null
+          dropoff_location: string | null
+          end_time: string | null
           id: string
+          internal_notes: string | null
+          pickup_location: string | null
+          pickup_time: string | null
+          short_description: string | null
+          start_time: string | null
           title: string | null
           updated_at: string
         }
@@ -240,7 +247,14 @@ export type Database = {
           date?: string | null
           day_number: number
           description?: string | null
+          dropoff_location?: string | null
+          end_time?: string | null
           id?: string
+          internal_notes?: string | null
+          pickup_location?: string | null
+          pickup_time?: string | null
+          short_description?: string | null
+          start_time?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -251,7 +265,14 @@ export type Database = {
           date?: string | null
           day_number?: number
           description?: string | null
+          dropoff_location?: string | null
+          end_time?: string | null
           id?: string
+          internal_notes?: string | null
+          pickup_location?: string | null
+          pickup_time?: string | null
+          short_description?: string | null
+          start_time?: string | null
           title?: string | null
           updated_at?: string
         }

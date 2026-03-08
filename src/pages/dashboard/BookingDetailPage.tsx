@@ -36,6 +36,7 @@ import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import { PaymentRecords } from "@/components/PaymentRecords";
+import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
@@ -763,62 +764,13 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Itinerary ─── */}
       {activeTab === "itinerary" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {itineraryDays.length} {isArabic ? "يوم" : "days"} {isArabic ? "في البرنامج" : "in itinerary"}
-            </p>
-            <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={() => addItineraryDay.mutate()}>
-              <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة يوم" : "Add Day"}
-            </Button>
-          </div>
-
-          {itineraryDays.length === 0 ? (
-            <div className="text-center py-12">
-              <Route className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">{isArabic ? "لا يوجد برنامج بعد" : "No itinerary days yet"}</p>
-              <Button size="sm" variant="outline" className="mt-3 text-xs gap-1.5" onClick={() => addItineraryDay.mutate()}>
-                <Plus className="w-3.5 h-3.5" /> {isArabic ? "ابدأ البرنامج" : "Start Itinerary"}
-              </Button>
-            </div>
-          ) : (
-            itineraryDays.map((day: any) => (
-              <Card key={day.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center text-accent-foreground font-bold text-sm">
-                      {day.day_number}
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-sm">{day.title || `Day ${day.day_number}`}</CardTitle>
-                      {day.city && <p className="text-[10px] text-muted-foreground flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /> {day.city}</p>}
-                    </div>
-                    {day.date && <Badge variant="secondary" className="text-[10px]">{format(new Date(day.date), "MMM d")}</Badge>}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {(day.booking_day_items || []).length === 0 ? (
-                    <p className="text-xs text-muted-foreground">{isArabic ? "لا توجد عناصر" : "No items yet"}</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {(day.booking_day_items as any[]).sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
-                        <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border border-border">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Badge variant="outline" className="text-[9px] capitalize shrink-0">{item.category}</Badge>
-                            <span className="text-xs font-medium text-foreground truncate">{item.custom_title || "Untitled"}</span>
-                          </div>
-                          <span className="text-xs font-mono font-semibold text-foreground shrink-0 ml-2">
-                            {Number(item.total_price || 0).toLocaleString()} {item.currency}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+        <ItineraryBuilder
+          bookingId={booking.id}
+          companyId={booking.company_id}
+          itineraryDays={itineraryDays as any}
+          booking={booking}
+          isArabic={isArabic}
+        />
       )}
 
       {/* ─── TAB: Services ─── */}
