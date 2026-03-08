@@ -177,3 +177,20 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* Print styles for quotation */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print\:hidden { display: none !important; }
+  .print\:border-0 { border: 0 !important; }
+  .print\:rounded-none { border-radius: 0 !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+}
