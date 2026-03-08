@@ -75,7 +75,8 @@ function AppRoutes() {
         <Route path="analytics" element={<PlaceholderPage />} />
         <Route path="trips" element={<PlaceholderPage />} />
         <Route path="itineraries" element={<PlaceholderPage />} />
-        <Route path="clients" element={<PlaceholderPage />} />
+        <Route path="clients" element={<LeadsPage />} />
+        <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="staff" element={<TeamPage />} />
         <Route path="invoices" element={<PlaceholderPage />} />
         <Route path="settings" element={<SettingsPage />} />
