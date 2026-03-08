@@ -1252,44 +1252,127 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
 
 function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: any) {
   const [form, setForm] = useState({ ...service });
+
+  const typeConfig: Record<string, {
+    icon: any; headerLabel: string; headerLabelAr: string; subtitle: string; subtitleAr: string;
+    titlePlaceholder: string; titlePlaceholderAr: string; locationLabel: string; locationLabelAr: string;
+    locationPlaceholder: string; locationPlaceholderAr: string; notesPlaceholder: string; notesPlaceholderAr: string;
+    showPickupDropoff?: boolean; showStartEndTime?: boolean; showDuration?: boolean; supplierLabel?: string; supplierLabelAr?: string;
+  }> = {
+    hotel: {
+      icon: Hotel, headerLabel: "Hotel / Accommodation", headerLabelAr: "فندق / إقامة",
+      subtitle: "Add hotel, resort, or accommodation details", subtitleAr: "أضف تفاصيل الفندق أو الإقامة",
+      titlePlaceholder: "e.g., Marriott Mena House 5★", titlePlaceholderAr: "مثال: ماريوت مينا هاوس 5★",
+      locationLabel: "Hotel Address", locationLabelAr: "عنوان الفندق",
+      locationPlaceholder: "e.g., Pyramids Road, Giza", locationPlaceholderAr: "مثال: طريق الأهرامات، الجيزة",
+      notesPlaceholder: "Room type, meal plan, check-in/out times...", notesPlaceholderAr: "نوع الغرفة، خطة الوجبات، مواعيد الوصول/المغادرة...",
+      supplierLabel: "Hotel / Chain", supplierLabelAr: "الفندق / السلسلة",
+    },
+    transfer: {
+      icon: Car, headerLabel: "Transfer / Transport", headerLabelAr: "نقل / مواصلات",
+      subtitle: "Airport pickup, city transfers, private cars", subtitleAr: "استقبال المطار، التنقلات، سيارات خاصة",
+      titlePlaceholder: "e.g., Airport → Hotel Transfer", titlePlaceholderAr: "مثال: نقل من المطار إلى الفندق",
+      locationLabel: "Route", locationLabelAr: "المسار",
+      locationPlaceholder: "e.g., Cairo Airport → Downtown Hotel", locationPlaceholderAr: "مثال: مطار القاهرة → فندق وسط البلد",
+      notesPlaceholder: "Vehicle type, flight number, meet & greet details...", notesPlaceholderAr: "نوع المركبة، رقم الرحلة، تفاصيل الاستقبال...",
+      showPickupDropoff: true, showStartEndTime: true,
+      supplierLabel: "Transport Company", supplierLabelAr: "شركة النقل",
+    },
+    tour: {
+      icon: MapPin, headerLabel: "Tour / Excursion", headerLabelAr: "جولة / رحلة",
+      subtitle: "Guided tours, day trips, experiences", subtitleAr: "جولات سياحية، رحلات يومية، تجارب",
+      titlePlaceholder: "e.g., Pyramids & Sphinx Guided Tour", titlePlaceholderAr: "مثال: جولة الأهرامات وأبو الهول",
+      locationLabel: "Meeting Point", locationLabelAr: "نقطة التجمع",
+      locationPlaceholder: "e.g., Hotel lobby at 8:00 AM", locationPlaceholderAr: "مثال: لوبي الفندق الساعة 8:00 صباحاً",
+      notesPlaceholder: "Itinerary highlights, what's included, entrance fees...", notesPlaceholderAr: "أبرز المحطات، ما يشمله، رسوم الدخول...",
+      showStartEndTime: true, showDuration: true,
+      supplierLabel: "Tour Operator", supplierLabelAr: "منظم الرحلة",
+    },
+    guide: {
+      icon: User, headerLabel: "Tour Guide", headerLabelAr: "مرشد سياحي",
+      subtitle: "Professional licensed tour guides", subtitleAr: "مرشدون سياحيون مرخصون",
+      titlePlaceholder: "e.g., 🇬🇧 English-speaking Guide", titlePlaceholderAr: "مثال: 🇬🇧 مرشد يتحدث الإنجليزية",
+      locationLabel: "Meeting Point", locationLabelAr: "نقطة التجمع",
+      locationPlaceholder: "e.g., Hotel lobby", locationPlaceholderAr: "مثال: لوبي الفندق",
+      notesPlaceholder: "Languages spoken, specialization, license #...", notesPlaceholderAr: "اللغات، التخصص، رقم الترخيص...",
+      showStartEndTime: true, showDuration: true,
+      supplierLabel: "Guide Name / Agency", supplierLabelAr: "اسم المرشد / الوكالة",
+    },
+    meal: {
+      icon: FileText, headerLabel: "Meal / Dining", headerLabelAr: "وجبة / مطعم",
+      subtitle: "Restaurant reservations, meal plans", subtitleAr: "حجوزات المطاعم، خطط الوجبات",
+      titlePlaceholder: "e.g., Dinner at Nile View Restaurant", titlePlaceholderAr: "مثال: عشاء في مطعم بإطلالة على النيل",
+      locationLabel: "Restaurant / Venue", locationLabelAr: "المطعم / المكان",
+      locationPlaceholder: "e.g., Four Seasons Nile Plaza", locationPlaceholderAr: "مثال: فور سيزونز نايل بلازا",
+      notesPlaceholder: "Cuisine type, dietary needs, reservation time...", notesPlaceholderAr: "نوع المطبخ، احتياجات غذائية، موعد الحجز...",
+      showStartEndTime: true,
+      supplierLabel: "Restaurant", supplierLabelAr: "المطعم",
+    },
+    activity: {
+      icon: Activity, headerLabel: "Activity / Experience", headerLabelAr: "نشاط / تجربة",
+      subtitle: "Special activities, shows, cruises", subtitleAr: "أنشطة خاصة، عروض، رحلات بحرية",
+      titlePlaceholder: "e.g., Felucca Ride on the Nile", titlePlaceholderAr: "مثال: ركوب الفلوكة على النيل",
+      locationLabel: "Venue / Location", locationLabelAr: "المكان / الموقع",
+      locationPlaceholder: "e.g., Corniche El Nile, Aswan", locationPlaceholderAr: "مثال: كورنيش النيل، أسوان",
+      notesPlaceholder: "Duration, what to bring, age restrictions...", notesPlaceholderAr: "المدة، ماذا تحضر، قيود العمر...",
+      showStartEndTime: true, showDuration: true,
+      supplierLabel: "Provider", supplierLabelAr: "مزود الخدمة",
+    },
+    other: {
+      icon: FileText, headerLabel: "Other Service", headerLabelAr: "خدمة أخرى",
+      subtitle: "Visa assistance, insurance, misc services", subtitleAr: "مساعدة التأشيرات، التأمين، خدمات متنوعة",
+      titlePlaceholder: "e.g., Travel Insurance", titlePlaceholderAr: "مثال: تأمين السفر",
+      locationLabel: "Location", locationLabelAr: "الموقع",
+      locationPlaceholder: "Service location or address", locationPlaceholderAr: "موقع الخدمة أو العنوان",
+      notesPlaceholder: "Any relevant details or special instructions...", notesPlaceholderAr: "أي تفاصيل أو تعليمات خاصة...",
+      supplierLabel: "Supplier", supplierLabelAr: "المورد",
+    },
+  };
+
+  const cfg = typeConfig[form.service_type] || typeConfig.other;
+  const HeaderIcon = cfg.icon;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
         <div className="relative px-6 pt-5 pb-4 navy-gradient">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
           <div className="relative flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
-              <Hotel className="w-5 h-5 text-accent-foreground" />
+              <HeaderIcon className="w-5 h-5 text-accent-foreground" />
             </div>
             <div>
               <h2 className="text-base font-bold text-white font-display">
-                {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
+                {form._isNew
+                  ? (isArabic ? cfg.headerLabelAr : cfg.headerLabel)
+                  : (isArabic ? "تعديل الخدمة" : "Edit Service")}
               </h2>
-              <p className="text-[11px] text-white/60">{isArabic ? "فنادق، نقل، جولات، مرشدين" : "Hotels, transfers, tours, guides"}</p>
+              <p className="text-[11px] text-white/60">{isArabic ? cfg.subtitleAr : cfg.subtitle}</p>
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
           {/* Service type chips */}
           <div>
             <Label className="text-xs font-medium mb-2 block">{isArabic ? "نوع الخدمة" : "Service Type"}</Label>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {SERVICE_TYPES.map(st => {
                 const StIcon = st.icon;
+                const isActive = form.service_type === st.value;
                 return (
                   <button
                     key={st.value}
                     type="button"
                     onClick={() => setForm({ ...form, service_type: st.value })}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border p-2.5 text-[10px] font-medium transition-all",
-                      form.service_type === st.value
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border text-muted-foreground hover:bg-muted"
+                      "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                      isActive
+                        ? "border-accent bg-accent/10 text-accent shadow-sm"
+                        : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
-                    <StIcon className="w-4 h-4" />
+                    <StIcon className="w-3.5 h-3.5" />
                     {st.label}
                   </button>
                 );
@@ -1297,17 +1380,20 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
             </div>
           </div>
 
+          <Separator />
+
+          {/* Main fields - 2 column layout */}
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <Label className="text-xs">{isArabic ? "العنوان" : "Title"} <span className="text-destructive">*</span></Label>
-              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
+              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? cfg.titlePlaceholderAr : cfg.titlePlaceholder} />
             </div>
             <div>
               <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
               <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger className="mt-1 h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                  {["pending", "confirmed", "cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1316,18 +1402,54 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
               <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1 h-11" />
             </div>
             <div>
-              <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
-              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" />
+              <Label className="text-xs">{isArabic ? (cfg.supplierLabelAr || "المورد") : (cfg.supplierLabel || "Supplier")}</Label>
+              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? (cfg.supplierLabelAr || "المورد") : (cfg.supplierLabel || "Supplier")} />
             </div>
             <div>
               <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
-              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" />
+              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" placeholder="e.g., CNF-2024-001" />
             </div>
             <div className="col-span-2">
-              <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
-              <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1 h-11" />
+              <Label className="text-xs">{isArabic ? cfg.locationLabelAr : cfg.locationLabel}</Label>
+              <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? cfg.locationPlaceholderAr : cfg.locationPlaceholder} />
             </div>
           </div>
+
+          {/* Conditional: Pickup/Dropoff for transfers */}
+          {cfg.showPickupDropoff && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "نقطة الالتقاط" : "Pickup Location"}</Label>
+                <Input value={form.pickup_location || ""} onChange={e => setForm({ ...form, pickup_location: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: مطار القاهرة T2" : "e.g., Cairo Airport T2"} />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "نقطة الإنزال" : "Dropoff Location"}</Label>
+                <Input value={form.dropoff_location || ""} onChange={e => setForm({ ...form, dropoff_location: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: فندق وسط البلد" : "e.g., Downtown Hotel"} />
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: Start/End time */}
+          {cfg.showStartEndTime && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "وقت البداية" : "Start Time"}</Label>
+                <Input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "وقت النهاية" : "End Time"}</Label>
+                <Input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} className="mt-1 h-11" />
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: Duration */}
+          {cfg.showDuration && (
+            <div className="w-1/2">
+              <Label className="text-xs">{isArabic ? "المدة (دقائق)" : "Duration (minutes)"}</Label>
+              <Input type="number" min={0} value={form.duration_minutes || ""} onChange={e => setForm({ ...form, duration_minutes: parseInt(e.target.value) || null })} className="mt-1 h-11" placeholder="e.g., 120" />
+            </div>
+          )}
 
           {/* Pricing row */}
           <div className="rounded-xl border border-border bg-muted/30 p-4">
@@ -1354,7 +1476,7 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
 
           <div>
             <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
-            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
+            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-sm resize-none" placeholder={isArabic ? cfg.notesPlaceholderAr : cfg.notesPlaceholder} />
           </div>
         </div>
 
