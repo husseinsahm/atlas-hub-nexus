@@ -201,39 +201,71 @@ export default function CustomersPage() {
     if (!validateForm()) return;
 
     setSaving(true);
-    const payload = {
-      company_id: companyId,
-      full_name: form.full_name.trim(),
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
-      secondary_phone: form.secondary_phone.trim() || null,
-      nationality: form.nationality.trim() || null,
-      date_of_birth: form.date_of_birth || null,
-      passport_number: form.passport_number.trim() || null,
-      address: form.address.trim() || null,
-      city: form.city.trim() || null,
-      country: form.country.trim() || null,
-      source: form.source,
-      notes: form.notes.trim() || null,
-      preferences: form.selectedPrefs,
-      tags: form.selectedPrefs,
-    };
 
     try {
-      if (editingId) {
-        const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
-        if (error) throw error;
-        toast({ title: "Customer updated" });
-      } else {
-        const { error } = await supabase.from("customers").insert({ ...payload, created_by: user.id });
-        if (error) throw error;
-        toast({ title: "Customer created" });
+      // Refresh session to ensure valid auth token before saving
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        toast({ title: "Session expired", description: "Please log in again and retry.", variant: "destructive" });
+        setSaving(false);
+        return;
       }
-      setFormOpen(false);
-      setFormErrors({});
-      fetchCustomers();
+
+      const payload = {
+        company_id: companyId,
+        full_name: form.full_name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        secondary_phone: form.secondary_phone.trim() || null,
+        nationality: form.nationality.trim() || null,
+        date_of_birth: form.date_of_birth || null,
+        passport_number: form.passport_number.trim() || null,
+        address: form.address.trim() || null,
+        city: form.city.trim() || null,
+        country: form.country.trim() || null,
+        source: form.source,
+        notes: form.notes.trim() || null,
+        preferences: form.selectedPrefs,
+        tags: form.selectedPrefs,
+      };
+
+      const maxRetries = 2;
+      let lastError: any = null;
+
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (editingId) {
+            const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
+            if (error) throw error;
+            toast({ title: "Customer updated" });
+          } else {
+            const { error } = await supabase.from("customers").insert({ ...payload, created_by: user.id });
+            if (error) throw error;
+            toast({ title: "Customer created" });
+          }
+          setFormOpen(false);
+          setFormErrors({});
+          fetchCustomers();
+          return; // success — exit
+        } catch (err: any) {
+          lastError = err;
+          // Only retry on network-level failures
+          if (err?.message?.includes("Failed to fetch") && attempt < maxRetries) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+            // Refresh session before retrying
+            await supabase.auth.getSession();
+            continue;
+          }
+          throw err; // non-retryable error
+        }
+      }
+
+      throw lastError;
     } catch (err: any) {
-      toast({ title: "Error saving customer", description: err.message || "Please check your connection and try again", variant: "destructive" });
+      const description = err?.message?.includes("Failed to fetch")
+        ? "Network error — please check your connection and try again."
+        : err?.message || "Please check your connection and try again";
+      toast({ title: "Error saving customer", description, variant: "destructive" });
     } finally {
       setSaving(false);
     }
