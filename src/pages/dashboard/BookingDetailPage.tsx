@@ -287,6 +287,8 @@ export default function BookingDetailPage() {
 
   const saveService = useMutation({
     mutationFn: async (service: any) => {
+      const adultTotal = (service.quantity || 0) * (service.unit_price || 0);
+      const childTotal = (service.child_quantity || 0) * (service.child_unit_price || 0);
       const payload = {
         booking_id: id!,
         company_id: booking!.company_id,
@@ -300,11 +302,15 @@ export default function BookingDetailPage() {
         location: service.location || null,
         quantity: service.quantity || 1,
         unit_price: service.unit_price || 0,
-        total_cost: (service.quantity || 1) * (service.unit_price || 0),
+        total_cost: adultTotal + childTotal,
         currency: booking?.currency || "USD",
         status: service.status || "pending",
         notes: service.notes || null,
         created_by: user?.id,
+        metadata: {
+          child_quantity: service.child_quantity || 0,
+          child_unit_price: service.child_unit_price || 0,
+        },
       };
       if (service.id && !service._isNew) {
         const { error } = await supabase.from("booking_services").update(payload).eq("id", service.id);
@@ -814,7 +820,7 @@ export default function BookingDetailPage() {
               </div>
             </div>
             <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
-              setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: 1, unit_price: 0, status: "pending" });
+              setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: booking.adults || 1, child_quantity: booking.children || 0, unit_price: 0, child_unit_price: 0, status: "pending" });
               setShowServiceDialog(true);
             }}>
               <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة خدمة" : "Add Service"}
@@ -865,10 +871,10 @@ export default function BookingDetailPage() {
                           <p className="text-sm font-bold font-mono text-foreground">
                             {Number(service.total_cost || 0).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{service.currency}</span>
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{service.quantity} × {Number(service.unit_price || 0).toLocaleString()}</p>
+                          <p className="text-[10px] text-muted-foreground">{service.quantity}A × {Number(service.unit_price || 0).toLocaleString()}{(service.metadata as any)?.child_quantity > 0 && ` + ${(service.metadata as any).child_quantity}C × ${Number((service.metadata as any).child_unit_price || 0).toLocaleString()}`}</p>
                         </div>
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService(service); setShowServiceDialog(true); }}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0 }); setShowServiceDialog(true); }}>
                             <Pencil className="w-3 h-3" />
                           </Button>
                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteService.mutate(service.id)}>
@@ -1048,6 +1054,8 @@ export default function BookingDetailPage() {
           onClose={() => { setShowServiceDialog(false); setEditingService(null); }}
           onSave={(s: any) => saveService.mutate(s)}
           isSaving={saveService.isPending}
+          bookingAdults={booking?.adults || 1}
+          bookingChildren={booking?.children || 0}
         />
       )}
     </div>
@@ -1253,7 +1261,7 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   );
 }
 
-function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: any) {
+function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, bookingAdults, bookingChildren }: any) {
   const [form, setForm] = useState({ ...service });
 
   const typeConfig: Record<string, {
@@ -1488,21 +1496,50 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1">
               <DollarSign className="w-3 h-3" /> {isArabic ? "التسعير" : "Pricing"}
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs">{isArabic ? "الكمية" : "Qty"}</Label>
-                <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1 h-11 text-center font-bold" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
-                <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1 h-11 font-mono" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "الإجمالي" : "Total"}</Label>
-                <div className="mt-1 h-11 rounded-md border border-border bg-background flex items-center justify-center text-sm font-bold font-mono text-foreground">
-                  {((form.quantity || 1) * (form.unit_price || 0)).toLocaleString()}
+            {/* Adults row */}
+            <div className="flex items-center gap-2 mb-1.5">
+              <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "بالغين" : "Adults"}</Badge>
+              <div className="flex-1 grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "عدد" : "Qty"}</Label>
+                  <Input type="number" min={0} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="mt-0.5 h-9 text-center font-bold text-sm" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "سعر الفرد" : "Price/each"}</Label>
+                  <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-0.5 h-9 font-mono text-sm" />
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "الإجمالي" : "Subtotal"}</Label>
+                  <div className="mt-0.5 h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
+                    {((form.quantity || 0) * (form.unit_price || 0)).toLocaleString()}
+                  </div>
                 </div>
               </div>
+            </div>
+            {/* Children row */}
+            <div className="flex items-center gap-2 mb-3">
+              <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "أطفال" : "Children"}</Badge>
+              <div className="flex-1 grid grid-cols-3 gap-2">
+                <div>
+                  <Input type="number" min={0} value={form.child_quantity || 0} onChange={e => setForm({ ...form, child_quantity: parseInt(e.target.value) || 0 })} className="h-9 text-center font-bold text-sm" />
+                </div>
+                <div>
+                  <Input type="number" min={0} value={form.child_unit_price || 0} onChange={e => setForm({ ...form, child_unit_price: parseFloat(e.target.value) || 0 })} className="h-9 font-mono text-sm" />
+                </div>
+                <div>
+                  <div className="h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
+                    {((form.child_quantity || 0) * (form.child_unit_price || 0)).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Grand total */}
+            <Separator className="mb-3" />
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground">{isArabic ? "الإجمالي الكلي" : "Grand Total"}</span>
+              <span className="text-base font-bold font-mono text-foreground">
+                {(((form.quantity || 0) * (form.unit_price || 0)) + ((form.child_quantity || 0) * (form.child_unit_price || 0))).toLocaleString()}
+              </span>
             </div>
           </div>
 
