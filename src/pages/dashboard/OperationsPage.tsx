@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Search, Filter, Calendar, Users, Plane, Hotel, Car, MapPin, User,
   CheckCircle2, Clock, AlertCircle, ChevronRight, Loader2, Eye,
-  FileText, Phone, Mail, CalendarDays, Briefcase, RefreshCw,
+  FileText, Phone, Mail, CalendarDays, Briefcase, RefreshCw, Ticket, Stamp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
