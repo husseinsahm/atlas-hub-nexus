@@ -24,6 +24,8 @@ import LeadDetailPage from "./pages/dashboard/LeadDetailPage";
 import CustomersPage from "./pages/dashboard/CustomersPage";
 import CustomerDetailPage from "./pages/dashboard/CustomerDetailPage";
 import LibraryPage from "./pages/dashboard/LibraryPage";
+import TripsPage from "./pages/dashboard/TripsPage";
+import TripBuilderPage from "./pages/dashboard/TripBuilderPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
