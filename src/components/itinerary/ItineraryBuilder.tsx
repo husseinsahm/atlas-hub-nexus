@@ -440,7 +440,7 @@ interface DayCardProps {
   onToggleTransport: (v: boolean) => void;
   onUpdateDay: (updates: Record<string, any>) => void;
   onDeleteDay: () => void;
-  onAddItem: (category: string) => void;
+  onAddItem: (category: string, title?: string) => void;
   onDeleteItem: (itemId: string) => void;
   onAiEnhanceDay: () => void;
   isAiGenerating: boolean;
