@@ -168,6 +168,11 @@ export default function LeadsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Duplicate detection
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [pendingSavePayload, setPendingSavePayload] = useState<any>(null);
+
   useEffect(() => {
     if (companyId) {
       fetchLeads();
