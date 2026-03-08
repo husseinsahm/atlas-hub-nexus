@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { PlanOverviewCard } from "@/components/plan/PlanOverviewCard";
 
 // ─── SUPER ADMIN TYPES ───
 interface PlatformStats {
@@ -200,6 +201,9 @@ function CompanyDashboard() {
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Plan Overview */}
+        <PlanOverviewCard />
+
         {/* Quick Actions */}
         <div className="luxury-card p-6">
           <h3 className="font-semibold font-display text-foreground mb-4 flex items-center gap-2">

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { FeatureGate } from "@/components/plan/FeatureGate";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -272,6 +273,7 @@ export default function AnalyticsPage() {
   ] as const;
 
   return (
+    <FeatureGate feature="Analytics">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -762,6 +764,7 @@ export default function AnalyticsPage() {
         </div>
       )}
     </div>
+    </FeatureGate>
   );
 }
 

@@ -21,6 +21,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UpgradeBanner, UsageIndicator } from "@/components/plan/UpgradeBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 type TripStatus = "draft" | "under_review" | "awaiting_approval" | "approved" | "converted" | "cancelled";
 
@@ -64,6 +67,18 @@ export default function TripsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [newTrip, setNewTrip] = useState({ title: "", description: "", total_days: "3", adults: "2", children: "0", currency: "USD" });
+
+  // Plan limits
+  const { limits, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
+  const handleCreateClick = () => {
+    if (!limits.canCreateTrip) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setCreateOpen(true);
+  };
 
   const { data: trips = [], isLoading } = useQuery({
     queryKey: ["trips", companyId],
@@ -182,12 +197,18 @@ export default function TripsPage() {
             </div>
             Trip Builder
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Create and manage custom travel itineraries</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-sm text-muted-foreground">Create and manage custom travel itineraries</p>
+            {limits.maxTripsPerMonth !== null && <UsageIndicator type="trips" />}
+          </div>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gold-gradient text-accent-foreground shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={handleCreateClick} className="gold-gradient text-accent-foreground shadow-md hover:shadow-lg transition-shadow">
           <Plus className="w-4 h-4 mr-2" /> New Trip
         </Button>
       </div>
+
+      {/* Plan limit warning */}
+      <UpgradeBanner type="trips" />
 
       {/* Status pipeline */}
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -389,6 +410,13 @@ export default function TripsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan limit reached dialog */}
+      <LimitReachedDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        type="trips"
+      />
     </div>
   );
 }

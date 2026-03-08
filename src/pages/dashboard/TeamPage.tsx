@@ -20,6 +20,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UpgradeBanner, UsageIndicator } from "@/components/plan/UpgradeBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 type CompanyRole = "company_admin" | "agent" | "operations" | "finance" | "viewer";
 
@@ -80,6 +83,18 @@ export default function TeamPage() {
   const [editMember, setEditMember] = useState<TeamMember | null>(null);
   const [editRole, setEditRole] = useState<CompanyRole>("agent");
   const [saving, setSaving] = useState(false);
+
+  // Plan limits
+  const { limits, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
+  const handleInviteClick = () => {
+    if (!limits.canAddUser) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setInviteOpen(true);
+  };
 
   useEffect(() => {
     if (companyId) fetchTeam();
@@ -232,17 +247,27 @@ export default function TeamPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground font-display">Team Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your team members, roles and invitations</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your team members, roles and invitations
+            {limits.maxUsers !== null && (
+              <span className="ms-2 text-xs">
+                · <UsageIndicator type="users" />
+              </span>
+            )}
+          </p>
         </div>
         {isAdmin && (
-          <Button onClick={() => setInviteOpen(true)} className="gold-gradient text-accent-foreground gap-2 shadow-md">
+          <Button onClick={handleInviteClick} className="gold-gradient text-accent-foreground gap-2 shadow-md">
             <UserPlus className="w-4 h-4" /> Invite Member
           </Button>
         )}
       </div>
+
+      {/* Plan limit warning */}
+      <UpgradeBanner type="users" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -528,6 +553,13 @@ export default function TeamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Plan limit reached dialog */}
+      <LimitReachedDialog
+        open={limitDialogOpen}
+        onOpenChange={setLimitDialogOpen}
+        type="users"
+      />
     </div>
   );
 }
