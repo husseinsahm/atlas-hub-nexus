@@ -799,11 +799,18 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Services ─── */}
       {activeTab === "services" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {services.length} {isArabic ? "خدمة" : "services"} · {isArabic ? "الإجمالي" : "Total"}: {servicesTotalCost.toLocaleString()} {booking.currency}
-            </p>
-            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={() => {
+          {/* Services header */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-sm">
+                <Hotel className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? "الإجمالي" : "Total"}: <span className="font-mono font-semibold text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span></p>
+              </div>
+            </div>
+            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
               setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: 1, unit_price: 0, status: "pending" });
               setShowServiceDialog(true);
             }}>
@@ -812,44 +819,52 @@ export default function BookingDetailPage() {
           </div>
 
           {services.length === 0 ? (
-            <div className="text-center py-12">
-              <Hotel className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                <Hotel className="w-8 h-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "أضف فنادق ونقل وجولات" : "Add hotels, transfers, tours & more"}</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {services.map((service: any) => {
                 const typeConfig = SERVICE_TYPES.find(st => st.value === service.service_type);
                 const Icon = typeConfig?.icon || FileText;
+                const statusColors: Record<string, string> = {
+                  confirmed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+                  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+                  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+                };
                 return (
-                  <Card key={service.id} className="border-border">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Card key={service.id} className="border-border/50 hover:border-accent/30 transition-colors overflow-hidden group">
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/15 transition-colors">
                           <Icon className="w-5 h-5 text-accent" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[9px] capitalize">{service.service_type}</Badge>
-                            <Badge variant={service.status === "confirmed" ? "default" : "secondary"} className="text-[9px]">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Badge variant="outline" className="text-[9px] capitalize border-border/60">{service.service_type}</Badge>
+                            <Badge className={cn("text-[9px] border-0", statusColors[service.status] || statusColors.pending)}>
                               {service.status}
                             </Badge>
                           </div>
-                          <h4 className="text-sm font-semibold text-foreground truncate mt-0.5">{service.title}</h4>
+                          <h4 className="text-sm font-semibold text-foreground truncate">{service.title}</h4>
                           <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                            {service.supplier_name && <span>{service.supplier_name}</span>}
-                            {service.service_date && <span>{format(new Date(service.service_date), "MMM d")}</span>}
+                            {service.supplier_name && <span className="flex items-center gap-0.5"><User className="w-2.5 h-2.5" />{service.supplier_name}</span>}
+                            {service.service_date && <span className="flex items-center gap-0.5"><Calendar className="w-2.5 h-2.5" />{format(new Date(service.service_date), "MMM d")}</span>}
                             {service.location && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{service.location}</span>}
-                            {service.confirmation_number && <span className="font-mono">#{service.confirmation_number}</span>}
+                            {service.confirmation_number && <span className="font-mono bg-muted px-1.5 py-0.5 rounded">#{service.confirmation_number}</span>}
                           </div>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-bold font-mono text-foreground">
-                            {Number(service.total_cost || 0).toLocaleString()} {service.currency}
+                            {Number(service.total_cost || 0).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{service.currency}</span>
                           </p>
                           <p className="text-[10px] text-muted-foreground">{service.quantity} × {Number(service.unit_price || 0).toLocaleString()}</p>
                         </div>
-                        <div className="flex gap-1 shrink-0">
+                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService(service); setShowServiceDialog(true); }}>
                             <Pencil className="w-3 h-3" />
                           </Button>
@@ -864,10 +879,15 @@ export default function BookingDetailPage() {
               })}
 
               {/* Services total */}
-              <Card className="border-accent/20 bg-accent/5">
+              <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10 overflow-hidden">
                 <CardContent className="p-4 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
-                  <span className="text-lg font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
+                      <DollarSign className="w-4 h-4 text-accent" />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">{isArabic ? "إجمالي الخدمات" : "Services Total"}</span>
+                  </div>
+                  <span className="text-xl font-bold font-mono text-foreground">{servicesTotalCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
                 </CardContent>
               </Card>
             </div>
