@@ -25,6 +25,7 @@ import { NoLeadsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/em
 import { TableLoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 import LeadKanban from "@/components/leads/LeadKanban";
+import LeadWizard, { type LeadFormData } from "@/components/leads/LeadWizard";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 type LeadSource = "website" | "referral" | "social_media" | "walk_in" | "phone" | "email" | "partner" | "other";
