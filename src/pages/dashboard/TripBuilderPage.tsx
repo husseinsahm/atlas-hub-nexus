@@ -15,6 +15,7 @@ import {
   MoveUp, MoveDown, CopyPlus, MessageSquare,
   Eye, EyeOff, Percent, Tag, Receipt,
   MessageCircle, CheckCircle, RefreshCw,
+  History, RotateCcw, GitCommitHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,6 +203,39 @@ export default function TripBuilderPage() {
     enabled: !!id,
   });
 
+  // Revisions
+  const { data: tripRevisions = [] } = useQuery({
+    queryKey: ["trip-revisions", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trip_revisions")
+        .select("*")
+        .eq("trip_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as { id: string; trip_id: string; user_id: string | null; revision_number: number; action: string; summary: string; note: string | null; changes: any; snapshot: any; created_at: string }[];
+    },
+    enabled: !!id,
+  });
+
+  const [revisionNote, setRevisionNote] = useState("");
+
+  const trackRevision = useCallback(async (action: string, summary: string, changes: Record<string, any> = {}, note?: string) => {
+    if (!id || !user?.id) return;
+    const nextNum = (tripRevisions.length > 0 ? tripRevisions[0].revision_number : 0) + 1;
+    await supabase.from("trip_revisions").insert({
+      trip_id: id,
+      user_id: user.id,
+      revision_number: nextNum,
+      action,
+      summary,
+      changes,
+      note: note || null,
+      snapshot: { title: trip?.title, status: trip?.status, total_days: trip?.total_days, selling_price: trip?.selling_price },
+    });
+    queryClient.invalidateQueries({ queryKey: ["trip-revisions", id] });
+  }, [id, user?.id, tripRevisions, trip, queryClient]);
+
   const { data: libraryItems = [] } = useQuery({
     queryKey: ["library-items-for-trip", companyId],
     queryFn: async () => {
@@ -242,7 +276,7 @@ export default function TripBuilderPage() {
     return groups;
   }, [dayItems]);
 
-  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback">("internal");
+  const [pricingView, setPricingView] = useState<"internal" | "client" | "feedback" | "history">("internal");
 
   const pricingSummary = useMemo(() => {
     const totalCost = allDayItems.reduce((sum, item) => sum + (item.total_price || 0), 0);
@@ -297,8 +331,22 @@ export default function TripBuilderPage() {
     mutationFn: async (updates: Record<string, any>) => {
       const { error } = await supabase.from("trips").update(updates).eq("id", id!);
       if (error) throw error;
+      return updates;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["trip", id] }),
+    onSuccess: (updates) => {
+      queryClient.invalidateQueries({ queryKey: ["trip", id] });
+      // Auto-track significant changes
+      const keys = Object.keys(updates);
+      if (keys.includes("status")) {
+        trackRevision("status_change", `Status changed to ${STATUS_CONFIG[updates.status as TripStatus]?.label || updates.status}`, updates);
+      } else if (keys.includes("selling_price")) {
+        trackRevision("pricing", `Selling price updated to ${updates.selling_price}`, updates);
+      } else if (keys.includes("markup_value") || keys.includes("discount_value")) {
+        trackRevision("pricing", "Pricing adjustments updated", updates);
+      } else if (keys.includes("title")) {
+        trackRevision("update", `Trip renamed to "${updates.title}"`, updates);
+      }
+    },
   });
 
   const updateDay = useMutation({
@@ -316,7 +364,7 @@ export default function TripBuilderPage() {
       if (error) throw error;
       await supabase.from("trips").update({ total_days: nextNum }).eq("id", id!);
     },
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); trackRevision("day_added", `Day ${days.length + 1} added`); },
   });
 
   const duplicateDay = useMutation({
@@ -355,7 +403,7 @@ export default function TripBuilderPage() {
       }
       await supabase.from("trips").update({ total_days: nextNum }).eq("id", id!);
     },
-    onSuccess: () => { invalidateAll(); toast({ title: "Day duplicated" }); },
+    onSuccess: () => { invalidateAll(); trackRevision("day_duplicated", "Day duplicated"); toast({ title: "Day duplicated" }); },
   });
 
   const removeDay = useMutation({
@@ -376,6 +424,7 @@ export default function TripBuilderPage() {
         return null;
       });
       invalidateAll();
+      trackRevision("day_removed", "Day removed from trip");
       toast({ title: "Day removed" });
     },
   });
@@ -409,7 +458,7 @@ export default function TripBuilderPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => { invalidateAll(); toast({ title: "Item added" }); },
+    onSuccess: () => { invalidateAll(); trackRevision("item_added", `Item added from library`); toast({ title: "Item added" }); },
   });
 
   const addCustomItem = useMutation({
@@ -909,21 +958,24 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback")}>
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history")}>
               <TabsList className="w-full h-8">
-                <TabsTrigger value="internal" className="flex-1 text-[11px] gap-1">
+                <TabsTrigger value="internal" className="flex-1 text-[10px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
                 </TabsTrigger>
-                <TabsTrigger value="client" className="flex-1 text-[11px] gap-1">
+                <TabsTrigger value="client" className="flex-1 text-[10px] gap-1">
                   <Eye className="w-3 h-3" /> Client
                 </TabsTrigger>
-                <TabsTrigger value="feedback" className="flex-1 text-[11px] gap-1 relative">
+                <TabsTrigger value="feedback" className="flex-1 text-[10px] gap-1 relative">
                   <MessageCircle className="w-3 h-3" /> Feedback
                   {tripFeedback.length > 0 && (
-                    <span className="ml-1 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
+                    <span className="ml-0.5 w-4 h-4 rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center">
                       {tripFeedback.length}
                     </span>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex-1 text-[10px] gap-1">
+                  <History className="w-3 h-3" /> History
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -1223,7 +1275,7 @@ export default function TripBuilderPage() {
                   />
                 </div>
               </div>
-            ) : (
+            ) : pricingView === "feedback" ? (
               /* ===== FEEDBACK VIEW ===== */
               <div className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
@@ -1289,7 +1341,113 @@ export default function TripBuilderPage() {
                   </div>
                 )}
               </div>
-            )}
+            ) : pricingView === "history" ? (
+              /* ===== HISTORY VIEW ===== */
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <History className="w-3 h-3" /> Revision History
+                  </h3>
+                  <Badge variant="outline" className="text-[10px]">
+                    {tripRevisions.length} {tripRevisions.length === 1 ? "revision" : "revisions"}
+                  </Badge>
+                </div>
+
+                {/* Add revision note */}
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={revisionNote}
+                      onChange={e => setRevisionNote(e.target.value)}
+                      placeholder="Add a revision note..."
+                      className="text-xs h-8 flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs"
+                      disabled={!revisionNote.trim()}
+                      onClick={() => {
+                        trackRevision("note", revisionNote.trim(), {}, revisionNote.trim());
+                        setRevisionNote("");
+                      }}
+                    >
+                      <GitCommitHorizontal className="w-3 h-3 mr-1" /> Save
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {tripRevisions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <History className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">No revisions yet</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">Changes will be tracked automatically</p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    {/* Timeline line */}
+                    <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
+                    
+                    <div className="space-y-4">
+                      {tripRevisions.map((rev, idx) => {
+                        const actionConfig: Record<string, { icon: React.ElementType; color: string }> = {
+                          status_change: { icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
+                          pricing: { icon: DollarSign, color: "bg-blue-100 text-blue-600" },
+                          day_added: { icon: Plus, color: "bg-accent/20 text-accent" },
+                          day_removed: { icon: Trash2, color: "bg-destructive/10 text-destructive" },
+                          day_duplicated: { icon: CopyPlus, color: "bg-purple-100 text-purple-600" },
+                          item_added: { icon: Sparkles, color: "bg-amber-100 text-amber-600" },
+                          note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
+                          update: { icon: Pencil, color: "bg-accent/10 text-accent" },
+                        };
+                        const config = actionConfig[rev.action] || actionConfig.update;
+                        const Icon = config.icon;
+                        
+                        return (
+                          <motion.div
+                            key={rev.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.03 }}
+                            className="relative pl-8"
+                          >
+                            {/* Timeline dot */}
+                            <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10", config.color)}>
+                              <Icon className="w-3 h-3" />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-xs font-medium text-foreground leading-snug">{rev.summary}</p>
+                                <Badge variant="outline" className="text-[9px] shrink-0 font-mono">
+                                  v{rev.revision_number}
+                                </Badge>
+                              </div>
+                              
+                              {rev.note && (
+                                <p className="text-[10px] text-muted-foreground italic leading-relaxed bg-muted/30 rounded px-2 py-1">
+                                  "{rev.note}"
+                                </p>
+                              )}
+                              
+                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                <span>{format(new Date(rev.created_at), "MMM d, h:mm a")}</span>
+                                {rev.snapshot && rev.snapshot.status && (
+                                  <Badge variant="outline" className="text-[8px] h-4">
+                                    {STATUS_CONFIG[rev.snapshot.status as TripStatus]?.label || rev.snapshot.status}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
           </ScrollArea>
         </div>
       </div>

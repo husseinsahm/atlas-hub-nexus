@@ -1004,6 +1004,53 @@ export type Database = {
           },
         ]
       }
+      trip_revisions: {
+        Row: {
+          action: string
+          changes: Json | null
+          created_at: string
+          id: string
+          note: string | null
+          revision_number: number
+          snapshot: Json | null
+          summary: string
+          trip_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          revision_number?: number
+          snapshot?: Json | null
+          summary: string
+          trip_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          revision_number?: number
+          snapshot?: Json | null
+          summary?: string
+          trip_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_revisions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           adults: number
