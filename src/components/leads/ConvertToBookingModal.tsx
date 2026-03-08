@@ -198,11 +198,11 @@ export default function ConvertToBookingModal({
     }
   }
 
+  const totalTravelers = adults + children;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[640px] p-0 gap-0 overflow-hidden border-border">
-        <div className="h-1.5 gold-gradient w-full" />
-
+      <DialogContent className="sm:max-w-[860px] p-0 gap-0 overflow-hidden border-border/50 shadow-2xl rounded-2xl">
         <AnimatePresence mode="wait">
           {step === "form" && (
             <motion.div
@@ -212,175 +212,226 @@ export default function ConvertToBookingModal({
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <div className="px-6 pt-5 pb-3">
-                <DialogHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-md">
-                      <Plane className="w-5 h-5 text-accent-foreground" />
+              {/* ── Enhanced Header ── */}
+              <div className="relative overflow-hidden">
+                <div className="absolute inset-0 gold-gradient opacity-10" />
+                <div className="absolute top-0 right-0 w-64 h-64 rounded-full gold-gradient opacity-5 -translate-y-1/2 translate-x-1/2" />
+                <div className="relative px-8 pt-7 pb-5">
+                  <DialogHeader className="space-y-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center shadow-lg ring-4 ring-background">
+                          <Plane className="w-6 h-6 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <DialogTitle className="font-display text-xl tracking-tight">Convert to Booking File</DialogTitle>
+                          <DialogDescription className="text-sm mt-1">
+                            Create a full booking from <span className="font-semibold text-foreground">{lead.full_name}</span>'s lead
+                          </DialogDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {lead.source && (
+                          <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/30 text-primary">
+                            {lead.source}
+                          </Badge>
+                        )}
+                        <Badge variant="secondary" className="text-[10px] gap-1">
+                          <Users className="w-3 h-3" />
+                          {totalTravelers} traveler{totalTravelers !== 1 ? "s" : ""}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <DialogTitle className="font-display text-lg">Convert to Booking File</DialogTitle>
-                      <DialogDescription className="text-xs mt-0.5">
-                        Create a booking from <span className="font-medium text-foreground">{lead.full_name}</span>'s lead
-                      </DialogDescription>
-                    </div>
-                  </div>
-                </DialogHeader>
+                  </DialogHeader>
+                </div>
+                <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
               </div>
 
-              <div className="px-6 pb-4 max-h-[60vh] overflow-y-auto space-y-5">
-                {/* Customer Info */}
-                <div>
-                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" /> Customer Information
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Full Name</Label>
-                      <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Email</Label>
-                      <Input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs">Phone</Label>
-                      <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="h-9" />
-                    </div>
-                  </div>
-                </div>
+              {/* ── Form Body - Two Column Layout ── */}
+              <div className="px-8 py-6 max-h-[62vh] overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                <Separator />
-
-                {/* Booking Details */}
-                <div>
-                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" /> Booking Details
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Assigned Agent</Label>
-                      <Select value={assignedTo || "none"} onValueChange={setAssignedTo}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {agents.map((a) => (
-                            <SelectItem key={a.userId} value={a.userId}>{a.fullName}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Booking Status</Label>
-                      <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus)}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="tentative">Tentative</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Arrival Date</Label>
-                      <Input type="date" value={arrivalDate} onChange={(e) => setArrivalDate(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Departure Date</Label>
-                      <Input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label className="text-xs">Destinations</Label>
-                      <div className="space-y-2">
-                        {destinations.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {destinations.map((dest, idx) => (
-                              <Badge key={idx} variant="secondary" className="gap-1 pl-2 pr-1 py-1 text-xs">
-                                <MapPin className="w-3 h-3 text-muted-foreground" />
-                                {dest}
-                                <button
-                                  type="button"
-                                  onClick={() => setDestinations(prev => prev.filter((_, i) => i !== idx))}
-                                  className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 transition-colors"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </Badge>
-                            ))}
+                  {/* ── Left Column ── */}
+                  <div className="space-y-5">
+                    {/* Customer Card */}
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center gap-2 pb-1">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <User className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">Customer Information</h4>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Full Name</Label>
+                          <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="h-9 bg-background" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Email</Label>
+                            <Input value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="h-9 bg-background" />
                           </div>
-                        )}
-                        <CityAutocomplete
-                          value=""
-                          onValueChange={(city) => {
-                            if (city && !destinations.includes(city)) {
-                              setDestinations(prev => [...prev, city]);
-                            }
-                          }}
-                          placeholder="Add destination..."
-                          className="h-9"
-                        />
+                          <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Phone</Label>
+                            <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="h-9 bg-background" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Booking Details Card */}
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center gap-2 pb-1">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <FileText className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">Booking Details</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Assigned Agent</Label>
+                          <Select value={assignedTo || "none"} onValueChange={setAssignedTo}>
+                            <SelectTrigger className="h-9 bg-background"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {agents.map((a) => (
+                                <SelectItem key={a.userId} value={a.userId}>{a.fullName}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Booking Status</Label>
+                          <Select value={status} onValueChange={(v) => setStatus(v as BookingStatus)}>
+                            <SelectTrigger className="h-9 bg-background"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="tentative">Tentative</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Arrival Date</Label>
+                          <Input type="date" value={arrivalDate} onChange={(e) => setArrivalDate(e.target.value)} className="h-9 bg-background" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Departure Date</Label>
+                          <Input type="date" value={departureDate} onChange={(e) => setDepartureDate(e.target.value)} className="h-9 bg-background" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <Separator />
-
-                {/* Travelers & Budget */}
-                <div>
-                  <h4 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5" /> Travelers & Budget
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Adults</Label>
-                      <Input type="number" min={1} max={50} value={adults} onChange={(e) => setAdults(parseInt(e.target.value) || 1)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Children</Label>
-                      <Input type="number" min={0} max={50} value={children} onChange={(e) => setChildren(parseInt(e.target.value) || 0)} className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Est. Budget</Label>
-                      <Input type="number" value={estimatedBudget} onChange={(e) => setEstimatedBudget(e.target.value)} placeholder="0" className="h-9" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Currency</Label>
-                      <Select value={currency} onValueChange={setCurrency}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {["USD", "EUR", "GBP", "SAR", "AED", "KWD", "BHD", "QAR", "OMR", "JOD"].map(c => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                  {/* ── Right Column ── */}
+                  <div className="space-y-5">
+                    {/* Destinations Card */}
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center gap-2 pb-1">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <MapPin className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">Destinations</h4>
+                        {destinations.length > 0 && (
+                          <Badge variant="secondary" className="text-[10px] ml-auto">{destinations.length} selected</Badge>
+                        )}
+                      </div>
+                      {destinations.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {destinations.map((dest, idx) => (
+                            <Badge
+                              key={idx}
+                              className="gap-1.5 pl-2.5 pr-1 py-1 text-xs bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 transition-colors"
+                            >
+                              <MapPin className="w-3 h-3" />
+                              {dest}
+                              <button
+                                type="button"
+                                onClick={() => setDestinations(prev => prev.filter((_, i) => i !== idx))}
+                                className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
                           ))}
-                        </SelectContent>
-                      </Select>
+                        </div>
+                      )}
+                      <CityAutocomplete
+                        value=""
+                        onValueChange={(city) => {
+                          if (city && !destinations.includes(city)) {
+                            setDestinations(prev => [...prev, city]);
+                          }
+                        }}
+                        placeholder="Search & add destinations..."
+                        className="h-9 bg-background"
+                      />
+                    </div>
+
+                    {/* Travelers & Budget Card */}
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center gap-2 pb-1">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <DollarSign className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">Travelers & Budget</h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Adults</Label>
+                          <Input type="number" min={1} max={50} value={adults} onChange={(e) => setAdults(parseInt(e.target.value) || 1)} className="h-9 bg-background" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Children</Label>
+                          <Input type="number" min={0} max={50} value={children} onChange={(e) => setChildren(parseInt(e.target.value) || 0)} className="h-9 bg-background" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Estimated Budget</Label>
+                          <Input type="number" value={estimatedBudget} onChange={(e) => setEstimatedBudget(e.target.value)} placeholder="0" className="h-9 bg-background" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Currency</Label>
+                          <Select value={currency} onValueChange={setCurrency}>
+                            <SelectTrigger className="h-9 bg-background"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {["USD", "EUR", "GBP", "SAR", "AED", "KWD", "BHD", "QAR", "OMR", "JOD", "EGP"].map(c => (
+                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes Card */}
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3.5 shadow-sm">
+                      <div className="flex items-center gap-2 pb-1">
+                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <FileText className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-foreground">Itinerary Notes</h4>
+                      </div>
+                      <Textarea
+                        value={itineraryNotes}
+                        onChange={(e) => setItineraryNotes(e.target.value)}
+                        placeholder="Add any initial notes for the itinerary..."
+                        rows={3}
+                        maxLength={2000}
+                        className="text-sm bg-background resize-none"
+                      />
                     </div>
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* Notes */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Initial Itinerary Notes</Label>
-                  <Textarea
-                    value={itineraryNotes}
-                    onChange={(e) => setItineraryNotes(e.target.value)}
-                    placeholder="Add any initial notes for the itinerary..."
-                    rows={3}
-                    maxLength={2000}
-                    className="text-sm"
-                  />
-                </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
-                <Button variant="ghost" onClick={() => handleOpenChange(false)} className="text-muted-foreground">
+              {/* ── Footer ── */}
+              <div className="px-8 py-4 border-t border-border/50 bg-muted/20 flex items-center justify-between">
+                <Button variant="ghost" onClick={() => handleOpenChange(false)} className="text-muted-foreground hover:text-foreground">
                   Cancel
                 </Button>
                 <Button
                   onClick={handleConvert}
                   disabled={!customerName.trim()}
-                  className="gold-gradient text-accent-foreground gap-2 shadow-md px-6"
+                  className="gold-gradient text-accent-foreground gap-2 shadow-lg px-8 h-10 text-sm font-semibold"
                 >
                   <Plane className="w-4 h-4" />
                   Convert to Booking
@@ -396,13 +447,13 @@ export default function ConvertToBookingModal({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-16 px-8"
+              className="flex flex-col items-center justify-center py-20 px-8"
             >
-              <div className="w-16 h-16 rounded-full gold-gradient flex items-center justify-center mb-4 animate-pulse">
+              <div className="w-16 h-16 rounded-full gold-gradient flex items-center justify-center mb-5 animate-pulse shadow-lg">
                 <Loader2 className="w-7 h-7 text-accent-foreground animate-spin" />
               </div>
               <h3 className="text-lg font-display font-semibold text-foreground mb-1">Creating Booking File...</h3>
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-muted-foreground text-center max-w-xs">
                 Setting up customer record, booking file, and linking lead history
               </p>
             </motion.div>
@@ -415,31 +466,31 @@ export default function ConvertToBookingModal({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="flex flex-col items-center justify-center py-12 px-8"
+              className="flex flex-col items-center justify-center py-16 px-8"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.1, type: "spring", stiffness: 400, damping: 15 }}
-                className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4"
+                className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5 ring-4 ring-primary/5"
               >
-                <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                <CheckCircle2 className="w-10 h-10 text-primary" />
               </motion.div>
-              <h3 className="text-lg font-display font-semibold text-foreground mb-1">Booking Created!</h3>
-              <p className="text-sm text-muted-foreground text-center mb-2">
+              <h3 className="text-xl font-display font-semibold text-foreground mb-1">Booking Created!</h3>
+              <p className="text-sm text-muted-foreground text-center mb-3">
                 Booking <span className="font-semibold text-foreground">{bookingNumber}</span> has been created successfully
               </p>
-              <div className="flex flex-wrap gap-2 mt-2 mb-6">
-                <Badge variant="secondary" className="text-xs gap-1"><User className="w-3 h-3" /> Customer Created</Badge>
-                <Badge variant="secondary" className="text-xs gap-1"><FileText className="w-3 h-3" /> Booking File Ready</Badge>
-                <Badge variant="secondary" className="text-xs gap-1"><Sparkles className="w-3 h-3" /> Lead Marked Won</Badge>
+              <div className="flex flex-wrap justify-center gap-2 mt-1 mb-7">
+                <Badge variant="secondary" className="text-xs gap-1.5 py-1 px-3"><User className="w-3 h-3" /> Customer Created</Badge>
+                <Badge variant="secondary" className="text-xs gap-1.5 py-1 px-3"><FileText className="w-3 h-3" /> Booking File Ready</Badge>
+                <Badge variant="secondary" className="text-xs gap-1.5 py-1 px-3"><Sparkles className="w-3 h-3" /> Lead Marked Won</Badge>
               </div>
               <Button
                 onClick={() => {
                   handleOpenChange(false);
                   if (bookingId) navigate(`/dashboard/bookings/${bookingId}`);
                 }}
-                className="gold-gradient text-accent-foreground gap-2 shadow-md px-8"
+                className="gold-gradient text-accent-foreground gap-2 shadow-lg px-10 h-11 text-sm font-semibold"
                 size="lg"
               >
                 <ArrowRight className="w-4 h-4" />
