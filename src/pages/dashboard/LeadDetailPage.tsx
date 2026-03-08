@@ -23,6 +23,7 @@ import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
 import { FollowUpTimeline } from "@/components/leads/FollowUpManager";
+import { createNotification } from "@/hooks/useNotifications";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
