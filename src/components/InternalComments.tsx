@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { createNotification } from "@/hooks/useNotifications";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare, Send, Loader2, Trash2, AtSign, Reply, CornerDownRight, Shield,
