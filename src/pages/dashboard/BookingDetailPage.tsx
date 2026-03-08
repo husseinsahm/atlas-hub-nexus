@@ -393,103 +393,140 @@ export default function BookingDetailPage() {
   const balance = (booking.selling_price || 0) - (booking.amount_paid || 0);
 
   return (
-    <div className="space-y-6">
-      {/* ─── Header ─── */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/bookings")}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-muted-foreground">{booking.booking_number}</span>
-              <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
-                {isArabic ? sc.labelAr : sc.label}
-              </Badge>
-              {(booking as any).source && (
-                <Badge variant="outline" className="text-[9px] capitalize">{(booking as any).source}</Badge>
-              )}
-            </div>
-            <h1 className="text-xl font-bold font-display text-foreground truncate">{booking.title}</h1>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {sc.next && (
-            <Button size="sm" onClick={advanceStatus} className="gold-gradient text-accent-foreground text-xs gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              {isArabic ? STATUS_CONFIG[sc.next].labelAr : STATUS_CONFIG[sc.next].label}
+    <div className="space-y-0">
+      {/* ─── Premium Header with navy gradient ─── */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-6 navy-gradient overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.4),transparent_60%)]" />
+        <div className="relative">
+          {/* Top row: Back + Actions */}
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/dashboard/bookings")}
+              className="text-white/70 hover:text-white hover:bg-white/10 gap-1.5 text-xs -ml-2"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {isArabic ? "الحجوزات" : "Bookings"}
             </Button>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Quick Stats ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Plane className="w-5 h-5 text-accent" />
+            <div className="flex items-center gap-2">
+              {sc.next && (
+                <Button
+                  size="sm"
+                  onClick={advanceStatus}
+                  className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-lg"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
+                </Button>
+              )}
+              <Select
+                value={booking.status}
+                onValueChange={v => updateBooking.mutate({ status: v })}
+              >
+                <SelectTrigger className="h-8 w-auto border-white/20 bg-white/10 text-white text-xs gap-2">
+                  <div className={cn("w-2 h-2 rounded-full", sc.bg.replace("bg-", "bg-"))} />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المدة" : "Duration"}</p>
-              <p className="text-sm font-bold text-foreground">{booking.total_days} {isArabic ? "يوم" : "days"}</p>
-              {(booking as any).arrival_date && (
-                <p className="text-[10px] text-muted-foreground">
-                  {format(new Date((booking as any).arrival_date || booking.start_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date || booking.end_date), "MMM d") : "..."}
+          </div>
+
+          {/* Booking identity */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center shadow-lg shrink-0">
+              <Briefcase className="w-6 h-6 text-accent-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="text-xs font-mono text-white/50">{booking.booking_number}</span>
+                <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
+                  {isArabic ? sc.labelAr : sc.label}
+                </Badge>
+                {(booking as any).source && (
+                  <Badge variant="outline" className="text-[9px] capitalize border-white/20 text-white/70">{(booking as any).source}</Badge>
+                )}
+              </div>
+              <h1 className="text-lg font-bold font-display text-white truncate">{booking.title}</h1>
+              {customer?.full_name && (
+                <p className="text-xs text-white/50 flex items-center gap-1 mt-0.5">
+                  <User className="w-3 h-3" /> {customer.full_name}
+                  {customer?.phone && <span className="ml-2 flex items-center gap-0.5"><Phone className="w-2.5 h-2.5" />{customer.phone}</span>}
                 </p>
               )}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-accent" />
+          </div>
+
+          {/* Quick stat pills */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
+              <Plane className="w-3 h-3 text-white/50" />
+              <span className="font-medium">{booking.total_days} {isArabic ? "يوم" : "days"}</span>
+              {(booking as any).arrival_date && (
+                <span className="text-white/40 ml-1">
+                  {format(new Date((booking as any).arrival_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}
+                </span>
+              )}
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "المسافرون" : "Travelers"}</p>
-              <p className="text-sm font-bold text-foreground">{booking.adults}A {booking.children > 0 ? `${booking.children}C` : ""}</p>
-              <p className="text-[10px] text-muted-foreground">{travelers.length} {isArabic ? "مسجل" : "registered"}</p>
+            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
+              <Users className="w-3 h-3 text-white/50" />
+              <span className="font-medium">{booking.adults}A{booking.children > 0 ? ` ${booking.children}C` : ""}</span>
+              <span className="text-white/40">· {travelers.length} {isArabic ? "مسجل" : "reg."}</span>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-accent" />
+            <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5 text-xs text-white/80">
+              <DollarSign className="w-3 h-3 text-white/50" />
+              <span className="font-medium font-mono">{Number(booking.selling_price || 0).toLocaleString()}</span>
+              <span className="text-white/40">{booking.currency}</span>
             </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "السعر" : "Price"}</p>
-              <p className="text-sm font-bold text-foreground">{Number(booking.selling_price || 0).toLocaleString()} {booking.currency}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", balance > 0 ? "bg-amber-50" : "bg-emerald-50")}>
-              <CreditCard className={cn("w-5 h-5", balance > 0 ? "text-amber-600" : "text-emerald-600")} />
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الرصيد" : "Balance"}</p>
-              <p className={cn("text-sm font-bold", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
-                {balance > 0 ? `${balance.toLocaleString()} ${booking.currency}` : isArabic ? "مدفوع" : "Paid"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            {balance > 0 && (
+              <div className="flex items-center gap-1.5 rounded-full bg-amber-500/20 backdrop-blur-sm px-3 py-1.5 text-xs text-amber-200">
+                <CreditCard className="w-3 h-3" />
+                <span className="font-medium font-mono">{balance.toLocaleString()}</span>
+                <span className="text-amber-200/60">{isArabic ? "متبقي" : "remaining"}</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ─── Tab Navigation ─── */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
-          {TABS.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5 text-xs whitespace-nowrap">
-              <tab.icon className="w-3.5 h-3.5" />
-              {isArabic ? tab.labelAr : tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {/* ─── Tab Navigation — horizontal scroll, pill style ─── */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-background/95 backdrop-blur-sm border-b border-border pb-0 mb-6">
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide py-2">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  isActive
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <tab.icon className="w-3.5 h-3.5" />
+                {isArabic ? tab.labelAr : tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Tab Content ─── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
 
       {/* ─── TAB: Summary ─── */}
       {activeTab === "summary" && (
@@ -506,22 +543,6 @@ export default function BookingDetailPage() {
                   <div>
                     <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "رقم الحجز" : "Booking #"}</Label>
                     <p className="text-sm font-mono font-medium text-foreground">{booking.booking_number}</p>
-                  </div>
-                  <div>
-                    <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "الحالة" : "Status"}</Label>
-                    <Select 
-                      value={booking.status} 
-                      onValueChange={v => updateBooking.mutate({ status: v })}
-                    >
-                      <SelectTrigger className="h-8 text-xs mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                          <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                   <div>
                     <Label className="text-[10px] text-muted-foreground uppercase">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
@@ -932,6 +953,9 @@ export default function BookingDetailPage() {
         />
       )}
 
+        </motion.div>
+      </AnimatePresence>
+
       {/* ─── Traveler Dialog ─── */}
       {showTravelerDialog && editingTraveler && (
         <TravelerDialog
@@ -1057,85 +1081,112 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   const [form, setForm] = useState({ ...traveler });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-accent" />
-            {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 py-4">
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} *</Label>
-            <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1" />
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+        {/* Premium header */}
+        <div className="relative px-6 pt-5 pb-4 navy-gradient">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <Users className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-display">
+                {form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
+              </h2>
+              <p className="text-[11px] text-white/60">{isArabic ? "معلومات جواز السفر والبيانات الشخصية" : "Passport details & personal info"}</p>
+            </div>
           </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Identity */}
           <div>
-            <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
-            <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
-              <SelectTrigger className="mt-1"><SelectValue placeholder="—" /></SelectTrigger>
-              <SelectContent>
-                {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">{isArabic ? "الهوية" : "Identity"}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span></Label>
+                <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-11" autoFocus />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
+                <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
+                  <SelectTrigger className="mt-1 h-11"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
+                <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
+                <NationalitySelect value={form.nationality || ""} onValueChange={v => setForm({ ...form, nationality: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
+                <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
+                <PhoneInput value={form.phone || ""} onValueChange={v => setForm({ ...form, phone: v })} defaultCountry="AE" className="mt-1" />
+              </div>
+            </div>
           </div>
+
+          {/* Passport */}
           <div>
-            <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
-            <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 flex items-center gap-1"><Shield className="w-3 h-3" />{isArabic ? "جواز السفر" : "Passport"}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
+                <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1 h-11 font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Expiry"}</Label>
+                <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1 h-11" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "بلد الإصدار" : "Issuing Country"}</Label>
+                <CountrySelect value={form.passport_country || ""} onValueChange={v => setForm({ ...form, passport_country: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Pref."}</Label>
+                <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1 h-11" />
+              </div>
+            </div>
           </div>
+
+          {/* Extras */}
           <div>
-            <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-            <Input value={form.nationality || ""} onChange={e => setForm({ ...form, nationality: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
-            <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
-            <Input value={form.phone || ""} onChange={e => setForm({ ...form, phone: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
-            <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Passport Expiry"}</Label>
-            <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "بلد الجواز" : "Passport Country"}</Label>
-            <Input value={form.passport_country || ""} onChange={e => setForm({ ...form, passport_country: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Preference"}</Label>
-            <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1" />
-          </div>
-          <div className="col-span-2">
             <Label className="text-xs">{isArabic ? "متطلبات خاصة" : "Special Requirements"}</Label>
-            <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-xs" />
+            <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
           </div>
-          <div className="flex items-center gap-4 col-span-2">
+          <div className="flex items-center gap-4">
             <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} />
+              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} className="rounded" />
               {isArabic ? "المسافر الرئيسي" : "Lead Traveler"}
             </label>
             <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} />
+              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} className="rounded" />
               {isArabic ? "بالغ" : "Adult"}
             </label>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+
+        <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
           <Button
+            size="sm"
             disabled={!form.full_name?.trim() || isSaving}
             onClick={() => onSave(form)}
-            className="gold-gradient text-accent-foreground gap-2"
+            className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
           >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isArabic ? "حفظ" : "Save"}
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isArabic ? "حفظ" : "Save Traveler"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -1145,76 +1196,122 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving }: a
   const [form, setForm] = useState({ ...service });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Hotel className="w-5 h-5 text-accent" />
-            {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 py-4">
-          <div>
-            <Label className="text-xs">{isArabic ? "نوع الخدمة" : "Service Type"} *</Label>
-            <Select value={form.service_type} onValueChange={v => setForm({ ...form, service_type: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {SERVICE_TYPES.map(st => <SelectItem key={st.value} value={st.value}>{st.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
-            <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "العنوان" : "Title"} *</Label>
-            <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
-            <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
-            <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
-            <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
-            <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "الكمية" : "Quantity"}</Label>
-            <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1" />
-          </div>
-          <div>
-            <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
-            <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1" />
-          </div>
-          <div className="col-span-2">
-            <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
-            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-xs" />
+      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
+        <div className="relative px-6 pt-5 pb-4 navy-gradient">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <Hotel className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-display">
+                {form._isNew ? (isArabic ? "إضافة خدمة" : "Add Service") : (isArabic ? "تعديل الخدمة" : "Edit Service")}
+              </h2>
+              <p className="text-[11px] text-white/60">{isArabic ? "فنادق، نقل، جولات، مرشدين" : "Hotels, transfers, tours, guides"}</p>
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{isArabic ? "إلغاء" : "Cancel"}</Button>
+
+        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Service type chips */}
+          <div>
+            <Label className="text-xs font-medium mb-2 block">{isArabic ? "نوع الخدمة" : "Service Type"}</Label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {SERVICE_TYPES.map(st => {
+                const StIcon = st.icon;
+                return (
+                  <button
+                    key={st.value}
+                    type="button"
+                    onClick={() => setForm({ ...form, service_type: st.value })}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border p-2.5 text-[10px] font-medium transition-all",
+                      form.service_type === st.value
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    <StIcon className="w-4 h-4" />
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "العنوان" : "Title"} <span className="text-destructive">*</span></Label>
+              <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: فندق ماريوت" : "e.g., Marriott Hotel"} />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
+              <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
+                <SelectTrigger className="mt-1 h-11"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
+              <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "المورد" : "Supplier"}</Label>
+              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
+              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "الموقع" : "Location"}</Label>
+              <Input value={form.location || ""} onChange={e => setForm({ ...form, location: e.target.value })} className="mt-1 h-11" />
+            </div>
+          </div>
+
+          {/* Pricing row */}
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1">
+              <DollarSign className="w-3 h-3" /> {isArabic ? "التسعير" : "Pricing"}
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">{isArabic ? "الكمية" : "Qty"}</Label>
+                <Input type="number" min={1} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })} className="mt-1 h-11 text-center font-bold" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "سعر الوحدة" : "Unit Price"}</Label>
+                <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-1 h-11 font-mono" />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "الإجمالي" : "Total"}</Label>
+                <div className="mt-1 h-11 rounded-md border border-border bg-background flex items-center justify-center text-sm font-bold font-mono text-foreground">
+                  {((form.quantity || 1) * (form.unit_price || 0)).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
+            <Textarea value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
           <Button
+            size="sm"
             disabled={!form.title?.trim() || isSaving}
             onClick={() => onSave(form)}
-            className="gold-gradient text-accent-foreground gap-2"
+            className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
           >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isArabic ? "حفظ" : "Save"}
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isArabic ? "حفظ" : "Save Service"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
