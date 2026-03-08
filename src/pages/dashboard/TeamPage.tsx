@@ -20,6 +20,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UpgradeBanner, UsageIndicator } from "@/components/plan/UpgradeBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 type CompanyRole = "company_admin" | "agent" | "operations" | "finance" | "viewer";
 
