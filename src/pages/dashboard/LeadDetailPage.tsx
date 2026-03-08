@@ -12,16 +12,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   ArrowLeft, Mail, Phone, Globe, Calendar, Users, MapPin, DollarSign,
   Clock, Trophy, XCircle, Sparkles, MessageSquare, UserCheck, Edit2,
   Send, Activity, CheckCircle2, Plane, Bell, AlertTriangle, Bookmark,
   FileText, ArrowRight, MessageCircle, Flame, Languages,
 } from "lucide-react";
-import { format, formatDistanceToNow, addDays, isPast } from "date-fns";
+import { format, formatDistanceToNow, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
+import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
+import { FollowUpTimeline } from "@/components/leads/FollowUpManager";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
@@ -104,24 +105,12 @@ export default function LeadDetailPage() {
   const [agents, setAgents] = useState<AgentInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Tabs
   const [activeTab, setActiveTab] = useState("notes");
-
-  // Note/comment input
   const [noteText, setNoteText] = useState("");
-  const [commentText, setCommentText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
-  const [addingComment, setAddingComment] = useState(false);
-
-  // Follow-up
-  const [followUpOpen, setFollowUpOpen] = useState(false);
-  const [followUpDate, setFollowUpDate] = useState("");
-  const [followUpNote, setFollowUpNote] = useState("");
-  const [addingFollowUp, setAddingFollowUp] = useState(false);
 
   // Convert dialog
   const [convertOpen, setConvertOpen] = useState(false);
-  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -248,138 +237,6 @@ export default function LeadDetailPage() {
     }
   }
 
-  async function addComment() {
-    if (!lead || !user || !commentText.trim()) return;
-    setAddingComment(true);
-    try {
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "comment",
-        description: commentText.trim(),
-        metadata: { internal: true },
-      });
-      setCommentText("");
-      fetchActivities();
-      toast({ title: "Comment added" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setAddingComment(false);
-    }
-  }
-
-  async function addFollowUp() {
-    if (!lead || !user || !followUpDate) return;
-    setAddingFollowUp(true);
-    try {
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "follow_up",
-        description: followUpNote.trim() || `Follow-up scheduled for ${format(new Date(followUpDate), "MMM d, yyyy")}`,
-        metadata: { follow_up_date: followUpDate },
-      });
-      setFollowUpOpen(false);
-      setFollowUpDate("");
-      setFollowUpNote("");
-      fetchActivities();
-      toast({ title: "Follow-up reminder added" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setAddingFollowUp(false);
-    }
-  }
-
-  async function convertToBooking() {
-    if (!lead || !user || !companyId) return;
-    setConverting(true);
-    try {
-      // Get company settings for booking number
-      const { data: settings } = await supabase
-        .from("company_settings")
-        .select("booking_prefix, booking_next_number")
-        .eq("company_id", companyId)
-        .single();
-      
-      const prefix = settings?.booking_prefix || "BKG";
-      const nextNum = settings?.booking_next_number || 1;
-      const bookingNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
-
-      // Create customer from lead
-      const { data: customer, error: custErr } = await supabase
-        .from("customers")
-        .insert({
-          company_id: companyId,
-          full_name: lead.full_name,
-          email: lead.email,
-          phone: lead.phone,
-          nationality: lead.nationality,
-          lead_id: lead.id,
-          created_by: user.id,
-          source: lead.source,
-        })
-        .select("id")
-        .single();
-      if (custErr) throw custErr;
-
-      // Create booking file
-      const { data: booking, error: bookErr } = await supabase
-        .from("bookings")
-        .insert({
-          company_id: companyId,
-          booking_number: bookingNumber,
-          title: `${lead.full_name} - ${lead.destinations?.join(", ") || "Trip"}`,
-          customer_id: customer.id,
-          lead_id: lead.id,
-          source: lead.source,
-          arrival_date: lead.travel_date,
-          adults: lead.adults,
-          children: lead.children,
-          internal_notes: lead.notes,
-          status: "tentative",
-          created_by: user.id,
-          assigned_to: lead.assigned_to || user.id,
-        })
-        .select("id")
-        .single();
-      if (bookErr) throw bookErr;
-
-      // Update booking number counter
-      await supabase
-        .from("company_settings")
-        .update({ booking_next_number: nextNum + 1 })
-        .eq("company_id", companyId);
-
-      // Mark lead as won
-      await supabase.from("leads").update({ status: "won" }).eq("id", lead.id);
-      
-      // Log the conversion activity
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "converted",
-        description: `Lead converted to Booking File ${bookingNumber}`,
-        metadata: { converted_at: new Date().toISOString(), booking_id: booking.id },
-      });
-
-      // Create booking activity
-      await supabase.from("booking_activities").insert({
-        booking_id: booking.id,
-        activity_type: "created",
-        title: "Booking file created from lead conversion",
-        user_id: user.id,
-      });
-
-      toast({
-        title: "Lead converted to Booking!",
-        description: `Booking file ${bookingNumber} has been created.`,
-      });
-      
-      // Navigate to the new booking
-      navigate(`/dashboard/bookings/${booking.id}`);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setConverting(false);
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -395,8 +252,6 @@ export default function LeadDetailPage() {
   const daysOpen = Math.floor((Date.now() - new Date(lead.created_at).getTime()) / 86400000);
   const noteActivities = activities.filter((a) => a.activity_type === "note_added");
   const commentActivities = activities.filter((a) => a.activity_type === "comment");
-  const followUps = activities.filter((a) => a.activity_type === "follow_up");
-  const overdueFollowUps = followUps.filter((f) => f.metadata?.follow_up_date && isPast(new Date(f.metadata.follow_up_date)));
 
   return (
     <div className="space-y-6">
@@ -421,7 +276,6 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        {/* Primary CTA */}
         {isAdminOrAgent && lead.status !== "won" && lead.status !== "lost" && (
           <Button
             onClick={() => setConvertOpen(true)}
@@ -475,25 +329,8 @@ export default function LeadDetailPage() {
         </Card>
       )}
 
-      {/* Overdue Follow-ups Alert */}
-      {overdueFollowUps.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="p-3 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-900">
-                {overdueFollowUps.length} overdue follow-up{overdueFollowUps.length > 1 ? "s" : ""}
-              </p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {overdueFollowUps[0].description}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column — Main Content */}
+        {/* Left Column */}
         <div className="lg:col-span-8 space-y-6">
 
           {/* Lead Summary Card */}
@@ -532,9 +369,7 @@ export default function LeadDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Agent</p>
-                  <p className="text-sm font-medium text-foreground">
-                    {assignedAgent?.fullName || "Unassigned"}
-                  </p>
+                  <p className="text-sm font-medium text-foreground">{assignedAgent?.fullName || "Unassigned"}</p>
                 </div>
               </div>
             </CardContent>
@@ -549,7 +384,6 @@ export default function LeadDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                {/* Contact */}
                 {lead.email && (
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0"><Mail className="w-4 h-4 text-muted-foreground" /></div>
@@ -610,7 +444,6 @@ export default function LeadDetailPage() {
                 )}
               </div>
 
-              {/* Destinations */}
               {lead.destinations.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Destinations</p>
@@ -624,7 +457,6 @@ export default function LeadDetailPage() {
                 </div>
               )}
 
-              {/* Client Notes */}
               {lead.notes && (
                 <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1.5">Client Notes</p>
@@ -634,7 +466,7 @@ export default function LeadDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Tabbed Section: Notes / Internal Comments / Follow-ups / All Activity */}
+          {/* Tabbed Section */}
           <Card className="border border-border bg-card">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <CardHeader className="pb-0">
@@ -643,15 +475,12 @@ export default function LeadDetailPage() {
                     Notes ({noteActivities.length})
                   </TabsTrigger>
                   <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Internal Comments ({commentActivities.length})
+                    Internal Comments
                   </TabsTrigger>
-                  <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm relative">
-                    Follow-ups ({followUps.length})
-                    {overdueFollowUps.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-destructive" />
-                    )}
+                  <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Follow-ups
                   </TabsTrigger>
-                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                  <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
                     Attachments
                   </TabsTrigger>
                   <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
@@ -660,7 +489,6 @@ export default function LeadDetailPage() {
                 </TabsList>
               </CardHeader>
               <CardContent className="pt-4">
-
                 {/* Notes Tab */}
                 <TabsContent value="notes" className="mt-0">
                   {isAdminOrAgent && (
@@ -690,55 +518,15 @@ export default function LeadDetailPage() {
                   />
                 </TabsContent>
 
-                {/* Follow-ups Tab */}
+                {/* Follow-ups Tab - Now using FollowUpTimeline */}
                 <TabsContent value="followups" className="mt-0">
-                  {isAdminOrAgent && (
-                    <div className="mb-4">
-                      <Button size="sm" variant="outline" onClick={() => setFollowUpOpen(true)} className="gap-1.5">
-                        <Bell className="w-3.5 h-3.5" /> Schedule Follow-up
-                      </Button>
-                    </div>
-                  )}
-                  {followUps.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="text-sm">No follow-ups scheduled</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {followUps.map((f) => {
-                        const fDate = f.metadata?.follow_up_date;
-                        const isOverdue = fDate && isPast(new Date(fDate));
-                        return (
-                          <div
-                            key={f.id}
-                            className={`flex items-start gap-3 p-3 rounded-lg border ${
-                              isOverdue ? "border-destructive/30 bg-destructive/5" : "border-border bg-muted/30"
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              isOverdue ? "bg-destructive/10" : "bg-muted"
-                            }`}>
-                              <Bell className={`w-4 h-4 ${isOverdue ? "text-destructive" : "text-muted-foreground"}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground">{f.description}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {fDate && (
-                                  <Badge variant={isOverdue ? "destructive" : "outline"} className="text-xs">
-                                    {isOverdue ? "Overdue: " : ""}{format(new Date(fDate), "MMM d, yyyy")}
-                                  </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  by {f.userName} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true })}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <FollowUpTimeline
+                    leadId={lead.id}
+                    companyId={companyId || ""}
+                    userId={user?.id || ""}
+                    agents={agents}
+                    isAdminOrAgent={!!isAdminOrAgent}
+                  />
                 </TabsContent>
 
                 {/* Attachments Tab */}
@@ -807,10 +595,10 @@ export default function LeadDetailPage() {
                     className="w-full justify-start gap-2 gold-gradient text-accent-foreground"
                     onClick={() => setConvertOpen(true)}
                   >
-                    <Plane className="w-4 h-4" /> Convert to Trip Draft
+                    <Plane className="w-4 h-4" /> Convert to Booking File
                   </Button>
                 )}
-                <Button size="sm" variant="outline" className="w-full justify-start gap-2" onClick={() => setFollowUpOpen(true)}>
+                <Button size="sm" variant="outline" className="w-full justify-start gap-2" onClick={() => setActiveTab("followups")}>
                   <Bell className="w-4 h-4" /> Schedule Follow-up
                 </Button>
                 {lead.email && (
@@ -856,16 +644,6 @@ export default function LeadDetailPage() {
               </div>
               <Separator />
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Comments</span>
-                <span className="text-foreground">{commentActivities.length}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Follow-ups</span>
-                <span className="text-foreground">{followUps.length}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between">
                 <span className="text-muted-foreground">Days Open</span>
                 <span className="text-foreground">{daysOpen}</span>
               </div>
@@ -879,80 +657,17 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      {/* Follow-up Dialog */}
-      <Dialog open={followUpOpen} onOpenChange={setFollowUpOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">Schedule Follow-up</DialogTitle>
-            <DialogDescription>Set a reminder to follow up with this lead</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Follow-up Date</Label>
-              <Input
-                type="date"
-                value={followUpDate}
-                onChange={(e) => setFollowUpDate(e.target.value)}
-                min={format(new Date(), "yyyy-MM-dd")}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Reminder Note</Label>
-              <Textarea
-                value={followUpNote}
-                onChange={(e) => setFollowUpNote(e.target.value)}
-                placeholder="What should be done during follow-up?"
-                rows={2}
-                maxLength={500}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFollowUpOpen(false)}>Cancel</Button>
-            <Button onClick={addFollowUp} disabled={!followUpDate || addingFollowUp}>
-              {addingFollowUp ? "Scheduling..." : "Schedule"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Convert to Trip Draft Dialog */}
-      <Dialog open={convertOpen} onOpenChange={setConvertOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <Plane className="w-5 h-5 text-accent" /> Convert to Trip Draft
-            </DialogTitle>
-            <DialogDescription>
-              This will mark <span className="font-medium text-foreground">{lead.full_name}</span> as a won lead and prepare the trip draft.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-3 space-y-3">
-            <div className="rounded-lg border border-border p-4 bg-muted/30 space-y-2">
-              <h4 className="text-sm font-semibold text-foreground">Trip Draft Summary</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground">Customer:</span> <span className="text-foreground font-medium">{lead.full_name}</span></div>
-                {lead.travel_date && <div><span className="text-muted-foreground">Travel Date:</span> <span className="text-foreground font-medium">{format(new Date(lead.travel_date), "MMM d, yyyy")}</span></div>}
-                <div><span className="text-muted-foreground">Travelers:</span> <span className="text-foreground font-medium">{lead.adults}A{lead.children > 0 ? ` + ${lead.children}C` : ""}</span></div>
-                {lead.destinations.length > 0 && <div><span className="text-muted-foreground">Destinations:</span> <span className="text-foreground font-medium">{lead.destinations.join(", ")}</span></div>}
-                {(lead.budget_min || lead.budget_max) && (
-                  <div><span className="text-muted-foreground">Budget:</span> <span className="text-foreground font-medium">{lead.budget_currency} {lead.budget_min?.toLocaleString()}{lead.budget_max ? ` – ${lead.budget_max.toLocaleString()}` : "+"}</span></div>
-                )}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              A new Booking File and Customer record will be created from this lead's information.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConvertOpen(false)}>Cancel</Button>
-            <Button onClick={convertToBooking} disabled={converting} className="gold-gradient text-accent-foreground gap-2">
-              <Plane className="w-4 h-4" />
-              {converting ? "Converting..." : "Convert to Booking"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Convert to Booking Modal */}
+      {lead && companyId && user && (
+        <ConvertToBookingModal
+          open={convertOpen}
+          onOpenChange={setConvertOpen}
+          lead={lead}
+          agents={agents}
+          companyId={companyId}
+          userId={user.id}
+        />
+      )}
     </div>
   );
 
