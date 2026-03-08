@@ -871,6 +871,18 @@ export default function TripBuilderPage() {
               </TooltipTrigger>
               <TooltipContent>Copy share link</TooltipContent>
             </Tooltip>
+            {(trip.status === "approved" || trip.status === "converted") && trip.status !== "converted" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => convertToBooking.mutate()}
+                disabled={convertToBooking.isPending}
+                className="text-xs gap-1.5 border-accent text-accent hover:bg-accent/10"
+              >
+                {convertToBooking.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Briefcase className="w-3.5 h-3.5" />}
+                Convert to Booking
+              </Button>
+            )}
             {sc.next && (
               <Button size="sm" onClick={advanceStatus} className="gold-gradient text-accent-foreground text-xs gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
