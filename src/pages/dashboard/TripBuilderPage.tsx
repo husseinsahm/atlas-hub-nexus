@@ -808,7 +808,84 @@ export default function TripBuilderPage() {
     },
   });
 
-  const aiSuggestDay = useCallback(async () => {
+  const createQuotation = useMutation({
+    mutationFn: async () => {
+      if (!trip || !companyId) throw new Error("Missing trip or company");
+      // Get quotation number
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("quotation_prefix, quotation_next_number")
+        .eq("company_id", companyId)
+        .single();
+      const prefix = (settings as any)?.quotation_prefix || "QTN";
+      const nextNum = (settings as any)?.quotation_next_number || 1;
+      const quotationNumber = `${prefix}-${String(nextNum).padStart(5, "0")}`;
+
+      // Build trip snapshot with days and items
+      const { data: daysData } = await supabase
+        .from("trip_days")
+        .select("*, trip_day_items(*, library_items(title, category))")
+        .eq("trip_id", trip.id)
+        .order("day_number");
+
+      const snapshot = {
+        title: trip.title,
+        total_days: trip.total_days,
+        days: (daysData || []).map((d: any) => ({
+          day_number: d.day_number,
+          title: d.title,
+          city: d.city,
+          items: (d.trip_day_items || []).map((item: any) => ({
+            title: item.library_items?.title || item.custom_title,
+            category: item.category,
+            custom_description: item.custom_description,
+          })),
+        })),
+      };
+
+      const discountAmount = trip.selling_price && trip.total_cost
+        ? Math.max(0, Number(trip.total_cost) - Number(trip.selling_price))
+        : 0;
+
+      const validUntil = new Date();
+      validUntil.setDate(validUntil.getDate() + 14);
+
+      const { data: quotation, error } = await supabase.from("quotations").insert({
+        quotation_number: quotationNumber,
+        company_id: companyId,
+        trip_id: trip.id,
+        customer_id: trip.customer_id,
+        lead_id: trip.lead_id,
+        currency: trip.currency,
+        subtotal: trip.total_cost || 0,
+        discount_amount: discountAmount,
+        total_amount: trip.selling_price || trip.total_cost || 0,
+        deposit_percentage: 30,
+        deposit_amount: Math.round(Number(trip.selling_price || trip.total_cost || 0) * 0.3 * 100) / 100,
+        validity_days: 14,
+        valid_until: validUntil.toISOString().split("T")[0],
+        trip_snapshot: snapshot,
+        created_by: user?.id,
+        status: "draft",
+      } as any).select().single();
+      if (error) throw error;
+
+      // Increment quotation number
+      await supabase.from("company_settings").update({
+        quotation_next_number: nextNum + 1,
+      } as any).eq("company_id", companyId);
+
+      return quotation;
+    },
+    onSuccess: (quotation: any) => {
+      toast({ title: "Quotation created!", description: `${quotation.quotation_number}` });
+      navigate(`/dashboard/quotations/${quotation.id}`);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
     if (!selectedDay || !trip) return;
     setAiLoading(true);
     try {
