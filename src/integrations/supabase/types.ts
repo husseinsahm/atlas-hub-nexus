@@ -146,10 +146,338 @@ export type Database = {
           },
         ]
       }
+      booking_day_items: {
+        Row: {
+          booking_day_id: string
+          category: string
+          created_at: string
+          currency: string
+          custom_description: string | null
+          custom_title: string | null
+          duration_minutes: number | null
+          id: string
+          library_item_id: string | null
+          metadata: Json | null
+          notes: string | null
+          quantity: number
+          sort_order: number
+          start_time: string | null
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          booking_day_id: string
+          category: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          booking_day_id?: string
+          category?: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_day_items_booking_day_id_fkey"
+            columns: ["booking_day_id"]
+            isOneToOne: false
+            referencedRelation: "booking_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_day_items_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_days: {
+        Row: {
+          booking_id: string
+          city: string | null
+          created_at: string
+          date: string | null
+          day_number: number
+          description: string | null
+          id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          day_number: number
+          description?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          city?: string | null
+          created_at?: string
+          date?: string | null
+          day_number?: number
+          description?: string | null
+          id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_days_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_services: {
+        Row: {
+          booking_id: string
+          company_id: string
+          confirmation_number: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          dropoff_location: string | null
+          duration_minutes: number | null
+          end_time: string | null
+          id: string
+          internal_notes: string | null
+          library_item_id: string | null
+          location: string | null
+          metadata: Json | null
+          notes: string | null
+          pickup_location: string | null
+          quantity: number
+          service_date: string | null
+          service_type: Database["public"]["Enums"]["service_type"]
+          sort_order: number
+          start_time: string | null
+          status: string
+          supplier_contact: string | null
+          supplier_name: string | null
+          title: string
+          total_cost: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          company_id: string
+          confirmation_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dropoff_location?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          internal_notes?: string | null
+          library_item_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          pickup_location?: string | null
+          quantity?: number
+          service_date?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          sort_order?: number
+          start_time?: string | null
+          status?: string
+          supplier_contact?: string | null
+          supplier_name?: string | null
+          title: string
+          total_cost?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          company_id?: string
+          confirmation_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          dropoff_location?: string | null
+          duration_minutes?: number | null
+          end_time?: string | null
+          id?: string
+          internal_notes?: string | null
+          library_item_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          pickup_location?: string | null
+          quantity?: number
+          service_date?: string | null
+          service_type?: Database["public"]["Enums"]["service_type"]
+          sort_order?: number
+          start_time?: string | null
+          status?: string
+          supplier_contact?: string | null
+          supplier_name?: string | null
+          title?: string
+          total_cost?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_services_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_services_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_services_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_travelers: {
+        Row: {
+          booking_id: string
+          company_id: string
+          created_at: string
+          date_of_birth: string | null
+          dietary_restrictions: string | null
+          email: string | null
+          full_name: string
+          gender: string | null
+          id: string
+          is_adult: boolean | null
+          is_lead_traveler: boolean | null
+          metadata: Json | null
+          nationality: string | null
+          passport_country: string | null
+          passport_expiry: string | null
+          passport_number: string | null
+          phone: string | null
+          room_preference: string | null
+          special_requirements: string | null
+          updated_at: string
+          visa_expiry: string | null
+          visa_number: string | null
+        }
+        Insert: {
+          booking_id: string
+          company_id: string
+          created_at?: string
+          date_of_birth?: string | null
+          dietary_restrictions?: string | null
+          email?: string | null
+          full_name: string
+          gender?: string | null
+          id?: string
+          is_adult?: boolean | null
+          is_lead_traveler?: boolean | null
+          metadata?: Json | null
+          nationality?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          room_preference?: string | null
+          special_requirements?: string | null
+          updated_at?: string
+          visa_expiry?: string | null
+          visa_number?: string | null
+        }
+        Update: {
+          booking_id?: string
+          company_id?: string
+          created_at?: string
+          date_of_birth?: string | null
+          dietary_restrictions?: string | null
+          email?: string | null
+          full_name?: string
+          gender?: string | null
+          id?: string
+          is_adult?: boolean | null
+          is_lead_traveler?: boolean | null
+          metadata?: Json | null
+          nationality?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          room_preference?: string | null
+          special_requirements?: string | null
+          updated_at?: string
+          visa_expiry?: string | null
+          visa_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_travelers_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_travelers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           adults: number
           amount_paid: number | null
+          arrival_date: string | null
           assigned_to: string | null
           booking_number: string
           children: number
@@ -160,14 +488,18 @@ export type Database = {
           currency: string
           customer_id: string | null
           deleted_at: string | null
+          departure_date: string | null
           description: string | null
           end_date: string | null
           id: string
           internal_notes: string | null
+          itinerary_notes: string | null
           lead_id: string | null
           operations_notes: string | null
           payment_status: string
           selling_price: number | null
+          service_notes: string | null
+          source: string | null
           start_date: string | null
           status: Database["public"]["Enums"]["booking_status"]
           title: string
@@ -180,6 +512,7 @@ export type Database = {
         Insert: {
           adults?: number
           amount_paid?: number | null
+          arrival_date?: string | null
           assigned_to?: string | null
           booking_number: string
           children?: number
@@ -190,14 +523,18 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           deleted_at?: string | null
+          departure_date?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
           internal_notes?: string | null
+          itinerary_notes?: string | null
           lead_id?: string | null
           operations_notes?: string | null
           payment_status?: string
           selling_price?: number | null
+          service_notes?: string | null
+          source?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           title: string
@@ -210,6 +547,7 @@ export type Database = {
         Update: {
           adults?: number
           amount_paid?: number | null
+          arrival_date?: string | null
           assigned_to?: string | null
           booking_number?: string
           children?: number
@@ -220,14 +558,18 @@ export type Database = {
           currency?: string
           customer_id?: string | null
           deleted_at?: string | null
+          departure_date?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
           internal_notes?: string | null
+          itinerary_notes?: string | null
           lead_id?: string | null
           operations_notes?: string | null
           payment_status?: string
           selling_price?: number | null
+          service_notes?: string | null
+          source?: string | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           title?: string
@@ -791,6 +1133,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itinerary_templates: {
+        Row: {
+          company_id: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          destinations: Json | null
+          id: string
+          is_active: boolean | null
+          tags: Json | null
+          title: string
+          total_days: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          destinations?: Json | null
+          id?: string
+          is_active?: boolean | null
+          tags?: Json | null
+          title: string
+          total_days?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          destinations?: Json | null
+          id?: string
+          is_active?: boolean | null
+          tags?: Json | null
+          title?: string
+          total_days?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itinerary_templates_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -1387,6 +1785,122 @@ export type Database = {
           },
         ]
       }
+      template_day_items: {
+        Row: {
+          category: string
+          created_at: string
+          currency: string
+          custom_description: string | null
+          custom_title: string | null
+          duration_minutes: number | null
+          id: string
+          library_item_id: string | null
+          metadata: Json | null
+          notes: string | null
+          quantity: number
+          sort_order: number
+          start_time: string | null
+          template_day_id: string
+          total_price: number | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          template_day_id: string
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          currency?: string
+          custom_description?: string | null
+          custom_title?: string | null
+          duration_minutes?: number | null
+          id?: string
+          library_item_id?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          quantity?: number
+          sort_order?: number
+          start_time?: string | null
+          template_day_id?: string
+          total_price?: number | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_day_items_library_item_id_fkey"
+            columns: ["library_item_id"]
+            isOneToOne: false
+            referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "template_day_items_template_day_id_fkey"
+            columns: ["template_day_id"]
+            isOneToOne: false
+            referencedRelation: "template_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_days: {
+        Row: {
+          city: string | null
+          created_at: string
+          day_number: number
+          description: string | null
+          id: string
+          template_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          day_number: number
+          description?: string | null
+          id?: string
+          template_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          day_number?: number
+          description?: string | null
+          id?: string
+          template_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_days_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_day_items: {
         Row: {
           category: string
@@ -1802,6 +2316,14 @@ export type Database = {
         | "rejected"
         | "expired"
         | "cancelled"
+      service_type:
+        | "hotel"
+        | "transfer"
+        | "tour"
+        | "guide"
+        | "meal"
+        | "activity"
+        | "other"
       trip_status:
         | "draft"
         | "under_review"
@@ -1985,6 +2507,15 @@ export const Constants = {
         "rejected",
         "expired",
         "cancelled",
+      ],
+      service_type: [
+        "hotel",
+        "transfer",
+        "tour",
+        "guide",
+        "meal",
+        "activity",
+        "other",
       ],
       trip_status: [
         "draft",
