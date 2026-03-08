@@ -203,6 +203,39 @@ export default function TripBuilderPage() {
     enabled: !!id,
   });
 
+  // Revisions
+  const { data: tripRevisions = [] } = useQuery({
+    queryKey: ["trip-revisions", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trip_revisions")
+        .select("*")
+        .eq("trip_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as { id: string; trip_id: string; user_id: string | null; revision_number: number; action: string; summary: string; note: string | null; changes: any; snapshot: any; created_at: string }[];
+    },
+    enabled: !!id,
+  });
+
+  const [revisionNote, setRevisionNote] = useState("");
+
+  const trackRevision = useCallback(async (action: string, summary: string, changes: Record<string, any> = {}, note?: string) => {
+    if (!id || !user?.id) return;
+    const nextNum = (tripRevisions.length > 0 ? tripRevisions[0].revision_number : 0) + 1;
+    await supabase.from("trip_revisions").insert({
+      trip_id: id,
+      user_id: user.id,
+      revision_number: nextNum,
+      action,
+      summary,
+      changes,
+      note: note || null,
+      snapshot: { title: trip?.title, status: trip?.status, total_days: trip?.total_days, selling_price: trip?.selling_price },
+    });
+    queryClient.invalidateQueries({ queryKey: ["trip-revisions", id] });
+  }, [id, user?.id, tripRevisions, trip, queryClient]);
+
   const { data: libraryItems = [] } = useQuery({
     queryKey: ["library-items-for-trip", companyId],
     queryFn: async () => {
