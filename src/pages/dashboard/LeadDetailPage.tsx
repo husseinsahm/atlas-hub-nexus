@@ -504,7 +504,7 @@ export default function LeadDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</p>
                   <Badge className={`${sc.color} border`}>{sc.label}</Badge>
@@ -512,6 +512,19 @@ export default function LeadDetailPage() {
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Source</p>
                   <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Urgency</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-emerald-500" : "bg-amber-500"
+                    }`} />
+                    <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Trip Type</p>
+                  <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Days Open</p>
