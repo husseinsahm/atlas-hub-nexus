@@ -492,7 +492,7 @@ export default function BookingDetailPage() {
                                   className="h-6 w-6 text-destructive hover:text-destructive"
                                   onClick={e => {
                                     e.stopPropagation();
-                                    const updated = (booking.travelers as Traveler[]).filter(tr => tr.id !== t.id);
+                                    const updated = travelers.filter(tr => tr.id !== t.id);
                                     updateBooking.mutate({ travelers: updated });
                                   }}
                                 >
