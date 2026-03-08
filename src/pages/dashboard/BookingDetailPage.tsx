@@ -4,14 +4,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Calendar, Users, DollarSign, MapPin,
   Loader2, Briefcase, CheckCircle2, Clock,
   FileText, StickyNote, Pencil, Upload,
   UserCheck, Phone, Mail, Globe,
   Plus, Trash2, Download, MessageSquare,
-  TrendingUp, CreditCard, Send,
+  TrendingUp, CreditCard, Send, ChevronDown, ChevronUp,
+  User, Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
+interface Traveler {
+  id: string;
+  full_name: string;
+  gender: string;
+  date_of_birth: string;
+  nationality: string;
+  passport_number: string;
+  passport_expiry: string;
+  room_notes: string;
+}
+
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: string; next?: BookingStatus }> = {
@@ -38,6 +50,18 @@ const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: s
 };
 
 const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"];
+const GENDERS = ["male", "female", "other"];
+
+const emptyTraveler = (): Traveler => ({
+  id: crypto.randomUUID(),
+  full_name: "",
+  gender: "",
+  date_of_birth: "",
+  nationality: "",
+  passport_number: "",
+  passport_expiry: "",
+  room_notes: "",
+});
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +72,9 @@ export default function BookingDetailPage() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "services" | "timeline">("overview");
   const [commentText, setCommentText] = useState("");
+  const [expandedTraveler, setExpandedTraveler] = useState<string | null>(null);
+  const [showTravelerDialog, setShowTravelerDialog] = useState(false);
+  const [editingTraveler, setEditingTraveler] = useState<Traveler | null>(null);
 
   // Fetch booking
   const { data: booking, isLoading } = useQuery({
@@ -206,6 +233,7 @@ export default function BookingDetailPage() {
   const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
   const customer = (booking as any).customers;
   const balance = (booking.selling_price || 0) - (booking.amount_paid || 0);
+  const travelers: Traveler[] = Array.isArray(booking.travelers) ? (booking.travelers as unknown as Traveler[]) : [];
 
   return (
     <div className="space-y-6">
@@ -402,27 +430,131 @@ export default function BookingDetailPage() {
             {/* Travelers */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Users className="w-4 h-4 text-accent" /> Travelers
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="w-4 h-4 text-accent" /> Travelers
+                    {travelers.length > 0 && (
+                      <Badge variant="secondary" className="text-[10px]">{travelers.length}</Badge>
+                    )}
+                  </CardTitle>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[10px] gap-1"
+                    onClick={() => { setEditingTraveler(emptyTraveler()); setShowTravelerDialog(true); }}
+                  >
+                    <Plus className="w-3 h-3" /> Add Traveler
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                {Array.isArray(booking.travelers) && (booking.travelers as any[]).length > 0 ? (
+                {travelers.length > 0 ? (
                   <div className="space-y-2">
-                    {(booking.travelers as any[]).map((t: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 border border-border">
-                        <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">{i + 1}</div>
-                        <div>
-                          <p className="text-xs font-medium text-foreground">{t.name || `Traveler ${i + 1}`}</p>
-                          {t.passport && <p className="text-[10px] text-muted-foreground font-mono">{t.passport}</p>}
-                        </div>
-                      </div>
-                    ))}
+                    <AnimatePresence>
+                      {travelers.map((t, i) => {
+                        const isExpanded = expandedTraveler === t.id;
+                        return (
+                          <motion.div
+                            key={t.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className="rounded-lg border border-border overflow-hidden"
+                          >
+                            <div
+                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+                              onClick={() => setExpandedTraveler(isExpanded ? null : t.id)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                                {i + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground truncate">{t.full_name || `Traveler ${i + 1}`}</p>
+                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                  {t.nationality && <span className="flex items-center gap-0.5"><Globe className="w-2.5 h-2.5" />{t.nationality}</span>}
+                                  {t.passport_number && <span className="font-mono">{t.passport_number}</span>}
+                                  {t.gender && <span className="capitalize">{t.gender}</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={e => { e.stopPropagation(); setEditingTraveler(t); setShowTravelerDialog(true); }}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 text-destructive hover:text-destructive"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    const updated = travelers.filter(tr => tr.id !== t.id);
+                                    updateBooking.mutate({ travelers: updated });
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                              </div>
+                            </div>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="border-t border-border bg-muted/20 px-3 py-3"
+                              >
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Full Name</Label>
+                                    <p className="text-xs font-medium text-foreground">{t.full_name || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Gender</Label>
+                                    <p className="text-xs text-foreground capitalize">{t.gender || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Date of Birth</Label>
+                                    <p className="text-xs text-foreground">{t.date_of_birth || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Nationality</Label>
+                                    <p className="text-xs text-foreground">{t.nationality || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Number</Label>
+                                    <p className="text-xs font-mono text-foreground">{t.passport_number || "—"}</p>
+                                  </div>
+                                  <div>
+                                    <Label className="text-[10px] text-muted-foreground uppercase">Passport Expiry</Label>
+                                    <p className="text-xs text-foreground">{t.passport_expiry || "—"}</p>
+                                  </div>
+                                  {t.room_notes && (
+                                    <div className="col-span-3">
+                                      <Label className="text-[10px] text-muted-foreground uppercase">Room Assignment</Label>
+                                      <p className="text-xs text-foreground">{t.room_notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {booking.adults} adult{booking.adults > 1 ? "s" : ""}{booking.children > 0 ? `, ${booking.children} child${booking.children > 1 ? "ren" : ""}` : ""}. No individual traveler details added yet.
-                  </p>
+                  <div className="text-center py-6 space-y-2">
+                    <Users className="w-8 h-8 text-muted-foreground/30 mx-auto" />
+                    <p className="text-xs text-muted-foreground">
+                      {booking.adults} adult{booking.adults > 1 ? "s" : ""}{booking.children > 0 ? `, ${booking.children} child${booking.children > 1 ? "ren" : ""}` : ""}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Click "Add Traveler" to enter individual traveler details</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -621,6 +753,107 @@ export default function BookingDetailPage() {
           )}
         </div>
       )}
+      {/* Traveler Add/Edit Dialog */}
+      <Dialog open={showTravelerDialog} onOpenChange={v => { if (!v) { setShowTravelerDialog(false); setEditingTraveler(null); } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+              <User className="w-4 h-4 text-accent" />
+              {editingTraveler && travelers.find(t => t.id === editingTraveler.id) ? "Edit Traveler" : "Add Traveler"}
+            </DialogTitle>
+          </DialogHeader>
+          {editingTraveler && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs">Full Name *</Label>
+                  <Input
+                    value={editingTraveler.full_name}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, full_name: e.target.value })}
+                    placeholder="Full name as in passport"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Gender</Label>
+                  <Select value={editingTraveler.gender} onValueChange={v => setEditingTraveler({ ...editingTraveler, gender: v })}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={editingTraveler.date_of_birth}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, date_of_birth: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Nationality</Label>
+                  <Input
+                    value={editingTraveler.nationality}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, nationality: e.target.value })}
+                    placeholder="e.g. Saudi"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Passport Number</Label>
+                  <Input
+                    value={editingTraveler.passport_number}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_number: e.target.value })}
+                    placeholder="Passport number"
+                    className="h-9 text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Passport Expiry</Label>
+                  <Input
+                    type="date"
+                    value={editingTraveler.passport_expiry}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, passport_expiry: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Room Assignment Notes</Label>
+                  <Input
+                    value={editingTraveler.room_notes}
+                    onChange={e => setEditingTraveler({ ...editingTraveler, room_notes: e.target.value })}
+                    placeholder="e.g. Room 201, sharing with traveler 2"
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => { setShowTravelerDialog(false); setEditingTraveler(null); }}>Cancel</Button>
+            <Button
+              size="sm"
+              disabled={!editingTraveler?.full_name?.trim()}
+              onClick={() => {
+                if (editingTraveler) {
+                  const existing = travelers.find(t => t.id === editingTraveler.id);
+                  const updated = existing
+                    ? travelers.map(t => t.id === editingTraveler.id ? editingTraveler : t)
+                    : [...travelers, editingTraveler];
+                  updateBooking.mutate({ travelers: updated });
+                  setShowTravelerDialog(false);
+                  setEditingTraveler(null);
+                  toast({ title: existing ? "Traveler updated" : "Traveler added" });
+                }
+              }}
+            >
+              {travelers.find(t => t.id === editingTraveler?.id) ? "Save Changes" : "Add Traveler"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
