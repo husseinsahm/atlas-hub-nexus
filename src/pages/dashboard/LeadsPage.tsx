@@ -318,6 +318,30 @@ export default function LeadsPage() {
     };
 
     try {
+      // Check duplicates for new leads
+      if (!editingId) {
+        const dups = await checkDuplicateLeads(companyId, payload.email, payload.phone);
+        if (dups.length > 0) {
+          setDuplicates(dups);
+          setPendingSavePayload(payload);
+          setDuplicateOpen(true);
+          setSaving(false);
+          return;
+        }
+      }
+
+      await executeSave(payload);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function executeSave(payload: any) {
+    if (!companyId || !user) return;
+    setSaving(true);
+    try {
       if (editingId) {
         const { error } = await supabase.from("leads").update(payload).eq("id", editingId);
         if (error) throw error;
@@ -362,6 +386,17 @@ export default function LeadsPage() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleMerge(targetLeadId: string) {
+    if (!companyId || !user) return;
+    try {
+      // We don't have a source lead yet (it's being created), so just navigate to existing
+      setDuplicateOpen(false);
+      navigate(`/dashboard/leads/${targetLeadId}`);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
