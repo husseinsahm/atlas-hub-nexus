@@ -61,6 +61,7 @@ export default function BookingsPage() {
   const queryClient = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
+  const [step, setStep] = useState(0);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
