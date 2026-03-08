@@ -830,7 +830,7 @@ export default function BookingDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</p>
-                <p className="text-xs text-muted-foreground">{isArabic ? "الإجمالي" : "Total"}: <span className="font-mono font-semibold text-foreground">{servicesTotalCost.toLocaleString()} {booking.currency}</span></p>
+                <p className="text-xs text-muted-foreground">{isArabic ? "الفعلي" : "Active"}: <span className="font-mono font-semibold text-foreground">{servicesActiveCost.toLocaleString()} {booking.currency}</span>{serviceCostByStatus.pending > 0 && <span className="text-muted-foreground/70"> ({isArabic ? "معلق" : "pending"}: {serviceCostByStatus.pending.toLocaleString()})</span>}</p>
               </div>
             </div>
             <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
