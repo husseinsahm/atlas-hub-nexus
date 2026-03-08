@@ -213,40 +213,24 @@ export default function ConvertToBookingModal({
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* ── Enhanced Header ── */}
-              <div className="relative overflow-hidden">
-                <div className="absolute inset-0 gold-gradient opacity-10" />
-                <div className="absolute top-0 right-0 w-64 h-64 rounded-full gold-gradient opacity-5 -translate-y-1/2 translate-x-1/2" />
-                <div className="relative px-8 pt-7 pb-5">
-                  <DialogHeader className="space-y-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl gold-gradient flex items-center justify-center shadow-lg ring-4 ring-background">
-                          <Plane className="w-6 h-6 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <DialogTitle className="font-display text-xl tracking-tight">Convert to Booking File</DialogTitle>
-                          <DialogDescription className="text-sm mt-1">
-                            Create a full booking from <span className="font-semibold text-foreground">{lead.full_name}</span>'s lead
-                          </DialogDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {lead.source && (
-                          <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary/30 text-primary">
-                            {lead.source}
-                          </Badge>
-                        )}
-                        <Badge variant="secondary" className="text-[10px] gap-1">
-                          <Users className="w-3 h-3" />
-                          {totalTravelers} traveler{totalTravelers !== 1 ? "s" : ""}
-                        </Badge>
-                      </div>
-                    </div>
-                  </DialogHeader>
-                </div>
-                <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              </div>
+              <ModalDarkHeader
+                icon={<Plane className="w-5 h-5 text-accent-foreground" />}
+                title="Convert to Booking File"
+                description={<>Create a full booking from <span className="font-semibold text-primary-foreground">{lead.full_name}</span>'s lead</>}
+                badge={
+                  <div className="flex items-center gap-2">
+                    {lead.source && (
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider border-primary-foreground/20 text-primary-foreground/70">
+                        {lead.source}
+                      </Badge>
+                    )}
+                    <Badge className="text-[10px] gap-1 bg-accent/20 text-primary-foreground border-0">
+                      <Users className="w-3 h-3" />
+                      {totalTravelers} traveler{totalTravelers !== 1 ? "s" : ""}
+                    </Badge>
+                  </div>
+                }
+              />
 
               {/* ── Form Body - Two Column Layout ── */}
               <div className="px-8 py-6 max-h-[62vh] overflow-y-auto">
