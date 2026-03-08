@@ -223,51 +223,27 @@ export default function CustomersPage() {
         tags: form.selectedPrefs,
       };
 
-      const maxRetries = 3;
-      let lastError: any = null;
-
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`[CustomerSave] Attempt ${attempt + 1}/${maxRetries + 1}`);
-
-          if (editingId) {
-            const { data, error, status } = await supabase
-              .from("customers")
-              .update(basePayload)
-              .eq("id", editingId)
-              .select();
-            console.log("[CustomerSave] Update response:", { data, error, status });
-            if (error) throw error;
-            toast({ title: "Customer updated" });
-          } else {
-            const { data, error, status } = await supabase
-              .from("customers")
-              .insert({ ...basePayload, company_id: companyId, created_by: user.id })
-              .select();
-            console.log("[CustomerSave] Insert response:", { data, error, status });
-            if (error) throw error;
-            toast({ title: "Customer created" });
-          }
-          setFormOpen(false);
-          setFormErrors({});
-          fetchCustomers();
-          return; // success
-        } catch (err: any) {
-          lastError = err;
-          console.error(`[CustomerSave] Attempt ${attempt + 1} failed:`, err?.message, err);
-
-          // Only retry on network-level failures
-          if (err?.message?.includes("Failed to fetch") && attempt < maxRetries) {
-            const delay = 1000 * (attempt + 1);
-            console.log(`[CustomerSave] Retrying in ${delay}ms...`);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-          throw err;
-        }
+      if (editingId) {
+        // Use upsert (POST) instead of update (PATCH) to avoid fetch wrapper issues
+        const { data, error } = await supabase
+          .from("customers")
+          .upsert({ ...basePayload, id: editingId, company_id: companyId })
+          .select();
+        console.log("[CustomerSave] Upsert response:", { data, error });
+        if (error) throw error;
+        toast({ title: "Customer updated" });
+      } else {
+        const { data, error } = await supabase
+          .from("customers")
+          .insert({ ...basePayload, company_id: companyId, created_by: user.id })
+          .select();
+        console.log("[CustomerSave] Insert response:", { data, error });
+        if (error) throw error;
+        toast({ title: "Customer created" });
       }
-
-      throw lastError;
+      setFormOpen(false);
+      setFormErrors({});
+      fetchCustomers();
     } catch (err: any) {
       console.error("[CustomerSave] Final error:", err);
       const description = err?.message?.includes("Failed to fetch")
