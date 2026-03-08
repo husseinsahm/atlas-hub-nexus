@@ -1209,8 +1209,8 @@ export default function TripBuilderPage() {
         <div className="w-80 shrink-0 border-l border-border bg-card/50 flex flex-col">
           {/* Pricing View Toggle */}
           <div className="p-3 border-b border-border">
-            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history" | "comments")}>
-              <TabsList className="w-full h-8">
+            <Tabs value={pricingView} onValueChange={v => setPricingView(v as "internal" | "client" | "feedback" | "history" | "comments" | "files")}>
+              <TabsList className="w-full h-8 flex-wrap">
                 <TabsTrigger value="internal" className="flex-1 text-[10px] gap-1">
                   <EyeOff className="w-3 h-3" /> Internal
                 </TabsTrigger>
@@ -1226,7 +1226,10 @@ export default function TripBuilderPage() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="comments" className="flex-1 text-[10px] gap-1">
-                  <MessageSquare className="w-3 h-3" /> Comments
+                  <MessageSquare className="w-3 h-3" /> Chat
+                </TabsTrigger>
+                <TabsTrigger value="files" className="flex-1 text-[10px] gap-1">
+                  <FileText className="w-3 h-3" /> Files
                 </TabsTrigger>
                 <TabsTrigger value="history" className="flex-1 text-[10px] gap-1">
                   <History className="w-3 h-3" /> History
