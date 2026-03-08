@@ -546,23 +546,27 @@ export default function BookingDetailPage() {
       </div>
 
       {/* ─── Tab Content ─── */}
+      <div className="pt-6">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.2 }}
         >
 
       {/* ─── TAB: Summary ─── */}
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
+          <div className="md:col-span-2 space-y-5">
+            <Card className="border-border/60 shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-accent" /> {isArabic ? "تفاصيل الحجز" : "Booking Details"}
+                  <div className="w-6 h-6 rounded-md bg-accent/10 flex items-center justify-center">
+                    <Briefcase className="w-3.5 h-3.5 text-accent" />
+                  </div>
+                  {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
