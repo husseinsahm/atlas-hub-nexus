@@ -64,6 +64,210 @@ export type Database = {
           },
         ]
       }
+      booking_activities: {
+        Row: {
+          activity_type: string
+          booking_id: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type?: string
+          booking_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          booking_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_activities_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_attachments: {
+        Row: {
+          booking_id: string
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_attachments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          adults: number
+          amount_paid: number | null
+          assigned_to: string | null
+          booking_number: string
+          children: number
+          client_notes: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          deleted_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          internal_notes: string | null
+          lead_id: string | null
+          operations_notes: string | null
+          payment_status: string
+          selling_price: number | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          title: string
+          total_cost: number | null
+          total_days: number
+          travelers: Json | null
+          trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          adults?: number
+          amount_paid?: number | null
+          assigned_to?: string | null
+          booking_number: string
+          children?: number
+          client_notes?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          operations_notes?: string | null
+          payment_status?: string
+          selling_price?: number | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          title: string
+          total_cost?: number | null
+          total_days?: number
+          travelers?: Json | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          amount_paid?: number | null
+          assigned_to?: string | null
+          booking_number?: string
+          children?: number
+          client_notes?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string | null
+          operations_notes?: string | null
+          payment_status?: string
+          selling_price?: number | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          title?: string
+          total_cost?: number | null
+          total_days?: number
+          travelers?: Json | null
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           address: string | null
@@ -1222,6 +1426,12 @@ export type Database = {
         | "operations"
         | "finance"
         | "viewer"
+      booking_status:
+        | "tentative"
+        | "confirmed"
+        | "in_operation"
+        | "completed"
+        | "cancelled"
       lead_source:
         | "website"
         | "referral"
@@ -1387,6 +1597,13 @@ export const Constants = {
         "operations",
         "finance",
         "viewer",
+      ],
+      booking_status: [
+        "tentative",
+        "confirmed",
+        "in_operation",
+        "completed",
+        "cancelled",
       ],
       lead_source: [
         "website",

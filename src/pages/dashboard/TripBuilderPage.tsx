@@ -721,6 +721,73 @@ export default function TripBuilderPage() {
     }
   }, [trip, updateTrip, toast]);
 
+  const convertToBooking = useMutation({
+    mutationFn: async () => {
+      if (!trip || !companyId) throw new Error("Missing trip or company");
+      // Get booking number
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("booking_prefix, booking_next_number")
+        .eq("company_id", companyId)
+        .single();
+      const prefix = settings?.booking_prefix || "BKG";
+      const nextNum = settings?.booking_next_number || 1;
+      const bookingNumber = `${prefix}-${String(nextNum).padStart(5, "0")}`;
+
+      // Create booking
+      const { data: booking, error } = await supabase.from("bookings").insert({
+        booking_number: bookingNumber,
+        company_id: companyId,
+        trip_id: trip.id,
+        customer_id: trip.customer_id,
+        lead_id: trip.lead_id,
+        title: trip.title,
+        description: trip.description,
+        adults: trip.adults,
+        children: trip.children,
+        start_date: trip.start_date,
+        end_date: trip.end_date,
+        total_days: trip.total_days,
+        currency: trip.currency,
+        total_cost: trip.total_cost,
+        selling_price: trip.selling_price,
+        internal_notes: trip.internal_notes,
+        client_notes: (trip as any).client_notes,
+        assigned_to: trip.assigned_to,
+        created_by: user?.id,
+        status: "tentative",
+      }).select().single();
+      if (error) throw error;
+
+      // Update trip status to converted
+      await supabase.from("trips").update({ status: "converted" }).eq("id", trip.id);
+
+      // Increment booking number
+      await supabase.from("company_settings").update({ booking_next_number: nextNum + 1 }).eq("company_id", companyId);
+
+      // Add initial activity
+      await supabase.from("booking_activities").insert({
+        booking_id: booking.id,
+        activity_type: "created",
+        title: `Booking created from trip ${trip.trip_number}`,
+        user_id: user?.id,
+      });
+
+      // Track revision on trip
+      trackRevision("status_change", `Trip converted to booking ${bookingNumber}`, { booking_id: booking.id });
+
+      return booking;
+    },
+    onSuccess: (booking) => {
+      queryClient.invalidateQueries({ queryKey: ["trip", id] });
+      toast({ title: "Booking created!", description: `Booking ${booking.booking_number} has been created` });
+      navigate(`/dashboard/bookings/${booking.id}`);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
   const aiSuggestDay = useCallback(async () => {
     if (!selectedDay || !trip) return;
     setAiLoading(true);
@@ -804,6 +871,18 @@ export default function TripBuilderPage() {
               </TooltipTrigger>
               <TooltipContent>Copy share link</TooltipContent>
             </Tooltip>
+            {(trip.status === "approved" || trip.status === "converted") && trip.status !== "converted" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => convertToBooking.mutate()}
+                disabled={convertToBooking.isPending}
+                className="text-xs gap-1.5 border-accent text-accent hover:bg-accent/10"
+              >
+                {convertToBooking.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Briefcase className="w-3.5 h-3.5" />}
+                Convert to Booking
+              </Button>
+            )}
             {sc.next && (
               <Button size="sm" onClick={advanceStatus} className="gold-gradient text-accent-foreground text-xs gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
