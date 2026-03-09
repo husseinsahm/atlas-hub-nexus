@@ -9,6 +9,9 @@ import {
   Image as ImageIcon, KeyRound, Eye, EyeOff, ShieldCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 interface CompanyData {
   id: string; name: string; slug: string; email: string | null;
@@ -41,7 +44,10 @@ const LANGUAGES = [
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
+  const { limits, hasFeature } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
+  const isBrandingLocked = !hasFeature("custom_branding") && limits.planSlug !== "professional" && limits.planSlug !== "enterprise";
+  const [branchLimitOpen, setBranchLimitOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -185,6 +191,10 @@ export default function SettingsPage() {
   // Branches
   const handleAddBranch = async () => {
     if (!companyId || !branchForm.name.trim()) return;
+    if (!limits.canAddBranch) {
+      setBranchLimitOpen(true);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("company_branches").insert({
       company_id: companyId, name: branchForm.name,
@@ -301,7 +311,10 @@ export default function SettingsPage() {
 
         {/* ── Brand Tab ── */}
         <TabsContent value="brand">
-          <div className="luxury-card p-6 space-y-6">
+          <div className="luxury-card p-6 space-y-6 relative">
+            {isBrandingLocked && (
+              <LockOverlay planRequired="Professional" featureName="Custom Branding" />
+            )}
             <div>
               <h3 className="font-semibold font-display text-foreground mb-1">Brand Settings</h3>
               <p className="text-xs text-muted-foreground">Your company logo, tagline, and website</p>
@@ -574,6 +587,8 @@ export default function SettingsPage() {
           <PasswordChangeSection />
         </TabsContent>
       </Tabs>
+
+      <LimitReachedDialog open={branchLimitOpen} onOpenChange={setBranchLimitOpen} type="branches" />
     </div>
   );
 }
@@ -673,6 +688,7 @@ function PasswordChangeSection() {
           Update Password
         </Button>
       </div>
+
     </div>
   );
 }

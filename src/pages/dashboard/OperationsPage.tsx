@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
 import { motion } from "framer-motion";
 import {
   Search, Filter, Calendar, Users, Plane, Hotel, Car, MapPin, User,
@@ -42,8 +44,10 @@ export default function OperationsPage() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { limits, hasFeature } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
+  const isLockedForFree = limits.planSlug === "free" && !hasFeature("operations");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -171,7 +175,10 @@ export default function OperationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isLockedForFree && (
+        <LockOverlay planRequired="Starter" featureName={isArabic ? "العمليات" : "Operations"} />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
