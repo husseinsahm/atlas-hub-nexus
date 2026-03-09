@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfettiEffect } from "@/components/plan/ConfettiEffect";
+import { DeactivatedPlanBanner } from "@/components/plan/DeactivatedPlanBanner";
 import {
   CreditCard, Crown, Users, Building2, Map, Sparkles, ArrowRight,
   Check, X, Zap, Shield, BarChart3, Globe, Mail, Phone, Star,
