@@ -157,6 +157,7 @@ export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { limits } = usePlanLimits();
   const location = useLocation();
   const currentPath = location.pathname;
 
