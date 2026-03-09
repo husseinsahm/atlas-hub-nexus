@@ -296,6 +296,7 @@ export default function BillingPage() {
         });
 
         toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
+        if (isUpgrade) setShowConfetti(true);
       }
     } else {
       const { data: newSub, error } = await supabase.from("subscriptions").insert({
