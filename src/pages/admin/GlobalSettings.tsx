@@ -39,10 +39,10 @@ export default function GlobalSettings() {
   useEffect(() => {
     if (settings) {
       const get = (key: string) => settings.find((s: any) => s.key === key)?.value;
-      setTrialDays(get("trial_duration_days") ?? 14);
-      setDefaultPlan(get("default_plan_slug") ?? "free");
-      setGracePeriod(get("grace_period_days") ?? 0);
-      setSupportEmail(get("support_email") ?? "support@safar.app");
+      setTrialDays(Number(get("trial_duration_days") ?? 14));
+      setDefaultPlan(String(get("default_plan_slug") ?? "free"));
+      setGracePeriod(Number(get("grace_period_days") ?? 0));
+      setSupportEmail(String(get("support_email") ?? "support@safar.app"));
     }
   }, [settings]);
 
