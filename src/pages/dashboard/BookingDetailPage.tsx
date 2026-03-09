@@ -1167,6 +1167,10 @@ export default function BookingDetailPage() {
         shareTokens={shareTokens as any}
         onRefetch={() => refetchShareTokens()}
         isArabic={isArabic}
+        bookingData={booking ? {
+          title: booking.title,
+          description: booking.description ?? undefined,
+        } : undefined}
       />
     </div>
   );

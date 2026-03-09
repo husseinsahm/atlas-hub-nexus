@@ -74,6 +74,16 @@ const CATEGORY_META: Record<string, { label: string; labelAr: string; icon: Reac
   template:   { label: "Template",   labelAr: "نموذج",    icon: FileText,         gradient: "from-slate-500 to-gray-500" },
 };
 
+// Available languages with their display info
+const LANGUAGE_INFO: Record<string, { label: string; nativeLabel: string; flag: string; rtl: boolean }> = {
+  en: { label: "English", nativeLabel: "English", flag: "🇬🇧", rtl: false },
+  ar: { label: "Arabic", nativeLabel: "العربية", flag: "🇸🇦", rtl: true },
+  ja: { label: "Japanese", nativeLabel: "日本語", flag: "🇯🇵", rtl: false },
+  es: { label: "Spanish", nativeLabel: "Español", flag: "🇪🇸", rtl: false },
+  fr: { label: "French", nativeLabel: "Français", flag: "🇫🇷", rtl: false },
+  zh: { label: "Chinese", nativeLabel: "中文", flag: "🇨🇳", rtl: false },
+};
+
 const getTimeIcon = (time: string | null) => {
   if (!time) return Sun;
   const h = parseInt(time.split(":")[0]);
@@ -102,7 +112,7 @@ export default function SharedBooking() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [lang, setLang] = useState<"en" | "ar">("en");
+  const [lang, setLang] = useState<string>("en");
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"comment" | "approval" | "change_request">("comment");
@@ -113,15 +123,18 @@ export default function SharedBooking() {
   const [passwordUnlocked, setPasswordUnlocked] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [showPw, setShowPw] = useState(false);
-  const isRtl = lang === "ar";
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  
+  const isRtl = LANGUAGE_INFO[lang]?.rtl ?? false;
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? "rtl" : "ltr";
     return () => { document.documentElement.dir = "ltr"; };
   }, [isRtl]);
 
+  // Static UI strings - these are hardcoded for basic UI
   const t = useMemo(() => {
-    const strings = {
+    const strings: Record<string, Record<string, string>> = {
       en: {
         itinerary: "Your Itinerary",
         days: "days",
@@ -155,6 +168,7 @@ export default function SharedBooking() {
         commentDesc: "Share any thoughts or questions",
         pickup: "Pickup",
         dropoff: "Drop-off",
+        selectLanguage: "Select Language",
       },
       ar: {
         itinerary: "برنامج رحلتك",
@@ -189,9 +203,10 @@ export default function SharedBooking() {
         commentDesc: "شارك أي أفكار أو أسئلة",
         pickup: "نقطة الالتقاط",
         dropoff: "نقطة الإنزال",
+        selectLanguage: "اختر اللغة",
       },
     };
-    return strings[lang];
+    return strings[lang] || strings.en;
   }, [lang]);
 
   // Fetch share token → booking
@@ -322,6 +337,69 @@ export default function SharedBooking() {
   const tagline = settings?.tagline;
   const isLoading = tokenLoading || bookingLoading;
 
+  // Extract metadata for translations (before any returns)
+  const metadata = shareToken?.metadata as { 
+    password_hash?: string;
+    translations?: Record<string, any>;
+    available_languages?: string[];
+  } | null;
+  const isPasswordProtected = !!metadata?.password_hash;
+  const availableLanguages = metadata?.available_languages || ["en", "ar"];
+  const translations = metadata?.translations || {};
+
+  // Get translated content based on selected language (useMemo must be before returns)
+  const getTranslatedContent = useMemo(() => {
+    if (lang === "en" || !translations[lang]) {
+      return null; // Use original content
+    }
+    return translations[lang];
+  }, [lang, translations]);
+
+  // Helper to get translated text
+  const getTranslatedText = (original: string | null | undefined, path: string): string => {
+    if (!original) return "";
+    if (lang === "en") return original;
+    
+    const translated = getTranslatedContent;
+    if (!translated) return original;
+    
+    // Parse the path to get the value (e.g., "title" or "days.0.title")
+    const parts = path.split(".");
+    let value: any = translated;
+    for (const part of parts) {
+      if (value && typeof value === "object") {
+        value = value[part];
+      } else {
+        return original;
+      }
+    }
+    return typeof value === "string" ? value : original;
+  };
+
+  // Hash password for comparison
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordInput.trim()) return;
+    if (!metadata?.password_hash) {
+      setPasswordUnlocked(true);
+      return;
+    }
+    const inputHash = await hashPassword(passwordInput.trim());
+    if (inputHash === metadata.password_hash) {
+      setPasswordUnlocked(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
   /* ====== LOADING ====== */
   if (isLoading) {
     return (
@@ -353,35 +431,6 @@ export default function SharedBooking() {
       </div>
     );
   }
-
-  // Hash password for comparison
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!passwordInput.trim()) return;
-    const metadata = shareToken.metadata as { password_hash?: string } | null;
-    if (!metadata?.password_hash) {
-      setPasswordUnlocked(true);
-      return;
-    }
-    const inputHash = await hashPassword(passwordInput.trim());
-    if (inputHash === metadata.password_hash) {
-      setPasswordUnlocked(true);
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-    }
-  };
-
-  // Check if password protection is enabled
-  const metadata = shareToken.metadata as { password_hash?: string } | null;
-  const isPasswordProtected = !!metadata?.password_hash;
 
   /* ====== PASSWORD GATE ====== */
   if (isPasswordProtected && !passwordUnlocked) {
@@ -444,11 +493,11 @@ export default function SharedBooking() {
           </div>
 
           <button
-            onClick={() => setLang(l => l === "en" ? "ar" : "en")}
+            onClick={() => setShowLangPicker(true)}
             className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all text-xs"
           >
             <Globe className="w-3.5 h-3.5" />
-            {lang === "en" ? "العربية" : "English"}
+            {LANGUAGE_INFO[lang]?.nativeLabel || "English"}
           </button>
         </motion.div>
       </div>
@@ -493,13 +542,51 @@ export default function SharedBooking() {
                 </div>
               )}
             </div>
-            <button
-              onClick={() => setLang(l => l === "en" ? "ar" : "en")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary-foreground/20 text-primary-foreground/70 hover:text-primary-foreground hover:border-primary-foreground/40 transition-all text-xs"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {lang === "en" ? "العربية" : "English"}
-            </button>
+            {/* Language Picker */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangPicker(!showLangPicker)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary-foreground/20 text-primary-foreground/70 hover:text-primary-foreground hover:border-primary-foreground/40 transition-all text-xs"
+              >
+                <span>{LANGUAGE_INFO[lang]?.flag || "🌐"}</span>
+                <span>{LANGUAGE_INFO[lang]?.nativeLabel || "English"}</span>
+                <Globe className="w-3.5 h-3.5" />
+              </button>
+              
+              {showLangPicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-full mt-2 end-0 bg-card border border-border rounded-xl shadow-lg py-2 min-w-[180px] z-50"
+                >
+                  <div className="px-3 py-2 border-b border-border">
+                    <span className="text-xs font-medium text-muted-foreground">{t.selectLanguage}</span>
+                  </div>
+                  {availableLanguages.map((langCode) => {
+                    const langInfo = LANGUAGE_INFO[langCode];
+                    if (!langInfo) return null;
+                    const isSelected = lang === langCode;
+                    return (
+                      <button
+                        key={langCode}
+                        onClick={() => { setLang(langCode); setShowLangPicker(false); }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start",
+                          isSelected ? "bg-primary/10 text-foreground" : "hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        <span className="text-lg">{langInfo.flag}</span>
+                        <div className="flex-1">
+                          <span className="font-medium">{langInfo.nativeLabel}</span>
+                          <span className="text-xs text-muted-foreground ms-1">({langInfo.label})</span>
+                        </div>
+                        {isSelected && <CheckCircle className="w-4 h-4 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </div>
           </motion.div>
 
           <motion.div

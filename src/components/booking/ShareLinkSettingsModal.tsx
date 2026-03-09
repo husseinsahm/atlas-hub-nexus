@@ -20,20 +20,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Lock, Calendar as CalendarIcon, Loader2, Copy, ExternalLink,
-  Shield, Clock, Eye, EyeOff, Link2, Trash2, CheckCircle,
+  Shield, Clock, Eye, EyeOff, Link2, Trash2, CheckCircle, Languages, Sparkles,
 } from "lucide-react";
+
+// Available languages for AI translation
+const TRANSLATION_LANGUAGES = [
+  { code: "en", label: "English", nativeLabel: "English", flag: "🇬🇧" },
+  { code: "ar", label: "Arabic", nativeLabel: "العربية", flag: "🇸🇦" },
+  { code: "ja", label: "Japanese", nativeLabel: "日本語", flag: "🇯🇵" },
+  { code: "es", label: "Spanish", nativeLabel: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "French", nativeLabel: "Français", flag: "🇫🇷" },
+  { code: "zh", label: "Chinese", nativeLabel: "中文", flag: "🇨🇳" },
+] as const;
+
+type TranslationLangCode = typeof TRANSLATION_LANGUAGES[number]["code"];
 
 interface ShareToken {
   id: string;
@@ -45,6 +51,8 @@ interface ShareToken {
   metadata: {
     password_hash?: string;
     password_hint?: string;
+    translations?: Record<string, any>;
+    available_languages?: string[];
   } | null;
   created_at: string;
 }
@@ -58,6 +66,20 @@ interface ShareLinkSettingsModalProps {
   shareTokens: ShareToken[];
   onRefetch: () => void;
   isArabic?: boolean;
+  bookingData?: {
+    title: string;
+    description?: string;
+    days?: Array<{
+      title?: string;
+      description?: string;
+      short_description?: string;
+      city?: string;
+      items?: Array<{
+        custom_title?: string;
+        custom_description?: string;
+      }>;
+    }>;
+  };
 }
 
 // Simple hash function for password (for demo - in production use bcrypt on server)
@@ -78,6 +100,7 @@ export function ShareLinkSettingsModal({
   shareTokens,
   onRefetch,
   isArabic = false,
+  bookingData,
 }: ShareLinkSettingsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -89,6 +112,11 @@ export function ShareLinkSettingsModal({
   const [enableExpiration, setEnableExpiration] = useState(false);
   const [expirationDate, setExpirationDate] = useState<Date | undefined>();
   const [expirationPreset, setExpirationPreset] = useState("");
+  
+  // AI Translation state
+  const [enableTranslation, setEnableTranslation] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<Set<TranslationLangCode>>(new Set(["en"]));
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -98,8 +126,23 @@ export function ShareLinkSettingsModal({
       setEnableExpiration(false);
       setExpirationDate(undefined);
       setExpirationPreset("");
+      setEnableTranslation(false);
+      setSelectedLanguages(new Set(["en"]));
     }
   }, [open]);
+
+  const toggleLanguage = (lang: TranslationLangCode) => {
+    setSelectedLanguages(prev => {
+      const next = new Set(prev);
+      if (next.has(lang)) {
+        // Don't allow removing all languages
+        if (next.size > 1) next.delete(lang);
+      } else {
+        next.add(lang);
+      }
+      return next;
+    });
+  };
 
   const handlePresetChange = (preset: string) => {
     setExpirationPreset(preset);
@@ -117,9 +160,66 @@ export function ShareLinkSettingsModal({
 
   const createLink = useMutation({
     mutationFn: async () => {
-      const metadata: { password_hash?: string } = {};
+      const metadata: { 
+        password_hash?: string;
+        translations?: Record<string, any>;
+        available_languages?: string[];
+      } = {};
+      
       if (enablePassword && password.trim()) {
         metadata.password_hash = await hashPassword(password.trim());
+      }
+
+      // Handle AI translation if enabled
+      if (enableTranslation && selectedLanguages.size > 1 && bookingData) {
+        setIsTranslating(true);
+        
+        // Prepare content for translation
+        const contentToTranslate = {
+          title: bookingData.title,
+          description: bookingData.description || "",
+          days: bookingData.days?.map(day => ({
+            title: day.title || "",
+            description: day.description || "",
+            short_description: day.short_description || "",
+            city: day.city || "",
+            items: day.items?.map(item => ({
+              custom_title: item.custom_title || "",
+              custom_description: item.custom_description || "",
+            })) || [],
+          })) || [],
+        };
+
+        const targetLanguages = Array.from(selectedLanguages).filter(l => l !== "en");
+        
+        if (targetLanguages.length > 0) {
+          const { data: translateData, error: translateError } = await supabase.functions.invoke(
+            "translate-booking",
+            {
+              body: {
+                content: contentToTranslate,
+                targetLanguages,
+                sourceLanguage: "en",
+              },
+            }
+          );
+
+          if (translateError) {
+            console.error("Translation error:", translateError);
+            toast({
+              title: isArabic ? "تحذير" : "Warning",
+              description: isArabic 
+                ? "فشلت الترجمة، سيتم إنشاء الرابط بدون ترجمات"
+                : "Translation failed, link will be created without translations",
+              variant: "destructive",
+            });
+          } else if (translateData?.translations) {
+            metadata.translations = translateData.translations;
+          }
+        }
+        
+        metadata.available_languages = Array.from(selectedLanguages);
+        setIsTranslating(false);
       }
 
       const { data, error } = await supabase
@@ -149,6 +249,7 @@ export function ShareLinkSettingsModal({
       onOpenChange(false);
     },
     onError: (error: any) => {
+      setIsTranslating(false);
       toast({
         title: isArabic ? "خطأ" : "Error",
         description: error.message,
@@ -282,6 +383,12 @@ export function ShareLinkSettingsModal({
                           <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
                             <CheckCircle className="w-3 h-3" />
                             {isArabic ? "بدون قيود" : "No restrictions"}
+                          </Badge>
+                        )}
+                        {token.metadata?.available_languages && token.metadata.available_languages.length > 1 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Languages className="w-3 h-3" />
+                            {token.metadata.available_languages.length} {isArabic ? "لغات" : "languages"}
                           </Badge>
                         )}
                       </div>
@@ -433,6 +540,65 @@ export function ShareLinkSettingsModal({
                 </div>
               )}
             </div>
+
+            {/* AI Translation */}
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4 text-muted-foreground" />
+                  <Label htmlFor="translation-toggle" className="text-sm font-medium cursor-pointer">
+                    {isArabic ? "ترجمة AI" : "AI Translation"}
+                  </Label>
+                  <Badge variant="secondary" className="text-[9px] gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    AI
+                  </Badge>
+                </div>
+                <Switch
+                  id="translation-toggle"
+                  checked={enableTranslation}
+                  onCheckedChange={setEnableTranslation}
+                />
+              </div>
+
+              {enableTranslation && (
+                <div className="space-y-3 pt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    {isArabic ? "اختر اللغات المتاحة للعميل" : "Select languages available for the client"}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TRANSLATION_LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => toggleLanguage(lang.code)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all text-start",
+                          selectedLanguages.has(lang.code)
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium">{lang.nativeLabel}</span>
+                          <span className="text-[10px] text-muted-foreground ms-1">({lang.label})</span>
+                        </div>
+                        {selectedLanguages.has(lang.code) && (
+                          <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isArabic
+                      ? "سيتم ترجمة محتوى البرنامج تلقائياً باستخدام الذكاء الاصطناعي"
+                      : "Itinerary content will be automatically translated using AI"
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -442,12 +608,18 @@ export function ShareLinkSettingsModal({
           </Button>
           <Button
             onClick={() => createLink.mutate()}
-            disabled={createLink.isPending || (enablePassword && !password.trim())}
+            disabled={createLink.isPending || isTranslating || (enablePassword && !password.trim())}
             className="gold-gradient text-accent-foreground gap-2"
           >
-            {createLink.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            <Link2 className="w-4 h-4" />
-            {isArabic ? "إنشاء رابط" : "Create Link"}
+            {(createLink.isPending || isTranslating) && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isTranslating ? (
+              isArabic ? "جاري الترجمة..." : "Translating..."
+            ) : (
+              <>
+                <Link2 className="w-4 h-4" />
+                {isArabic ? "إنشاء رابط" : "Create Link"}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

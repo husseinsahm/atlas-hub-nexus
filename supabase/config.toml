@@ -2,3 +2,6 @@ project_id = "wlcbhnkhvopjpkueplfe"
 
 [functions.generate-day-description]
 verify_jwt = false
+
+[functions.translate-booking]
+verify_jwt = false
