@@ -29,7 +29,7 @@ export function Topbar() {
           <input
             type="text"
             placeholder={t("topbar.search") || "Search..."}
-            className="w-full h-8 text-xs bg-secondary/60 border-0 rounded-lg pr-3 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
+            className="w-full h-8 text-xs bg-secondary/60 border-0 rounded-lg pe-3 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
             style={{ paddingInlineStart: 32 }}
           />
         </div>
