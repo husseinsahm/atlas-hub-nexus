@@ -360,6 +360,154 @@ export default function SubscriptionManagement() {
           </Table>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="space-y-4">
+          {upgradeRequests.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Inbox className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No upgrade requests yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-start">Company</TableHead>
+                      <TableHead className="text-start">Current Plan</TableHead>
+                      <TableHead className="text-start">Requested Plan</TableHead>
+                      <TableHead className="text-start">Billing</TableHead>
+                      <TableHead className="text-start">Status</TableHead>
+                      <TableHead className="text-start">Requested</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {upgradeRequests.map((req: any) => (
+                      <TableRow key={req.id}>
+                        <TableCell>
+                          <p className="font-medium text-sm">{req.companies?.name || "—"}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">{req.current_plan?.name || "—"}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="text-xs bg-accent/10 text-accent border-0">{req.requested_plan?.name || "—"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm capitalize">{req.requested_billing_cycle}</TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-[10px] border-0",
+                            req.status === "pending" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" :
+                            req.status === "approved" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" :
+                            "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                          )}>
+                            {req.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{format(new Date(req.created_at), "MMM d, yyyy HH:mm")}</TableCell>
+                        <TableCell>
+                          {req.status === "pending" && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost" size="sm"
+                                className="text-xs h-7 text-emerald-600"
+                                onClick={() => { setReviewDialog(req); setReviewNotes(""); }}
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 me-1" /> Review
+                              </Button>
+                            </div>
+                          )}
+                          {req.status !== "pending" && req.admin_notes && (
+                            <span className="text-xs text-muted-foreground" title={req.admin_notes}>📝 Has notes</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Review Request Dialog */}
+      <Dialog open={!!reviewDialog} onOpenChange={() => { setReviewDialog(null); setReviewNotes(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Inbox className="w-5 h-5" /> Review Upgrade Request
+            </DialogTitle>
+          </DialogHeader>
+          {reviewDialog && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Company</p>
+                  <p className="font-semibold">{reviewDialog.companies?.name}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Current Plan</p>
+                  <p className="font-semibold">{reviewDialog.current_plan?.name || "—"}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Requested Plan</p>
+                  <p className="font-semibold text-accent">{reviewDialog.requested_plan?.name}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-[10px] text-muted-foreground uppercase mb-1">Billing Cycle</p>
+                  <p className="font-semibold capitalize">{reviewDialog.requested_billing_cycle}</p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-accent/5 border border-accent/20 text-center">
+                <p className="text-sm font-semibold">
+                  New price: ${reviewDialog.requested_billing_cycle === "yearly"
+                    ? reviewDialog.requested_plan?.price_yearly
+                    : reviewDialog.requested_plan?.price_monthly
+                  }/{reviewDialog.requested_billing_cycle === "yearly" ? "yr" : "mo"}
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-xs">Admin Notes (optional)</Label>
+                <Textarea
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                  placeholder="Add a note about this decision..."
+                  className="mt-1 text-sm"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={approveRequest.isPending}
+              onClick={() => reviewDialog && approveRequest.mutate({ request: reviewDialog, approved: false })}
+              className="gap-1.5"
+            >
+              {approveRequest.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XOctagon className="w-3.5 h-3.5" />}
+              Reject
+            </Button>
+            <Button
+              size="sm"
+              disabled={approveRequest.isPending}
+              onClick={() => reviewDialog && approveRequest.mutate({ request: reviewDialog, approved: true })}
+              className="gap-1.5 bg-gradient-to-r from-accent to-amber-500 text-white border-0"
+            >
+              {approveRequest.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              Approve & Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail Dialog with Usage Tab */}
       <Dialog open={!!detailSub} onOpenChange={() => setDetailSub(null)}>
