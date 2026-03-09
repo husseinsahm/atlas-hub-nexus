@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { CompanyUsageTab } from "@/components/admin/CompanyUsageTab";
 import {
   Loader2, Search, CreditCard, Clock, XCircle, AlertTriangle, Eye,
-  RefreshCw, Calendar, ArrowUpDown, BarChart3, Mail,
+  RefreshCw, Calendar, ArrowUpDown, BarChart3, Mail, CheckCircle2, XOctagon, Inbox,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
