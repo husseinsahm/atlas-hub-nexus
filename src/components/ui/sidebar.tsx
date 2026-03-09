@@ -137,6 +137,10 @@ const Sidebar = React.forwardRef<
   }
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  
+  // Auto-detect side based on document direction
+  const isRTL = document.documentElement.dir === 'rtl';
+  const actualSide = isRTL ? "right" : "left";
 
   if (collapsible === "none") {
     return (
