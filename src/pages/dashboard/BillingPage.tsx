@@ -588,9 +588,14 @@ export default function BillingPage() {
                     </div>
 
                     {/* Price */}
-                    <div className="mb-5">
+                    <div className="mb-5 min-h-[60px]">
                       {price !== null ? (
-                        <>
+                        <motion.div
+                          key={`${tier.slug}-${priceKey}`}
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
                           <div className="flex items-baseline gap-1">
                             <span className="text-3xl font-extrabold font-display text-foreground tabular-nums">${price}</span>
                             <span className="text-sm text-muted-foreground">/{billingCycle === "yearly" ? "yr" : "mo"}</span>
@@ -600,7 +605,7 @@ export default function BillingPage() {
                               ${Math.round(tier.yearly! / 12)}/mo billed annually
                             </p>
                           )}
-                        </>
+                        </motion.div>
                       ) : (
                         <span className="text-2xl font-extrabold font-display text-foreground">Custom</span>
                       )}
