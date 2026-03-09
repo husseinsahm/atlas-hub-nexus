@@ -513,7 +513,7 @@ export default function BillingPage() {
                 <p className="text-sm font-medium text-foreground">•••• •••• •••• 4242</p>
                 <p className="text-xs text-muted-foreground">Expires 12/2027</p>
               </div>
-              <Button variant="outline" size="sm" className="text-xs">Update</Button>
+              <Button variant="outline" size="sm" className="text-xs" onClick={() => setPaymentDialog(true)}>Update</Button>
             </div>
           </div>
         </TabsContent>

@@ -621,6 +621,35 @@ function CompanyDashboard() {
         </div>
       </motion.div>
 
+      {/* Downgrade Banner */}
+      {subscription?.canceled_at && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 flex items-center gap-4"
+        >
+          <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {isArabic ? "سيتم تغيير اشتراكك" : "Your subscription is set to cancel"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isArabic ? "سيبقى اشتراكك نشطاً حتى نهاية الفترة الحالية" : `Your plan will remain active until ${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "end of period"}`}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await supabase.from("subscriptions").update({ status: "active", canceled_at: null }).eq("id", subscription.id);
+              loadCompanyData();
+            }}
+          >
+            {isArabic ? "إعادة التفعيل" : "Reactivate"}
+          </Button>
+        </motion.div>
+      )}
+
       {/* Hero Pipeline Section */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
