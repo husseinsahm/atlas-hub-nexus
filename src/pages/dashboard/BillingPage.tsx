@@ -799,7 +799,8 @@ export default function BillingPage() {
 
       {/* ─── Upgrade Dialog ─── */}
       <Dialog open={!!upgradeDialog} onOpenChange={() => setUpgradeDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:w-full max-sm:max-w-full">
+          <div className="sm:hidden w-10 h-1 rounded-full bg-muted mx-auto mb-2" />
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-gradient-to-br from-accent to-amber-500 flex items-center justify-center mb-4">
               <Sparkles className="w-7 h-7 text-white" />
