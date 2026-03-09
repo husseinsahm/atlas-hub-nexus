@@ -206,6 +206,8 @@ export default function BillingPage() {
   const [downgradeDialog, setDowngradeDialog] = useState<string | null>(null);
   const [cancelDialog, setCancelDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [paymentDialog, setPaymentDialog] = useState(false);
+  const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvv: "", name: "" });
 
   // Fetch billing history
   const { data: billingHistory = [] } = useQuery({
