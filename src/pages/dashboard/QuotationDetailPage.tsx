@@ -141,7 +141,7 @@ export default function QuotationDetailPage() {
         <p className="text-sm font-medium text-foreground">Quotation not found</p>
         <p className="text-xs text-muted-foreground">This quotation may have been deleted or you don't have access.</p>
         <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/quotations")} className="gap-1.5">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Quotations
+          <ArrowLeft className="w-3.5 h-3.5 rtl:scale-x-[-1]" /> Back to Quotations
         </Button>
       </div>
     );
