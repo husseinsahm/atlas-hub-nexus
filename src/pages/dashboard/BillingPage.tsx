@@ -442,12 +442,21 @@ export default function BillingPage() {
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  if (!limits.subscriptionId) return;
-                  await supabase.from("subscriptions").update({
-                    status: "active", canceled_at: null,
-                  }).eq("id", limits.subscriptionId);
-                  toast({ title: "Subscription reactivated!" });
-                  await refetchLimits();
+                  if (!limits.subscriptionId || !companyId || !user) return;
+                  // Submit a reactivation request
+                  const currentPlan = dbPlans.find((p: any) => p.id === limits.planId);
+                  if (!currentPlan) return;
+                  await supabase.from("upgrade_requests").insert({
+                    company_id: companyId,
+                    subscription_id: limits.subscriptionId,
+                    requested_by: user.id,
+                    requested_plan_id: currentPlan.id,
+                    requested_billing_cycle: limits.billingCycle,
+                    current_plan_id: limits.planId,
+                    status: "pending",
+                  });
+                  toast({ title: "Reactivation request submitted 📨", description: "The admin will review your request." });
+                  await refetchRequests();
                 }}
               >
                 Reactivate
