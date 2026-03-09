@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import {
   DollarSign, Globe, BarChart3, Loader2, ChevronRight, Map, FileText,
   UserPlus, Phone, Mail, CalendarDays, Briefcase, Target, Eye,
   MessageSquare, Bell, Zap, Plus, ArrowRight, Plane, UserCheck,
-  Calendar, MapPin, AlertCircle, TrendingDown,
+  Calendar, MapPin, AlertCircle, TrendingDown, Sparkles, Settings,
+  PieChart, Wallet, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ import { PlanOverviewCard } from "@/components/plan/PlanOverviewCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 // ─── SUPER ADMIN TYPES ───
 interface PlatformStats {
@@ -49,30 +51,186 @@ function getGreeting(isArabic: boolean): string {
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
-function StatCard({ label, value, icon: Icon, trend, trendLabel, color, subtitle, onClick }: {
-  label: string; value: string | number; icon: React.ElementType;
-  trend?: number; trendLabel?: string; color: string; subtitle?: string; onClick?: () => void;
+// Animated counter hook
+function useCountUp(end: number, duration: number = 1000) {
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+  const startTimeRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
+    
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentCount = Math.floor(easeOutQuart * end);
+      
+      setCount(currentCount);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+    
+    requestAnimationFrame(animate);
+    
+    return () => {
+      startTimeRef.current = null;
+    };
+  }, [end, duration]);
+  
+  return count;
+}
+
+// Premium Stat Card Component
+function PremiumStatCard({ 
+  label, 
+  value, 
+  icon: Icon, 
+  trend, 
+  trendLabel, 
+  bgGradient, 
+  iconBg, 
+  subtitle, 
+  onClick 
+}: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  trend?: number;
+  trendLabel?: string;
+  bgGradient: string;
+  iconBg: string;
+  subtitle?: string;
+  onClick?: () => void;
 }) {
+  const animatedValue = useCountUp(value, 800);
   const positive = (trend ?? 0) >= 0;
+  
   return (
-    <div className={cn("luxury-card p-5 group", onClick && "cursor-pointer hover:shadow-md transition-shadow")} onClick={onClick}>
-      <div className="flex items-start justify-between">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={cn(
+        "relative overflow-hidden rounded-2xl p-5 cursor-pointer group transition-all duration-300",
+        "hover:shadow-lg hover:-translate-y-1",
+        "border border-border/50",
+        bgGradient
+      )}
+      onClick={onClick}
+    >
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.1)_0%,_transparent_60%)]" />
+      
+      <div className="relative flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</p>
-          <p className="text-[28px] font-bold font-display text-foreground mt-1.5 leading-none">{value}</p>
-          {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+          <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.15em]">{label}</p>
+          <p className="text-[32px] font-extrabold font-display text-foreground mt-1 leading-none tabular-nums">
+            {animatedValue.toLocaleString()}
+          </p>
+          {subtitle && (
+            <p className="text-[11px] text-foreground/50 mt-1.5 font-medium">{subtitle}</p>
+          )}
         </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+        <div className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+          iconBg
+        )}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
+      
       {trend !== undefined && (
-        <div className={`flex items-center gap-1 mt-3 text-xs font-medium ${positive ? "text-emerald-600" : "text-destructive"}`}>
-          {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {Math.abs(trend)}% {trendLabel || "from last month"}
+        <div className={cn(
+          "flex items-center gap-1.5 mt-4 text-xs font-semibold",
+          positive ? "text-emerald-700" : "text-red-600"
+        )}>
+          <div className={cn(
+            "flex items-center justify-center w-5 h-5 rounded-full",
+            positive ? "bg-emerald-500/20" : "bg-red-500/20"
+          )}>
+            {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          </div>
+          <span>{Math.abs(trend)}%</span>
+          <span className="text-foreground/50 font-normal">{trendLabel || "vs last week"}</span>
         </div>
       )}
-    </div>
+      
+      {/* Hover glow effect */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-white/5 to-transparent" />
+    </motion.div>
+  );
+}
+
+// Revenue Card with special styling
+function RevenueStatCard({ 
+  label, 
+  value, 
+  currency,
+  trend,
+  onClick 
+}: {
+  label: string;
+  value: number;
+  currency: string;
+  trend?: number;
+  onClick?: () => void;
+}) {
+  const displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString();
+  const positive = (trend ?? 0) >= 0;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className={cn(
+        "relative overflow-hidden rounded-2xl p-5 cursor-pointer group transition-all duration-300",
+        "hover:shadow-lg hover:-translate-y-1",
+        "border border-amber-200/50 bg-gradient-to-br from-amber-50 via-amber-50/80 to-orange-50/60"
+      )}
+      onClick={onClick}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.1)_0%,_transparent_60%)]" />
+      
+      <div className="relative flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold text-amber-700/70 uppercase tracking-[0.15em]">{label}</p>
+          <div className="flex items-baseline gap-1 mt-1">
+            <p className="text-[32px] font-extrabold font-display text-amber-900 leading-none">
+              {displayValue}
+            </p>
+            <span className="text-sm font-semibold text-amber-700/60">{currency}</span>
+          </div>
+        </div>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20">
+          <DollarSign className="w-5 h-5 text-white" />
+        </div>
+      </div>
+      
+      {trend !== undefined && (
+        <div className={cn(
+          "flex items-center gap-1.5 mt-4 text-xs font-semibold",
+          positive ? "text-emerald-700" : "text-red-600"
+        )}>
+          <div className={cn(
+            "flex items-center justify-center w-5 h-5 rounded-full",
+            positive ? "bg-emerald-500/20" : "bg-red-500/20"
+          )}>
+            {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          </div>
+          <span>{Math.abs(trend)}%</span>
+          <span className="text-amber-700/50 font-normal">vs last week</span>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -94,13 +252,129 @@ function SubscriptionBadge({ status }: { status: string }) {
   );
 }
 
-const STATUS_COLORS: Record<string, { bg: string; dot: string; text: string }> = {
-  tentative: { bg: "bg-slate-100", dot: "bg-slate-400", text: "text-slate-700" },
-  confirmed: { bg: "bg-blue-50", dot: "bg-blue-500", text: "text-blue-700" },
-  in_operation: { bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-700" },
-  completed: { bg: "bg-emerald-50", dot: "bg-emerald-500", text: "text-emerald-700" },
-  cancelled: { bg: "bg-red-50", dot: "bg-red-500", text: "text-red-700" },
+const STATUS_COLORS: Record<string, { bg: string; dot: string; text: string; border: string }> = {
+  tentative: { bg: "bg-slate-50", dot: "bg-slate-400", text: "text-slate-700", border: "border-slate-200" },
+  confirmed: { bg: "bg-emerald-50", dot: "bg-emerald-500", text: "text-emerald-700", border: "border-emerald-200" },
+  in_operation: { bg: "bg-blue-50", dot: "bg-blue-500", text: "text-blue-700", border: "border-blue-200" },
+  completed: { bg: "bg-purple-50", dot: "bg-purple-500", text: "text-purple-700", border: "border-purple-200" },
+  cancelled: { bg: "bg-red-50", dot: "bg-red-500", text: "text-red-700", border: "border-red-200" },
 };
+
+// Mini Donut Chart Component
+function MiniDonutChart({ collected, total, size = 80 }: { collected: number; total: number; size?: number }) {
+  const percentage = total > 0 ? (collected / total) * 100 : 0;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-muted/30"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="url(#progressGradient)"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+        <defs>
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(var(--accent))" />
+            <stop offset="100%" stopColor="hsl(38 70% 55%)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-sm font-bold text-foreground">{percentage.toFixed(0)}%</span>
+      </div>
+    </div>
+  );
+}
+
+// Empty State Component
+function EmptyState({ 
+  icon: Icon, 
+  title, 
+  description, 
+  actionLabel, 
+  onAction 
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 px-4">
+      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 flex items-center justify-center mb-4">
+        <Icon className="w-8 h-8 text-muted-foreground/50" />
+      </div>
+      <h4 className="text-sm font-semibold text-foreground mb-1">{title}</h4>
+      <p className="text-xs text-muted-foreground text-center max-w-[200px] mb-4">{description}</p>
+      {actionLabel && onAction && (
+        <Button 
+          onClick={onAction} 
+          size="sm" 
+          className="gap-1.5 bg-gradient-to-r from-accent to-amber-500 hover:from-accent/90 hover:to-amber-500/90 text-white shadow-lg shadow-accent/20"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          {actionLabel}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+// Quick Action Button Component
+function QuickActionButton({ 
+  icon: Icon, 
+  label, 
+  color, 
+  bgColor, 
+  onClick 
+}: {
+  icon: React.ElementType;
+  label: string;
+  color: string;
+  bgColor: string;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center gap-2 p-4 rounded-xl border border-border/50 transition-all duration-200",
+        "hover:shadow-md hover:border-transparent",
+        bgColor
+      )}
+    >
+      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", color)}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <span className="text-xs font-medium text-foreground">{label}</span>
+    </motion.button>
+  );
+}
 
 // ═══════════════════════════════════════════
 //  COMPANY ADMIN DASHBOARD
@@ -226,189 +500,323 @@ function CompanyDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
-          <p className="text-sm text-muted-foreground">{isArabic ? "جاري التحميل..." : "Loading dashboard…"}</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-amber-500/20 animate-pulse" />
+            <Loader2 className="w-6 h-6 animate-spin text-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <p className="text-sm text-muted-foreground font-medium">{isArabic ? "جاري التحميل..." : "Loading your dashboard…"}</p>
         </div>
       </div>
     );
   }
 
   const quickActions = [
-    { label: isArabic ? "حجز جديد" : "New Booking", icon: Plus, path: "/dashboard/bookings", color: "text-accent" },
-    { label: isArabic ? "إضافة عميل محتمل" : "Add Lead", icon: UserPlus, path: "/dashboard/clients", color: "text-primary" },
-    { label: isArabic ? "المكتبة" : "Library", icon: Map, path: "/dashboard/library", color: "text-emerald-600" },
-    { label: isArabic ? "فريق العمل" : "Team", icon: Users, path: "/dashboard/staff", color: "text-purple-600" },
-    { label: isArabic ? "الإعدادات" : "Settings", icon: Building2, path: "/dashboard/settings", color: "text-muted-foreground" },
+    { label: isArabic ? "حجز جديد" : "New Booking", icon: Plus, path: "/dashboard/bookings", color: "bg-gradient-to-br from-accent to-amber-500 text-white", bgColor: "bg-gradient-to-br from-amber-50 to-orange-50" },
+    { label: isArabic ? "إضافة عميل" : "Add Lead", icon: UserPlus, path: "/dashboard/clients", color: "bg-gradient-to-br from-blue-500 to-indigo-500 text-white", bgColor: "bg-gradient-to-br from-blue-50 to-indigo-50" },
+    { label: isArabic ? "المكتبة" : "Library", icon: Map, path: "/dashboard/library", color: "bg-gradient-to-br from-emerald-500 to-teal-500 text-white", bgColor: "bg-gradient-to-br from-emerald-50 to-teal-50" },
+    { label: isArabic ? "فريق العمل" : "Team", icon: Users, path: "/dashboard/staff", color: "bg-gradient-to-br from-purple-500 to-pink-500 text-white", bgColor: "bg-gradient-to-br from-purple-50 to-pink-50" },
+    { label: isArabic ? "الإعدادات" : "Settings", icon: Settings, path: "/dashboard/settings", color: "bg-gradient-to-br from-slate-500 to-slate-600 text-white", bgColor: "bg-gradient-to-br from-slate-50 to-slate-100" },
   ];
 
+  const pendingCount = bookingStats.tentative + bookingStats.confirmed;
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">
-            {getGreeting(isArabic)}, {displayName}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {companyName} — {isArabic ? "نظرة عامة على العمليات اليومية" : "Here's your operational overview for today."}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={loadCompanyData} className="gap-1.5 text-xs">
-            <Activity className="w-3.5 h-3.5" /> {isArabic ? "تحديث" : "Refresh"}
+    <div className="space-y-6 animate-fade-in pb-8">
+      {/* Premium Header with Gradient */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/60 to-white p-6 border border-amber-100/50"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.15)_0%,_transparent_50%)]" />
+        <div className="absolute top-0 end-0 w-40 h-40 bg-gradient-to-bl from-amber-200/20 to-transparent rounded-full blur-3xl" />
+        
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              <span className="text-xs font-semibold text-amber-600/80 uppercase tracking-wider">
+                {format(new Date(), "EEEE, MMMM d, yyyy")}
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold font-display text-foreground">
+              {getGreeting(isArabic)}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">{displayName}</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              {companyName}
+              {pendingCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                  <Bell className="w-3 h-3" />
+                  {pendingCount} {isArabic ? "حجوزات معلقة" : "pending bookings"}
+                </span>
+              )}
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadCompanyData} 
+            className="gap-2 bg-white/80 backdrop-blur-sm border-amber-200/50 hover:bg-white hover:border-amber-300 transition-all self-start sm:self-center"
+          >
+            <Activity className="w-4 h-4 text-amber-600" />
+            <span>{isArabic ? "تحديث" : "Refresh"}</span>
           </Button>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Primary Stats - Booking Pipeline - RTL-friendly grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3" dir={isArabic ? 'rtl' : 'ltr'}>
-        <StatCard 
-          label={isArabic ? "حجوزات مبدئية" : "Tentative"} 
+      {/* Primary Stats - Booking Pipeline */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <PremiumStatCard 
+          label={isArabic ? "مبدئية" : "Tentative"} 
           value={bookingStats.tentative} 
           icon={Clock} 
-          color="bg-slate-100 text-slate-600"
+          bgGradient="bg-gradient-to-br from-amber-50 to-orange-50/60"
+          iconBg="bg-gradient-to-br from-amber-400 to-amber-500 text-white"
           subtitle={isArabic ? "في انتظار التأكيد" : "Awaiting confirmation"}
+          trend={5}
           onClick={() => navigate("/dashboard/bookings")}
         />
-        <StatCard 
+        <PremiumStatCard 
           label={isArabic ? "مؤكدة" : "Confirmed"} 
           value={bookingStats.confirmed} 
           icon={CheckCircle} 
-          color="bg-blue-100 text-blue-600"
+          bgGradient="bg-gradient-to-br from-emerald-50 to-green-50/60"
+          iconBg="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white"
           subtitle={isArabic ? "جاهزة للعمليات" : "Ready for operations"}
+          trend={12}
           onClick={() => navigate("/dashboard/bookings")}
         />
-        <StatCard 
+        <PremiumStatCard 
           label={isArabic ? "قيد التنفيذ" : "In Operation"} 
           value={bookingStats.inOperation} 
           icon={Plane} 
-          color="bg-amber-100 text-amber-600"
+          bgGradient="bg-gradient-to-br from-blue-50 to-indigo-50/60"
+          iconBg="bg-gradient-to-br from-blue-400 to-blue-500 text-white"
           subtitle={isArabic ? "حاليًا نشطة" : "Currently active"}
+          trend={-3}
           onClick={() => navigate("/dashboard/bookings")}
         />
-        <StatCard 
+        <PremiumStatCard 
           label={isArabic ? "مكتملة" : "Completed"} 
           value={bookingStats.completed} 
           icon={CheckCircle} 
-          color="bg-emerald-100 text-emerald-600"
+          bgGradient="bg-gradient-to-br from-slate-50 to-gray-50/60"
+          iconBg="bg-gradient-to-br from-slate-400 to-slate-500 text-white"
           subtitle={isArabic ? "هذا الشهر" : "This month"}
+          trend={8}
           onClick={() => navigate("/dashboard/bookings")}
         />
-        <StatCard 
+        <RevenueStatCard 
           label={isArabic ? "الإيرادات" : "Revenue"} 
-          value={`${(bookingStats.totalRevenue / 1000).toFixed(0)}K`} 
-          icon={DollarSign} 
-          color="bg-accent/10 text-accent"
-          subtitle={bookingStats.currency}
+          value={bookingStats.totalRevenue} 
+          currency={bookingStats.currency}
+          trend={15}
           onClick={() => navigate("/dashboard/bookings")}
         />
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Target className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.total}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
-                {isArabic ? "العملاء المحتملين" : "Total Leads"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <UserCheck className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.won}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
-                {isArabic ? "تم الفوز" : "Won Leads"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-lg font-bold font-display text-foreground leading-none">{teamCount}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
-                {isArabic ? "فريق العمل" : "Team Members"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            {subscription ? (
-              <>
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold font-display text-foreground leading-none">
-                    {subscription?.plans?.name || "None"}
-                  </p>
-                  <SubscriptionBadge status={subscription.status} />
-                </div>
-              </>
-            ) : (
-              <span className="text-xs text-muted-foreground">{isArabic ? "لا اشتراك" : "No subscription"}</span>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Secondary Stats - Compact Summary Bar */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-card border border-border/50 shadow-sm"
+      >
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+            <Target className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.total}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "العملاء المحتملين" : "Total Leads"}</p>
+          </div>
+        </div>
+        
+        <div className="w-px h-10 bg-border hidden sm:block" />
+        
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/5 to-emerald-500/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+            <UserCheck className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.won}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تم الفوز" : "Won Leads"}</p>
+          </div>
+        </div>
+        
+        <div className="w-px h-10 bg-border hidden sm:block" />
+        
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/5 to-purple-500/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+            <Users className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{teamCount}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "فريق العمل" : "Team Members"}</p>
+          </div>
+        </div>
+        
+        <div className="w-px h-10 bg-border hidden sm:block" />
+        
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-accent/5 to-accent/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-amber-500 flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-bold font-display text-foreground leading-none">
+              {subscription?.plans?.name || "—"}
+            </p>
+            {subscription && <SubscriptionBadge status={subscription.status} />}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Upcoming Arrivals */}
-        <Card className="border-border lg:col-span-2">
-          <CardHeader className="pb-3">
+        <Card className="lg:col-span-2 rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50/50 to-transparent border-b border-border/30">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Plane className="w-4 h-4 text-accent" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+                <Plane className="w-4 h-4 text-white" />
+              </div>
               {isArabic ? "الوصول القادم (7 أيام)" : "Upcoming Arrivals (7 days)"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {upcomingArrivals.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">{isArabic ? "لا يوجد وصول قادم" : "No upcoming arrivals"}</p>
-              </div>
+              <EmptyState
+                icon={Plane}
+                title={isArabic ? "لا يوجد وصول قادم" : "No upcoming arrivals"}
+                description={isArabic ? "ستظهر هنا الحجوزات القادمة" : "Upcoming bookings will appear here"}
+                actionLabel={isArabic ? "إنشاء حجز" : "Create Booking"}
+                onAction={() => navigate("/dashboard/bookings")}
+              />
             ) : (
-              <div className="space-y-2">
-                {upcomingArrivals.map((b) => {
+              <div className="space-y-3">
+                {upcomingArrivals.map((b, idx) => {
                   const sc = STATUS_COLORS[b.status] || STATUS_COLORS.tentative;
+                  const customerName = (b.customers as any)?.full_name || "Guest";
+                  const initials = customerName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                  
                   return (
-                    <div 
-                      key={b.id} 
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                    <motion.div
+                      key={b.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer group",
+                        sc.bg, sc.border,
+                        "hover:shadow-md hover:-translate-y-0.5"
+                      )}
                       onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={cn("w-2 h-2 rounded-full shrink-0", sc.dot)} />
+                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold", sc.bg, sc.text)}>
+                          {initials}
+                        </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{b.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(b.customers as any)?.full_name || "—"} · {b.booking_number}
+                          <p className="text-sm font-semibold text-foreground truncate">{b.title}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <span>{customerName}</span>
+                            <span className="opacity-50">·</span>
+                            <span className="font-mono">{b.booking_number}</span>
                           </p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {format(parseISO(b.arrival_date), "MMM d")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(parseISO(b.arrival_date), { addSuffix: true })}
-                        </p>
+                      <div className="text-end shrink-0 flex items-center gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-foreground">
+                            {format(parseISO(b.arrival_date), "MMM d")}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {formatDistanceToNow(parseISO(b.arrival_date), { addSuffix: true })}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity rtl:scale-x-[-1]" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-gradient-to-r from-amber-50/50 to-transparent border-b border-border/30">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              {isArabic ? "إجراءات سريعة" : "Quick Actions"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              {quickActions.map((action, idx) => (
+                <QuickActionButton
+                  key={action.label}
+                  icon={action.icon}
+                  label={action.label}
+                  color={action.color}
+                  bgColor={action.bgColor}
+                  onClick={() => navigate(action.path)}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agent Performance */}
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-gradient-to-r from-purple-50/50 to-transparent border-b border-border/30">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-white" />
+              </div>
+              {isArabic ? "أداء الوكلاء" : "Agent Performance"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {agentPerformance.length === 0 ? (
+              <EmptyState
+                icon={BarChart3}
+                title={isArabic ? "لا توجد بيانات" : "No data yet"}
+                description={isArabic ? "ستظهر بيانات الأداء هنا" : "Performance data will appear here"}
+              />
+            ) : (
+              <div className="space-y-4">
+                {agentPerformance.map((agent, idx) => {
+                  const maxCount = Math.max(...agentPerformance.map(a => a.count));
+                  const percentage = (agent.count / maxCount) * 100;
+                  const conversionRate = leadStats.total > 0 ? ((agent.count / leadStats.total) * 100).toFixed(0) : 0;
+                  
+                  return (
+                    <div key={agent.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center text-[10px] font-bold text-purple-600">
+                            {agent.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-sm font-medium text-foreground truncate max-w-[100px]">{agent.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-muted-foreground">{agent.count} {isArabic ? "حجز" : "bookings"}</span>
+                          <span className="font-mono text-emerald-600">${(agent.revenue / 1000).toFixed(1)}K</span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          transition={{ duration: 0.8, delay: idx * 0.1 }}
+                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                        />
                       </div>
                     </div>
                   );
@@ -418,130 +826,122 @@ function CompanyDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Zap className="w-4 h-4 text-accent" />
-              {isArabic ? "إجراءات سريعة" : "Quick Actions"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {quickActions.map((action) => (
-              <button 
-                key={action.label} 
-                onClick={() => navigate(action.path)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors group"
-              >
-                <action.icon className={`w-4 h-4 ${action.color} shrink-0`} />
-                <span className="flex-1 text-start">{action.label}</span>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </button>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Agent Performance */}
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              {isArabic ? "أداء الوكلاء" : "Agent Performance"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {agentPerformance.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {isArabic ? "لا توجد بيانات" : "No data this month"}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {agentPerformance.map((agent, idx) => (
-                  <div key={agent.id}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium text-foreground truncate">{agent.name}</span>
-                      <span className="text-muted-foreground">{agent.count} {isArabic ? "حجز" : "bookings"}</span>
-                    </div>
-                    <Progress 
-                      value={(agent.count / Math.max(...agentPerformance.map(a => a.count))) * 100} 
-                      className="h-2"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Financial Summary */}
-        <Card className="border-border">
-          <CardHeader className="pb-3">
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-gradient-to-r from-emerald-50/50 to-transparent border-b border-border/30">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-emerald-600" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-white" />
+              </div>
               {isArabic ? "ملخص مالي" : "Financial Summary"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{isArabic ? "إجمالي الإيرادات" : "Total Revenue"}</span>
-              <span className="font-bold font-mono text-foreground">
-                {bookingStats.totalRevenue.toLocaleString()} {bookingStats.currency}
-              </span>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-6">
+              <MiniDonutChart 
+                collected={bookingStats.totalPaid} 
+                total={bookingStats.totalRevenue} 
+                size={90}
+              />
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{isArabic ? "إجمالي الإيرادات" : "Total Revenue"}</span>
+                  <span className="text-sm font-bold font-mono text-foreground">
+                    {bookingStats.totalRevenue.toLocaleString()} {bookingStats.currency}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    {isArabic ? "المحصل" : "Collected"}
+                  </span>
+                  <span className="text-sm font-bold font-mono text-emerald-600">
+                    {bookingStats.totalPaid.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    {isArabic ? "المتبقي" : "Outstanding"}
+                  </span>
+                  <span className="text-sm font-bold font-mono text-orange-600">
+                    {bookingStats.totalBalance.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{isArabic ? "المدفوع" : "Collected"}</span>
-              <span className="font-bold font-mono text-emerald-600">
-                {bookingStats.totalPaid.toLocaleString()} {bookingStats.currency}
-              </span>
+            <div className="mt-4">
+              <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(bookingStats.totalPaid / Math.max(bookingStats.totalRevenue, 1)) * 100}%` }}
+                  transition={{ duration: 1 }}
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500"
+                />
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground mt-2">
+                {((bookingStats.totalPaid / Math.max(bookingStats.totalRevenue, 1)) * 100).toFixed(0)}% {isArabic ? "تم تحصيله" : "collected"}
+              </p>
             </div>
-            <div className="flex items-center justify-between border-t border-border pt-3">
-              <span className="text-sm font-medium text-foreground">{isArabic ? "الرصيد المتبقي" : "Outstanding Balance"}</span>
-              <span className="font-bold font-mono text-amber-600">
-                {bookingStats.totalBalance.toLocaleString()} {bookingStats.currency}
-              </span>
-            </div>
-            <Progress 
-              value={(bookingStats.totalPaid / Math.max(bookingStats.totalRevenue, 1)) * 100} 
-              className="h-2"
-            />
-            <p className="text-[10px] text-center text-muted-foreground">
-              {((bookingStats.totalPaid / Math.max(bookingStats.totalRevenue, 1)) * 100).toFixed(0)}% {isArabic ? "تم تحصيله" : "collected"}
-            </p>
           </CardContent>
         </Card>
 
         {/* Recent Bookings */}
-        <Card className="border-border">
-          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+        <Card className="rounded-2xl border-border/50 shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-gradient-to-r from-indigo-50/50 to-transparent border-b border-border/30 flex flex-row items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-accent" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
+                <Briefcase className="w-4 h-4 text-white" />
+              </div>
               {isArabic ? "آخر الحجوزات" : "Recent Bookings"}
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/bookings")} className="text-xs gap-1">
-              {isArabic ? "عرض الكل" : "View all"} <ChevronRight className="w-3 h-3" />
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/bookings")} className="text-xs gap-1 text-muted-foreground hover:text-foreground">
+              {isArabic ? "عرض الكل" : "View all"} <ChevronRight className="w-3 h-3 rtl:scale-x-[-1]" />
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {recentBookings.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {isArabic ? "لا توجد حجوزات" : "No bookings yet"}
-              </p>
+              <EmptyState
+                icon={Briefcase}
+                title={isArabic ? "لا توجد حجوزات" : "No bookings yet"}
+                description={isArabic ? "ستظهر الحجوزات هنا" : "Your bookings will appear here"}
+                actionLabel={isArabic ? "إنشاء حجز" : "Create Booking"}
+                onAction={() => navigate("/dashboard/bookings")}
+              />
             ) : (
               <div className="space-y-2">
-                {recentBookings.map((b) => {
+                {recentBookings.map((b, idx) => {
                   const sc = STATUS_COLORS[b.status] || STATUS_COLORS.tentative;
+                  const customerName = (b.customers as any)?.full_name || "Guest";
+                  const initials = customerName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+                  
                   return (
-                    <div 
-                      key={b.id} 
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                    <motion.div 
+                      key={b.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-all group"
                       onClick={() => navigate(`/dashboard/bookings/${b.id}`)}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", sc.dot)} />
-                        <p className="text-sm font-medium text-foreground truncate">{b.title}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold", sc.bg, sc.text)}>
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("w-2 h-2 rounded-full", sc.dot)} />
+                            <p className="text-sm font-medium text-foreground truncate">{b.title}</p>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground font-mono">{b.booking_number}</p>
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{b.booking_number}</span>
-                    </div>
+                      <div className="text-end shrink-0">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(b.created_at), "MMM d")}
+                        </p>
+                      </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -677,17 +1077,41 @@ function SuperAdminDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Companies" value={stats.totalCompanies} icon={Building2} color="bg-primary/10 text-primary" subtitle={`${stats.activeCompanies} active`} />
-        <StatCard label="Users" value={stats.totalUsers} icon={Users} color="bg-accent/10 text-accent" />
-        <StatCard label="Subscriptions" value={stats.totalSubscriptions} icon={CreditCard} color="bg-emerald-500/10 text-emerald-600" subtitle={`${stats.activeSubscriptions} active`} />
-        <StatCard label="MRR" value={`$${stats.totalRevenueMRR.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={TrendingUp} color="bg-amber-500/10 text-amber-600" />
+        <PremiumStatCard 
+          label="Companies" 
+          value={stats.totalCompanies} 
+          icon={Building2} 
+          bgGradient="bg-gradient-to-br from-primary/5 to-primary/10" 
+          iconBg="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"
+          subtitle={`${stats.activeCompanies} active`} 
+        />
+        <PremiumStatCard 
+          label="Users" 
+          value={stats.totalUsers} 
+          icon={Users} 
+          bgGradient="bg-gradient-to-br from-accent/5 to-accent/10"
+          iconBg="bg-gradient-to-br from-accent to-amber-500 text-white"
+        />
+        <PremiumStatCard 
+          label="Subscriptions" 
+          value={stats.totalSubscriptions} 
+          icon={CreditCard} 
+          bgGradient="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10"
+          iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
+          subtitle={`${stats.activeSubscriptions} active`} 
+        />
+        <RevenueStatCard 
+          label="MRR" 
+          value={stats.totalRevenueMRR} 
+          currency="$"
+        />
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input type="text" placeholder="Search companies…" value={search} onChange={(e) => setSearch(e.target.value)} className="luxury-input w-full pl-10" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input type="text" placeholder="Search companies…" value={search} onChange={(e) => setSearch(e.target.value)} className="luxury-input w-full ps-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -709,16 +1133,16 @@ function SuperAdminDashboard() {
       </div>
 
       {/* Companies Table */}
-      <div className="luxury-card overflow-hidden">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-left">
-                <th className="px-5 py-3 font-semibold text-foreground">Company</th>
-                <th className="px-5 py-3 font-semibold text-foreground">Plan</th>
-                <th className="px-5 py-3 font-semibold text-foreground">Status</th>
-                <th className="px-5 py-3 font-semibold text-foreground">Users</th>
-                <th className="px-5 py-3 font-semibold text-foreground">Created</th>
+              <tr className="border-b border-border text-start">
+                <th className="px-5 py-3 font-semibold text-foreground text-start">Company</th>
+                <th className="px-5 py-3 font-semibold text-foreground text-start">Plan</th>
+                <th className="px-5 py-3 font-semibold text-foreground text-start">Status</th>
+                <th className="px-5 py-3 font-semibold text-foreground text-start">Users</th>
+                <th className="px-5 py-3 font-semibold text-foreground text-start">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -750,7 +1174,7 @@ function SuperAdminDashboard() {
       </div>
 
       {/* Audit Logs */}
-      <div className="luxury-card">
+      <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-semibold font-display text-foreground flex items-center gap-2">
             <Activity className="w-4 h-4 text-muted-foreground" /> Recent Platform Activity
