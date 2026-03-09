@@ -275,7 +275,7 @@ export function GenerateQuotationModal({
         <ModalDarkHeader
           icon={<Receipt className="w-5 h-5" />}
           title="Generate Quotation"
-          subtitle={customerName !== "—" ? `For ${customerName}` : "Create a professional quote"}
+          description={customerName !== "—" ? `For ${customerName}` : "Create a professional quote"}
         />
 
         <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
