@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth, differenceInDays, isPast } from "date-fns";
 
 export interface PlanLimits {
   planId: string | null;
@@ -27,6 +27,21 @@ export interface PlanLimits {
   // Plan status
   isOnFreeTier: boolean;
   hasSubscription: boolean;
+  // Subscription info
+  subscriptionId: string | null;
+  subscriptionStatus: string;
+  billingCycle: string;
+  currentPeriodEnd: string | null;
+  canceledAt: string | null;
+  // Trial info
+  isTrialing: boolean;
+  trialEndsAt: string | null;
+  trialDaysRemaining: number | null;
+  trialExpired: boolean;
+  // Pricing
+  priceMonthly: number;
+  priceYearly: number;
+  currency: string;
 }
 
 const DEFAULT_LIMITS: PlanLimits = {
@@ -34,8 +49,8 @@ const DEFAULT_LIMITS: PlanLimits = {
   planName: "Free",
   planSlug: "free",
   maxUsers: 1,
-  maxBranches: 1,
-  maxTripsPerMonth: 10,
+  maxBranches: 0,
+  maxTripsPerMonth: 5,
   features: [],
   currentUsers: 0,
   currentBranches: 0,
@@ -45,9 +60,21 @@ const DEFAULT_LIMITS: PlanLimits = {
   canCreateTrip: true,
   usersRemaining: 0,
   branchesRemaining: 0,
-  tripsRemaining: 10,
+  tripsRemaining: 5,
   isOnFreeTier: true,
   hasSubscription: false,
+  subscriptionId: null,
+  subscriptionStatus: "none",
+  billingCycle: "monthly",
+  currentPeriodEnd: null,
+  canceledAt: null,
+  isTrialing: false,
+  trialEndsAt: null,
+  trialDaysRemaining: null,
+  trialExpired: false,
+  priceMonthly: 0,
+  priceYearly: 0,
+  currency: "USD",
 };
 
 export function usePlanLimits() {
@@ -66,6 +93,11 @@ export function usePlanLimits() {
           id,
           status,
           plan_id,
+          billing_cycle,
+          current_period_end,
+          canceled_at,
+          trial_starts_at,
+          trial_ends_at,
           plans (
             id,
             name,
@@ -73,11 +105,14 @@ export function usePlanLimits() {
             max_users,
             max_branches,
             max_trips,
-            features
+            features,
+            price_monthly,
+            price_yearly,
+            currency
           )
         `)
         .eq("company_id", companyId)
-        .eq("status", "active")
+        .in("status", ["active", "trialing", "past_due"])
         .single();
 
       // Fetch current usage in parallel
@@ -97,7 +132,7 @@ export function usePlanLimits() {
           .eq("company_id", companyId)
           .is("deleted_at", null),
         supabase
-          .from("trips")
+          .from("bookings")
           .select("id", { count: "exact" })
           .eq("company_id", companyId)
           .is("deleted_at", null)
@@ -110,18 +145,17 @@ export function usePlanLimits() {
       const tripsThisMonth = tripsRes.count || 0;
 
       if (!subscription?.plans) {
-        // No active subscription - use free tier defaults
         return {
           ...DEFAULT_LIMITS,
           currentUsers,
           currentBranches,
           tripsThisMonth,
           canAddUser: currentUsers < 1,
-          canAddBranch: currentBranches < 1,
-          canCreateTrip: tripsThisMonth < 10,
+          canAddBranch: false,
+          canCreateTrip: tripsThisMonth < 5,
           usersRemaining: Math.max(0, 1 - currentUsers),
-          branchesRemaining: Math.max(0, 1 - currentBranches),
-          tripsRemaining: Math.max(0, 10 - tripsThisMonth),
+          branchesRemaining: 0,
+          tripsRemaining: Math.max(0, 5 - tripsThisMonth),
         };
       }
 
@@ -131,7 +165,6 @@ export function usePlanLimits() {
       const maxTripsPerMonth = plan.max_trips;
       const features = Array.isArray(plan.features) ? plan.features : [];
 
-      // null means unlimited
       const canAddUser = maxUsers === null || currentUsers < maxUsers;
       const canAddBranch = maxBranches === null || currentBranches < maxBranches;
       const canCreateTrip = maxTripsPerMonth === null || tripsThisMonth < maxTripsPerMonth;
@@ -139,6 +172,21 @@ export function usePlanLimits() {
       const usersRemaining = maxUsers === null ? null : Math.max(0, maxUsers - currentUsers);
       const branchesRemaining = maxBranches === null ? null : Math.max(0, maxBranches - currentBranches);
       const tripsRemaining = maxTripsPerMonth === null ? null : Math.max(0, maxTripsPerMonth - tripsThisMonth);
+
+      // Trial info
+      const isTrialing = subscription.status === "trialing";
+      const trialEndsAt = subscription.trial_ends_at;
+      let trialDaysRemaining: number | null = null;
+      let trialExpired = false;
+      if (trialEndsAt) {
+        const endDate = new Date(trialEndsAt);
+        if (isPast(endDate)) {
+          trialExpired = true;
+          trialDaysRemaining = 0;
+        } else {
+          trialDaysRemaining = differenceInDays(endDate, now);
+        }
+      }
 
       return {
         planId: plan.id,
@@ -159,10 +207,22 @@ export function usePlanLimits() {
         tripsRemaining,
         isOnFreeTier: false,
         hasSubscription: true,
+        subscriptionId: subscription.id,
+        subscriptionStatus: subscription.status,
+        billingCycle: subscription.billing_cycle,
+        currentPeriodEnd: subscription.current_period_end,
+        canceledAt: subscription.canceled_at,
+        isTrialing,
+        trialEndsAt,
+        trialDaysRemaining,
+        trialExpired,
+        priceMonthly: plan.price_monthly || 0,
+        priceYearly: plan.price_yearly || 0,
+        currency: plan.currency || "USD",
       };
     },
     enabled: !!companyId,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   });
 
   const hasFeature = (featureName: string): boolean => {
@@ -170,10 +230,23 @@ export function usePlanLimits() {
     return limits.features.includes(featureName);
   };
 
+  const usagePercent = (type: "users" | "branches" | "trips"): number => {
+    if (!limits) return 0;
+    const configs = {
+      users: { current: limits.currentUsers, max: limits.maxUsers },
+      branches: { current: limits.currentBranches, max: limits.maxBranches },
+      trips: { current: limits.tripsThisMonth, max: limits.maxTripsPerMonth },
+    };
+    const c = configs[type];
+    if (c.max === null) return 0;
+    return Math.min(100, Math.round((c.current / c.max) * 100));
+  };
+
   return {
     limits: limits || DEFAULT_LIMITS,
     isLoading,
     refetch,
     hasFeature,
+    usagePercent,
   };
 }
