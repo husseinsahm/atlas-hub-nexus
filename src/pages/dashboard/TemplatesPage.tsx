@@ -118,8 +118,13 @@ export default function TemplatesPage() {
     );
   }
 
+  const isLocked = !limits.features.includes("custom_templates") && limits.planSlug !== "professional" && limits.planSlug !== "enterprise";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isLocked && (
+        <LockOverlay planRequired="Professional" featureName="Custom Templates" />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -130,7 +135,7 @@ export default function TemplatesPage() {
             {isArabic ? "قوالب برامج سياحية جاهزة للاستخدام" : "Reusable itinerary templates for quick booking setup"}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2">
+        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2" disabled={isLocked}>
           <Plus className="w-4 h-4" />
           {isArabic ? "قالب جديد" : "New Template"}
         </Button>

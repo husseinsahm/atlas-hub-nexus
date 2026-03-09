@@ -2,6 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+
 import { 
   LayoutDashboard,
   Building2,
@@ -20,6 +21,7 @@ import {
   FolderOpen,
   ChevronsLeft,
   ChevronsRight,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,7 +36,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { TrialBadge, PlanBadge } from "@/components/plan/TrialBadge";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -154,6 +156,34 @@ function SidebarNavItem({ item, collapsed, active, t }: {
   return link;
 }
 
+function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
+  const navigate = useNavigate();
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
+          >
+            <Shield className="w-[18px] h-[18px]" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">Admin Panel</TooltipContent>
+      </Tooltip>
+    );
+  }
+  return (
+    <button
+      onClick={() => navigate("/admin")}
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors font-medium"
+    >
+      <Shield className="w-[18px] h-[18px]" />
+      <span>Admin Panel</span>
+    </button>
+  );
+}
+
 export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
@@ -253,6 +283,13 @@ export function DashboardSidebar() {
             </SidebarGroup>
           ))}
         </SidebarContent>
+
+        {/* Admin Panel Link - super_admin only */}
+        {user?.isSuperAdmin && (
+          <div className="border-t border-sidebar-border px-3 py-2">
+            <AdminPanelLink collapsed={collapsed} />
+          </div>
+        )}
 
         {/* Trial / Plan badge */}
         <div className="border-t border-sidebar-border px-3 py-2">

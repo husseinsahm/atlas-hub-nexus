@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AcceptInvite from "./pages/AcceptInvite";
 import { DashboardLayout } from "./components/layouts/DashboardLayout";
+import { AdminLayout } from "./components/layouts/AdminLayout";
 import Overview from "./pages/dashboard/Overview";
 import PlaceholderPage from "./pages/dashboard/PlaceholderPage";
 import CompaniesPage from "./pages/dashboard/CompaniesPage";
@@ -35,6 +36,14 @@ import SharedTrip from "./pages/shared/SharedTrip";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import NotFound from "./pages/NotFound";
+
+// Admin pages
+import AdminOverview from "./pages/admin/AdminOverview";
+import PlanManagement from "./pages/admin/PlanManagement";
+import SubscriptionManagement from "./pages/admin/SubscriptionManagement";
+import RevenueDashboard from "./pages/admin/RevenueDashboard";
+import GlobalSettings from "./pages/admin/GlobalSettings";
+
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -49,6 +58,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-gold" />
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user?.isSuperAdmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -77,6 +100,15 @@ function AppRoutes() {
 
       {/* Shared trip - public, token-based */}
       <Route path="/trip/:token" element={<SharedTrip />} />
+
+      {/* Super Admin Panel */}
+      <Route path="/admin" element={<SuperAdminRoute><AdminLayout /></SuperAdminRoute>}>
+        <Route index element={<AdminOverview />} />
+        <Route path="plans" element={<PlanManagement />} />
+        <Route path="subscriptions" element={<SubscriptionManagement />} />
+        <Route path="revenue" element={<RevenueDashboard />} />
+        <Route path="settings" element={<GlobalSettings />} />
+      </Route>
 
       {/* Dashboard - protected */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
