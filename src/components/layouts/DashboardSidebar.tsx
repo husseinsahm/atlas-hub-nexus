@@ -179,7 +179,7 @@ export function DashboardSidebar() {
                         <SidebarMenuButton asChild>
                           <NavLink 
                             to={item.url} 
-                            end={item.end}
+                            end={itemEnd}
                             className={`
                               flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
                               ${active 
