@@ -249,7 +249,6 @@ export default function BillingPage() {
 
   const handleUpgrade = async (targetSlug: string) => {
     setProcessing(true);
-    // Find the plan in DB
     const targetPlan = dbPlans.find((p: any) => p.slug === targetSlug);
     if (!targetPlan || !companyId) {
       toast({ title: "Error", description: "Plan not found", variant: "destructive" });
@@ -262,6 +261,9 @@ export default function BillingPage() {
       ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
       : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+    const price = billingCycle === "yearly" ? targetPlan.price_yearly : targetPlan.price_monthly;
+    const isUpgrade = planOrder.indexOf(targetSlug) > currentIdx;
+
     if (limits.subscriptionId) {
       const { error } = await supabase.from("subscriptions").update({
         plan_id: targetPlan.id,
@@ -269,15 +271,28 @@ export default function BillingPage() {
         billing_cycle: billingCycle,
         current_period_start: now.toISOString(),
         current_period_end: periodEnd.toISOString(),
+        trial_ends_at: null,
+        canceled_at: null,
       }).eq("id", limits.subscriptionId);
 
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Plan upgraded! 🎉", description: `Welcome to ${targetPlan.name}` });
+        // Insert billing history record
+        await supabase.from("billing_history").insert({
+          company_id: companyId,
+          invoice_date: now.toISOString(),
+          amount: price,
+          currency: targetPlan.currency || "USD",
+          status: "paid",
+          description: `${isUpgrade ? "Upgraded" : "Downgraded"} to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
+          subscription_id: limits.subscriptionId,
+        });
+
+        toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
       }
     } else {
-      const { error } = await supabase.from("subscriptions").insert({
+      const { data: newSub, error } = await supabase.from("subscriptions").insert({
         company_id: companyId,
         plan_id: targetPlan.id,
         status: "active",
@@ -285,11 +300,21 @@ export default function BillingPage() {
         current_period_start: now.toISOString(),
         current_period_end: periodEnd.toISOString(),
         payment_status: "paid",
-      });
+      }).select("id").single();
 
       if (error) {
         toast({ title: "Error", description: error.message, variant: "destructive" });
       } else {
+        await supabase.from("billing_history").insert({
+          company_id: companyId,
+          invoice_date: now.toISOString(),
+          amount: price,
+          currency: targetPlan.currency || "USD",
+          status: "paid",
+          description: `Subscribed to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
+          subscription_id: newSub?.id || null,
+        });
+
         toast({ title: "Subscribed! 🎉", description: `Welcome to ${targetPlan.name}` });
       }
     }
@@ -297,8 +322,8 @@ export default function BillingPage() {
     setProcessing(false);
     setUpgradeDialog(null);
     setDowngradeDialog(null);
-    // Refetch plan limits
-    window.location.reload();
+    // Refresh plan limits without full page reload
+    await refetchLimits();
   };
 
   const handleCancel = async () => {
