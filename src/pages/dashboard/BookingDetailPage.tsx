@@ -1156,6 +1156,18 @@ export default function BookingDetailPage() {
           bookingChildren={booking?.children || 0}
         />
       )}
+
+      {/* ─── Share Link Settings Modal ─── */}
+      <ShareLinkSettingsModal
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        bookingId={id!}
+        companyId={booking?.company_id || ""}
+        userId={user?.id}
+        shareTokens={shareTokens as any}
+        onRefetch={() => refetchShareTokens()}
+        isArabic={isArabic}
+      />
     </div>
   );
 }
