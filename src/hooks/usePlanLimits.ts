@@ -72,6 +72,7 @@ const DEFAULT_LIMITS: PlanLimits = {
   priceMonthly: 0,
   priceYearly: 0,
   currency: "USD",
+  planDeactivated: false,
 };
 
 export function usePlanLimits() {
