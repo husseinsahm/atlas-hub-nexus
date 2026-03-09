@@ -156,7 +156,7 @@ export function DashboardSidebar() {
       <SidebarContent className="px-2">
         {filteredGroups.map((group) => {
           const hasActiveItem = group.items.some(item => 
-            isActive(item.url, item.end)
+            isActive(item.url, (item as any).end)
           );
 
           return (
