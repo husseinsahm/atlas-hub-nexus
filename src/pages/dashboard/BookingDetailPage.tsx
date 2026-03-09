@@ -1189,6 +1189,15 @@ export default function BookingDetailPage() {
           })),
         } : undefined}
       />
+
+      {/* ─── Generate Quotation Modal ─── */}
+      <GenerateQuotationModal
+        open={showQuotationModal}
+        onOpenChange={setShowQuotationModal}
+        bookingId={id}
+        customerId={booking?.customer_id || undefined}
+        leadId={booking?.lead_id || undefined}
+      />
     </div>
   );
 }
