@@ -16,6 +16,7 @@ import {
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
+  Link, ExternalLink, Share2,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -106,6 +107,8 @@ export default function BookingDetailPage() {
   const [editingTraveler, setEditingTraveler] = useState<any>(null);
   const [showServiceDialog, setShowServiceDialog] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
@@ -202,6 +205,22 @@ export default function BookingDetailPage() {
       return data || [];
     },
     enabled: !!companyId,
+  });
+
+  // ─── Fetch existing share tokens ───
+  const { data: shareTokens = [], refetch: refetchShareTokens } = useQuery({
+    queryKey: ["booking-share-tokens", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_share_tokens")
+        .select("*")
+        .eq("booking_id", id!)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
   });
 
   const getProfileName = useCallback((userId: string | null) => {
@@ -389,6 +408,44 @@ export default function BookingDetailPage() {
     },
   });
 
+  // ─── Share link generation ───
+  const generateShareLink = async () => {
+    if (!booking || !companyId) return;
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase
+        .from("booking_share_tokens")
+        .insert({
+          booking_id: id!,
+          company_id: booking.company_id,
+          created_by: user?.id,
+          is_active: true,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      const shareUrl = `${window.location.origin}/booking/${data.token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      await refetchShareTokens();
+      toast({
+        title: isArabic ? "تم نسخ الرابط!" : "Link copied!",
+        description: shareUrl,
+      });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const previewClientItinerary = () => {
+    if (shareTokens.length > 0) {
+      window.open(`/booking/${shareTokens[0].token}`, "_blank");
+    } else {
+      setShowShareDialog(true);
+    }
+  };
+
   const advanceStatus = useCallback(() => {
     if (!booking) return;
     const next = STATUS_CONFIG[booking.status as BookingStatus]?.next;
@@ -456,7 +513,27 @@ export default function BookingDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             {isArabic ? "الحجوزات" : "Bookings"}
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Share buttons */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={previewClientItinerary}
+              className="h-8 text-xs gap-1.5 border-border"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              {isArabic ? "معاينة البرنامج" : "Preview Client Itinerary"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={generateShareLink}
+              disabled={generatingLink}
+              className="h-8 text-xs gap-1.5 border-border"
+            >
+              {generatingLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link className="w-3.5 h-3.5" />}
+              {isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+            </Button>
             {sc.next && (
               <Button
                 size="sm"
@@ -488,9 +565,20 @@ export default function BookingDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={previewClientItinerary}>
+                  <ExternalLink className="w-4 h-4 me-2" />{isArabic ? "معاينة البرنامج للعميل" : "Preview Client Itinerary"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generateShareLink}>
+                  <Share2 className="w-4 h-4 me-2" />{isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+                </DropdownMenuItem>
+                {shareTokens.length > 0 && (
+                  <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/booking/${shareTokens[0].token}`); toast({ title: isArabic ? "تم نسخ الرابط" : "Link copied" }); }}>
+                    <Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ الرابط الحالي" : "Copy Existing Link"}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
                 <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
-                <DropdownMenuItem><Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ" : "Duplicate"}</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive"><Trash2 className="w-4 h-4 me-2" />{isArabic ? "حذف" : "Delete"}</DropdownMenuItem>
