@@ -16,7 +16,7 @@ import {
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
-  Link, ExternalLink, Share2,
+  Link, ExternalLink, Share2, Receipt,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -56,6 +56,7 @@ import { PaymentRecords } from "@/components/PaymentRecords";
 import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
 import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
+import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotationModal";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -110,6 +111,7 @@ export default function BookingDetailPage() {
   const [editingService, setEditingService] = useState<any>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [showQuotationModal, setShowQuotationModal] = useState(false);
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
@@ -579,6 +581,9 @@ export default function BookingDetailPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
                 <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowQuotationModal(true)}>
+                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive"><Trash2 className="w-4 h-4 me-2" />{isArabic ? "حذف" : "Delete"}</DropdownMenuItem>
@@ -1183,6 +1188,15 @@ export default function BookingDetailPage() {
             })),
           })),
         } : undefined}
+      />
+
+      {/* ─── Generate Quotation Modal ─── */}
+      <GenerateQuotationModal
+        open={showQuotationModal}
+        onOpenChange={setShowQuotationModal}
+        bookingId={id}
+        customerId={booking?.customer_id || undefined}
+        leadId={booking?.lead_id || undefined}
       />
     </div>
   );
