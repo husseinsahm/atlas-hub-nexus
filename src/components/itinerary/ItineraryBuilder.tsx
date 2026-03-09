@@ -656,7 +656,7 @@ function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
   onAddItem, onUpdateItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
-  editingItemId, onSetEditingItemId,
+  editingItemId, onSetEditingItemId, libraryItemCount, onOpenLibrary,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
