@@ -96,6 +96,43 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [generatingDayId, setGeneratingDayId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [showLibraryPicker, setShowLibraryPicker] = useState<string | null>(null); // dayId or null
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [showTemplateImport, setShowTemplateImport] = useState(false);
+
+  // Fetch library items for the company
+  const { data: libraryItems = [] } = useQuery({
+    queryKey: ["library-items-picker", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("library_items")
+        .select("*")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .order("title");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  // Fetch templates for import
+  const { data: templates = [] } = useQuery({
+    queryKey: ["templates-picker", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itinerary_templates")
+        .select("*, template_days:template_days(*, template_day_items:template_day_items(*))")
+        .eq("company_id", companyId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("title");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
 
   // Initialize transport toggle state from existing data
   const hasTransport = useCallback((day: ItineraryDay) => {
