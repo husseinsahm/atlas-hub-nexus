@@ -161,6 +161,15 @@
   [dir="rtl"] {
     font-family: var(--font-body);
   }
+  
+  /* Ensure text alignment follows direction */
+  [dir="rtl"] .text-left {
+    text-align: right;
+  }
+  
+  [dir="rtl"] .text-right {
+    text-align: left;
+  }
 }
 
 @layer components {
