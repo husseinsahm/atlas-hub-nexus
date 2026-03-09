@@ -394,9 +394,44 @@ export default function SharedBooking() {
     }
   };
 
-  // Check if password protection is enabled
-  const metadata = shareToken.metadata as { password_hash?: string } | null;
+  // Check if password protection is enabled and get available languages
+  const metadata = shareToken.metadata as { 
+    password_hash?: string;
+    translations?: Record<string, any>;
+    available_languages?: string[];
+  } | null;
   const isPasswordProtected = !!metadata?.password_hash;
+  const availableLanguages = metadata?.available_languages || ["en", "ar"];
+  const translations = metadata?.translations || {};
+
+  // Get translated content based on selected language
+  const getTranslatedContent = useMemo(() => {
+    if (lang === "en" || !translations[lang]) {
+      return null; // Use original content
+    }
+    return translations[lang];
+  }, [lang, translations]);
+
+  // Helper to get translated text
+  const getTranslatedText = (original: string | null | undefined, path: string): string => {
+    if (!original) return "";
+    if (lang === "en") return original;
+    
+    const translated = getTranslatedContent;
+    if (!translated) return original;
+    
+    // Parse the path to get the value (e.g., "title" or "days.0.title")
+    const parts = path.split(".");
+    let value: any = translated;
+    for (const part of parts) {
+      if (value && typeof value === "object") {
+        value = value[part];
+      } else {
+        return original;
+      }
+    }
+    return typeof value === "string" ? value : original;
+  };
 
   /* ====== PASSWORD GATE ====== */
   if (isPasswordProtected && !passwordUnlocked) {
