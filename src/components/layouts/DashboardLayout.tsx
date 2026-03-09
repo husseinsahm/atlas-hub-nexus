@@ -12,19 +12,21 @@ export function DashboardLayout() {
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <DashboardSidebar />
-        
+
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Topbar />
-          
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-full"
-            >
-              <Outlet />
-            </motion.div>
+
+          <main className="flex-1 overflow-y-auto scrollbar-thin">
+            <div className="p-4 sm:p-5 lg:p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="max-w-full space-y-6"
+              >
+                <Outlet />
+              </motion.div>
+            </div>
           </main>
         </div>
       </div>
