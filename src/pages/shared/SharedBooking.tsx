@@ -543,13 +543,51 @@ export default function SharedBooking() {
                 </div>
               )}
             </div>
-            <button
-              onClick={() => setLang(l => l === "en" ? "ar" : "en")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary-foreground/20 text-primary-foreground/70 hover:text-primary-foreground hover:border-primary-foreground/40 transition-all text-xs"
-            >
-              <Globe className="w-3.5 h-3.5" />
-              {lang === "en" ? "العربية" : "English"}
-            </button>
+            {/* Language Picker */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangPicker(!showLangPicker)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary-foreground/20 text-primary-foreground/70 hover:text-primary-foreground hover:border-primary-foreground/40 transition-all text-xs"
+              >
+                <span>{LANGUAGE_INFO[lang]?.flag || "🌐"}</span>
+                <span>{LANGUAGE_INFO[lang]?.nativeLabel || "English"}</span>
+                <Globe className="w-3.5 h-3.5" />
+              </button>
+              
+              {showLangPicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute top-full mt-2 end-0 bg-card border border-border rounded-xl shadow-lg py-2 min-w-[180px] z-50"
+                >
+                  <div className="px-3 py-2 border-b border-border">
+                    <span className="text-xs font-medium text-muted-foreground">{t.selectLanguage}</span>
+                  </div>
+                  {availableLanguages.map((langCode) => {
+                    const langInfo = LANGUAGE_INFO[langCode];
+                    if (!langInfo) return null;
+                    const isSelected = lang === langCode;
+                    return (
+                      <button
+                        key={langCode}
+                        onClick={() => { setLang(langCode); setShowLangPicker(false); }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start",
+                          isSelected ? "bg-primary/10 text-foreground" : "hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        <span className="text-lg">{langInfo.flag}</span>
+                        <div className="flex-1">
+                          <span className="font-medium">{langInfo.nativeLabel}</span>
+                          <span className="text-xs text-muted-foreground ms-1">({langInfo.label})</span>
+                        </div>
+                        {isSelected && <CheckCircle className="w-4 h-4 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </div>
           </motion.div>
 
           <motion.div
