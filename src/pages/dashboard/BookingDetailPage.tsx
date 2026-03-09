@@ -1170,6 +1170,18 @@ export default function BookingDetailPage() {
         bookingData={booking ? {
           title: booking.title,
           description: booking.description ?? undefined,
+          days: itineraryDays.map((day: any) => ({
+            title: day.title ?? undefined,
+            description: day.description ?? undefined,
+            short_description: day.short_description ?? undefined,
+            city: day.city ?? undefined,
+            pickup_location: day.pickup_location ?? undefined,
+            dropoff_location: day.dropoff_location ?? undefined,
+            items: (day.booking_day_items || []).map((item: any) => ({
+              custom_title: item.custom_title ?? undefined,
+              custom_description: item.custom_description ?? undefined,
+            })),
+          })),
         } : undefined}
       />
     </div>

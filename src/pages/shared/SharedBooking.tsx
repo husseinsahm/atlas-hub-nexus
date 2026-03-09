@@ -730,9 +730,9 @@ export default function SharedBooking() {
                                       <div className="rounded-xl border border-border bg-background p-4 hover:border-accent/30 transition-colors duration-200">
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="min-w-0">
-                                            <h3 className="text-sm font-semibold text-foreground">{item.custom_title}</h3>
+                                            <h3 className="text-sm font-semibold text-foreground">{getTranslatedText(item.custom_title, `days.${dayIdx}.items.${itemIdx}.custom_title`)}</h3>
                                             {item.custom_description && (
-                                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-3">{item.custom_description}</p>
+                                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-3">{getTranslatedText(item.custom_description, `days.${dayIdx}.items.${itemIdx}.custom_description`)}</p>
                                             )}
                                           </div>
                                           <Badge variant="outline" className="shrink-0 text-[10px] capitalize border-border">

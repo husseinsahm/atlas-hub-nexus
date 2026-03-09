@@ -183,6 +183,8 @@ export function ShareLinkSettingsModal({
             description: day.description || "",
             short_description: day.short_description || "",
             city: day.city || "",
+            pickup_location: day.pickup_location || "",
+            dropoff_location: day.dropoff_location || "",
             items: day.items?.map(item => ({
               custom_title: item.custom_title || "",
               custom_description: item.custom_description || "",
