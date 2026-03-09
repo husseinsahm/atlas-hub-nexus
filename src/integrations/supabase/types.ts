@@ -2678,6 +2678,8 @@ export type Database = {
       quotation_status:
         | "draft"
         | "sent"
+        | "viewed"
+        | "negotiating"
         | "accepted"
         | "rejected"
         | "expired"
@@ -2872,6 +2874,8 @@ export const Constants = {
       quotation_status: [
         "draft",
         "sent",
+        "viewed",
+        "negotiating",
         "accepted",
         "rejected",
         "expired",
