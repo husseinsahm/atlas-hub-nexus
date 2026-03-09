@@ -223,7 +223,7 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
-
+  const getProfileName = useCallback((userId: string | null) => {
     if (!userId) return "System";
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
   }, [profiles]);
