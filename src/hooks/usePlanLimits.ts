@@ -219,6 +219,7 @@ export function usePlanLimits() {
         priceMonthly: plan.price_monthly || 0,
         priceYearly: plan.price_yearly || 0,
         currency: plan.currency || "USD",
+        planDeactivated,
       };
     },
     enabled: !!companyId,
