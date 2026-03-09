@@ -104,7 +104,6 @@ export function ShareLinkSettingsModal({
   bookingData,
 }: ShareLinkSettingsModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Form state
   const [enablePassword, setEnablePassword] = useState(false);
