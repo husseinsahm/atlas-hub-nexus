@@ -680,28 +680,41 @@ export default function BillingPage() {
                     </div>
 
                     {/* CTA */}
-                    {tier.slug === "enterprise" ? (
-                      <Button variant="outline" className="w-full gap-2">
-                        <Phone className="w-4 h-4" /> Contact Sales
-                      </Button>
-                    ) : action === "current" ? (
-                      <Button disabled className="w-full">Current Plan</Button>
-                    ) : action === "upgrade" ? (
-                      <Button
-                        className="w-full bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
-                        onClick={() => setUpgradeDialog(tier.slug)}
-                      >
-                        <Sparkles className="w-4 h-4" /> Upgrade
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setDowngradeDialog(tier.slug)}
-                      >
-                        Downgrade
-                      </Button>
-                    )}
+                    {(() => {
+                      const dbTier = dbPlans.find((p: any) => p.slug === tier.slug);
+                      const hasPendingRequest = dbTier && pendingRequests.some(
+                        (r: any) => r.requested_plan_id === dbTier.id && r.status === "pending"
+                      );
+                      if (hasPendingRequest) {
+                        return (
+                          <Button disabled className="w-full gap-2 opacity-70">
+                            <Clock className="w-4 h-4" /> Request Pending
+                          </Button>
+                        );
+                      }
+                      return tier.slug === "enterprise" ? (
+                        <Button variant="outline" className="w-full gap-2">
+                          <Phone className="w-4 h-4" /> Contact Sales
+                        </Button>
+                      ) : action === "current" ? (
+                        <Button disabled className="w-full">Current Plan</Button>
+                      ) : action === "upgrade" ? (
+                        <Button
+                          className="w-full bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
+                          onClick={() => setUpgradeDialog(tier.slug)}
+                        >
+                          <Sparkles className="w-4 h-4" /> Upgrade
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setDowngradeDialog(tier.slug)}
+                        >
+                          Downgrade
+                        </Button>
+                      );
+                    })()}
                   </div>
                 </motion.div>
               );
