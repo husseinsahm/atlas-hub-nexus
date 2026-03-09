@@ -261,8 +261,8 @@ function CompanyDashboard() {
         </div>
       </div>
 
-      {/* Primary Stats - Booking Pipeline */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* Primary Stats - Booking Pipeline - RTL-friendly grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3" dir={isArabic ? 'rtl' : 'ltr'}>
         <StatCard 
           label={isArabic ? "حجوزات مبدئية" : "Tentative"} 
           value={bookingStats.tentative} 
