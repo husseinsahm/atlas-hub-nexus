@@ -177,7 +177,7 @@ export function DashboardSidebar() {
 
   return (
     <TooltipProvider>
-      <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar-background">
+      <Sidebar collapsible="icon" className="border-e border-sidebar-border bg-sidebar-background">
         <SidebarHeader className="p-3 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
