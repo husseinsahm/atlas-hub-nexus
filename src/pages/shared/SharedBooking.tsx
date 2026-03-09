@@ -657,11 +657,11 @@ export default function SharedBooking() {
 
                     <div className="flex-1 min-w-0 pt-1">
                       <h2 className="text-lg md:text-xl font-bold font-display text-foreground mb-1">
-                        {day.title || `${t.day} ${day.day_number}`}
+                        {getTranslatedText(day.title || `${t.day} ${day.day_number}`, `days.${dayIdx}.title`)}
                       </h2>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         {day.city && (
-                          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {day.city}</span>
+                          <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {getTranslatedText(day.city, `days.${dayIdx}.city`)}</span>
                         )}
                         {day.date && (
                           <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {format(new Date(day.date), "EEEE, MMM d")}</span>
@@ -669,7 +669,7 @@ export default function SharedBooking() {
                         <span>{dayItems.length} {t.services}</span>
                       </div>
                       {(day.short_description || day.description) && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{day.short_description || day.description}</p>
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{getTranslatedText(day.short_description || day.description, day.short_description ? `days.${dayIdx}.short_description` : `days.${dayIdx}.description`)}</p>
                       )}
                       {(day.pickup_location || day.dropoff_location) && (
                         <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
