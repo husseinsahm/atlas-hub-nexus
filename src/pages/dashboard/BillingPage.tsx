@@ -195,7 +195,7 @@ UsageBar.displayName = "UsageBar";
 // ─── Main Component ───
 
 export default function BillingPage() {
-  const { limits, isLoading } = usePlanLimits();
+  const { limits, isLoading, refetch: refetchLimits } = usePlanLimits();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
