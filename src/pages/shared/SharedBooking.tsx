@@ -112,7 +112,7 @@ export default function SharedBooking() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [lang, setLang] = useState<"en" | "ar">("en");
+  const [lang, setLang] = useState<string>("en");
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"comment" | "approval" | "change_request">("comment");
@@ -123,7 +123,9 @@ export default function SharedBooking() {
   const [passwordUnlocked, setPasswordUnlocked] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [showPw, setShowPw] = useState(false);
-  const isRtl = lang === "ar";
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  
+  const isRtl = LANGUAGE_INFO[lang]?.rtl ?? false;
 
   useEffect(() => {
     document.documentElement.dir = isRtl ? "rtl" : "ltr";
