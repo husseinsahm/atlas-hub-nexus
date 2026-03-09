@@ -115,6 +115,7 @@ function AppRoutes() {
         
         {/* Team & Settings */}
         <Route path="staff" element={<TeamPage />} />
+        <Route path="billing" element={<BillingPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

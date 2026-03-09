@@ -97,6 +97,7 @@ const navigationGroups = [
     label: "Team & Settings",
     items: [
       { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] as AppRole[] },
+      { title: "Billing", translationKey: "nav.billing", url: "/dashboard/billing", icon: CreditCard, roles: ["company_admin"] as AppRole[] },
       { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] as AppRole[] },
     ]
   }
