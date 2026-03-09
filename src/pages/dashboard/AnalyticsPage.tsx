@@ -277,6 +277,22 @@ export default function AnalyticsPage() {
     { key: "revenue", label: "Revenue", icon: DollarSign },
   ] as const;
 
+  if (isLockedOut) {
+    return (
+      <div className="relative min-h-[60vh]">
+        <LockOverlay planRequired="Starter" featureName="Analytics & Reporting" />
+        <div className="opacity-30 pointer-events-none blur-sm p-8">
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">Detailed analytics and reporting for your business.</p>
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {[1,2,3].map(i => <div key={i} className="h-32 rounded-xl bg-muted" />)}
+          </div>
+          <div className="h-64 rounded-xl bg-muted mt-6" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <FeatureGate feature="Analytics">
     <div className="space-y-6">
