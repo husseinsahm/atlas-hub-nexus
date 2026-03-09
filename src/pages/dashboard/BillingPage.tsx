@@ -389,6 +389,28 @@ export default function BillingPage() {
 
         {/* ─── Overview Tab ─── */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Pending Requests Banner */}
+          {pendingRequests.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  Plan change request pending
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your request to switch to <strong>{(pendingRequests[0] as any)?.plans?.name}</strong> is awaiting admin approval.
+                </p>
+              </div>
+              <Badge variant="secondary" className="shrink-0 text-xs">Pending</Badge>
+            </motion.div>
+          )}
+
           {/* Trial Banner */}
           {limits.isTrialing && limits.trialDaysRemaining !== null && (
             <motion.div
