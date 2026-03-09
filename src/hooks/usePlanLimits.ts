@@ -158,6 +158,7 @@ export function usePlanLimits() {
       }
 
       const plan = subscription.plans as any;
+      const planDeactivated = plan.is_active === false;
       const maxUsers = plan.max_users;
       const maxBranches = plan.max_branches;
       const maxTripsPerMonth = plan.max_trips;
