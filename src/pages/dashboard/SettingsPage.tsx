@@ -689,7 +689,6 @@ function PasswordChangeSection() {
         </Button>
       </div>
 
-      <LimitReachedDialog open={branchLimitOpen} onOpenChange={setBranchLimitOpen} type="branches" />
     </div>
   );
 }
