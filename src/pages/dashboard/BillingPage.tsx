@@ -953,6 +953,42 @@ export default function BillingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Method Modal */}
+      <Dialog open={paymentDialog} onOpenChange={setPaymentDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update Payment Method</DialogTitle>
+            <DialogDescription>Enter your new card details below.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs font-medium text-foreground">Card Number</label>
+              <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" placeholder="4242 4242 4242 4242" value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-foreground">Expiry</label>
+                <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" placeholder="MM/YY" value={cardForm.expiry} onChange={(e) => setCardForm({ ...cardForm, expiry: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-foreground">CVV</label>
+                <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" placeholder="123" value={cardForm.cvv} onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-foreground">Name on Card</label>
+              <input className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1" placeholder="John Doe" value={cardForm.name} onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentDialog(false)}>Cancel</Button>
+            <Button onClick={() => { setPaymentDialog(false); setCardForm({ number: "", expiry: "", cvv: "", name: "" }); toast({ title: "Payment method updated", description: "Your card details have been saved successfully." }); }}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
