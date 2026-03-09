@@ -55,6 +55,7 @@ import { FileAttachments } from "@/components/FileAttachments";
 import { PaymentRecords } from "@/components/PaymentRecords";
 import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
+import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -527,12 +528,11 @@ export default function BookingDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={generateShareLink}
-              disabled={generatingLink}
+              onClick={() => setShowShareDialog(true)}
               className="h-8 text-xs gap-1.5 border-border"
             >
-              {generatingLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link className="w-3.5 h-3.5" />}
-              {isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+              <Link className="w-3.5 h-3.5" />
+              {isArabic ? "رابط المشاركة" : "Share Link"}
             </Button>
             {sc.next && (
               <Button
@@ -568,8 +568,8 @@ export default function BookingDetailPage() {
                 <DropdownMenuItem onClick={previewClientItinerary}>
                   <ExternalLink className="w-4 h-4 me-2" />{isArabic ? "معاينة البرنامج للعميل" : "Preview Client Itinerary"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={generateShareLink}>
-                  <Share2 className="w-4 h-4 me-2" />{isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+                <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
+                  <Share2 className="w-4 h-4 me-2" />{isArabic ? "إعدادات رابط المشاركة" : "Share Link Settings"}
                 </DropdownMenuItem>
                 {shareTokens.length > 0 && (
                   <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/booking/${shareTokens[0].token}`); toast({ title: isArabic ? "تم نسخ الرابط" : "Link copied" }); }}>
@@ -1156,6 +1156,18 @@ export default function BookingDetailPage() {
           bookingChildren={booking?.children || 0}
         />
       )}
+
+      {/* ─── Share Link Settings Modal ─── */}
+      <ShareLinkSettingsModal
+        open={showShareDialog}
+        onOpenChange={setShowShareDialog}
+        bookingId={id!}
+        companyId={booking?.company_id || ""}
+        userId={user?.id}
+        shareTokens={shareTokens as any}
+        onRefetch={() => refetchShareTokens()}
+        isArabic={isArabic}
+      />
     </div>
   );
 }
