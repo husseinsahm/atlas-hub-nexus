@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiEffect } from "@/components/plan/ConfettiEffect";
 import { DeactivatedPlanBanner } from "@/components/plan/DeactivatedPlanBanner";
+import { AnnualBillingBanner } from "@/components/plan/AnnualBillingBanner";
 import {
   CreditCard, Crown, Users, Building2, Map, Sparkles, ArrowRight,
   Check, X, Zap, Shield, BarChart3, Globe, Mail, Phone, Star,
@@ -297,6 +298,10 @@ export default function BillingPage() {
 
         toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
         if (isUpgrade) setShowConfetti(true);
+        // Send email notification
+        supabase.functions.invoke("subscription-emails", {
+          body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name } },
+        }).catch(console.error);
       }
     } else {
       const { data: newSub, error } = await supabase.from("subscriptions").insert({
@@ -344,6 +349,10 @@ export default function BillingPage() {
 
     if (!error) {
       toast({ title: "Subscription cancelled", description: "Your plan will remain active until the end of the current period." });
+      // Send cancellation email
+      supabase.functions.invoke("subscription-emails", {
+        body: { type: "cancellation", companyId },
+      }).catch(console.error);
       await refetchLimits();
     }
     setProcessing(false);
@@ -362,6 +371,7 @@ export default function BillingPage() {
     <div className="space-y-6 animate-fade-in max-w-6xl">
       {showConfetti && <ConfettiEffect onComplete={() => setShowConfetti(false)} />}
       {limits.planDeactivated && <DeactivatedPlanBanner />}
+      <AnnualBillingBanner />
       <div>
         <h1 className="text-2xl font-bold font-display text-foreground">Billing & Subscription</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your plan, usage, and billing</p>

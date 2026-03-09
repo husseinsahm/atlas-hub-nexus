@@ -9,10 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { CompanyUsageTab } from "@/components/admin/CompanyUsageTab";
 import {
   Loader2, Search, CreditCard, Clock, XCircle, AlertTriangle, Eye,
-  RefreshCw, Calendar, ArrowUpDown,
+  RefreshCw, Calendar, ArrowUpDown, BarChart3, Mail,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -33,12 +35,13 @@ export default function SubscriptionManagement() {
   const [selectedSub, setSelectedSub] = useState<any>(null);
   const [actionDialog, setActionDialog] = useState<string | null>(null);
   const [actionValue, setActionValue] = useState("");
+  const [detailSub, setDetailSub] = useState<any>(null);
 
   const { data: subscriptions = [], isLoading } = useQuery({
     queryKey: ["admin-subscriptions"],
     queryFn: async () => {
       const { data } = await supabase.from("subscriptions").select(`
-        *, plans(id, name, slug, price_monthly, price_yearly),
+        *, plans(id, name, slug, price_monthly, price_yearly, max_users, max_branches, max_trips),
         companies(id, name, slug, email)
       `).order("created_at", { ascending: false });
       return data || [];
@@ -88,9 +91,21 @@ export default function SubscriptionManagement() {
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
+  const sendEmail = useMutation({
+    mutationFn: async ({ type, companyId, metadata }: { type: string; companyId: string; metadata?: any }) => {
+      const { error } = await supabase.functions.invoke("subscription-emails", {
+        body: { type, companyId, metadata },
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => toast({ title: "Notification sent" }),
+    onError: (e: any) => toast({ title: "Error sending notification", description: e.message, variant: "destructive" }),
+  });
+
   const handleAction = () => {
     if (!selectedSub) return;
     const id = selectedSub.id;
+    const companyId = (selectedSub.companies as any)?.id;
     switch (actionDialog) {
       case "change_plan":
         updateSub.mutate({ id, updates: { plan_id: actionValue } });
@@ -100,6 +115,7 @@ export default function SubscriptionManagement() {
         break;
       case "cancel":
         updateSub.mutate({ id, updates: { status: "canceled", canceled_at: new Date().toISOString() } });
+        if (companyId) sendEmail.mutate({ type: "cancellation", companyId });
         break;
       case "reactivate":
         updateSub.mutate({ id, updates: { status: "active", canceled_at: null } });
@@ -140,8 +156,8 @@ export default function SubscriptionManagement() {
       {/* Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search company..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Search className="absolute inset-inline-start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Search company..." value={search} onChange={(e) => setSearch(e.target.value)} className="ps-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -161,18 +177,18 @@ export default function SubscriptionManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Billing</TableHead>
-                <TableHead>Period End</TableHead>
-                <TableHead>Trial Ends</TableHead>
+                <TableHead className="text-start">Company</TableHead>
+                <TableHead className="text-start">Plan</TableHead>
+                <TableHead className="text-start">Status</TableHead>
+                <TableHead className="text-start">Billing</TableHead>
+                <TableHead className="text-start">Period End</TableHead>
+                <TableHead className="text-start">Trial Ends</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((sub: any) => (
-                <TableRow key={sub.id}>
+                <TableRow key={sub.id} className="cursor-pointer hover:bg-muted/30" onClick={() => setDetailSub(sub)}>
                   <TableCell>
                     <div>
                       <p className="font-medium text-sm">{(sub.companies as any)?.name || "—"}</p>
@@ -191,7 +207,7 @@ export default function SubscriptionManagement() {
                   <TableCell className="text-sm">{sub.current_period_end ? format(new Date(sub.current_period_end), "MMM d, yyyy") : "—"}</TableCell>
                   <TableCell className="text-sm">{sub.trial_ends_at ? format(new Date(sub.trial_ends_at), "MMM d, yyyy") : "—"}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="sm" className="text-xs h-7"
                         onClick={() => { setSelectedSub(sub); setActionDialog("change_plan"); setActionValue(""); }}>
                         Change Plan
@@ -221,6 +237,96 @@ export default function SubscriptionManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Detail Dialog with Usage Tab */}
+      <Dialog open={!!detailSub} onOpenChange={() => setDetailSub(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              {(detailSub?.companies as any)?.name || "Company"} — Subscription
+            </DialogTitle>
+          </DialogHeader>
+          {detailSub && (
+            <Tabs defaultValue="details" className="mt-2">
+              <TabsList>
+                <TabsTrigger value="details" className="text-xs gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5" /> Details
+                </TabsTrigger>
+                <TabsTrigger value="usage" className="text-xs gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" /> Usage
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details" className="space-y-3 mt-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Plan</p>
+                    <p className="font-semibold">{(detailSub.plans as any)?.name}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Status</p>
+                    <Badge className={cn("text-[10px] border-0", STATUS_COLORS[detailSub.status] || "bg-muted")}>{detailSub.status}</Badge>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Billing</p>
+                    <p className="font-semibold capitalize">{detailSub.billing_cycle}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/30">
+                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Period End</p>
+                    <p className="font-semibold">{detailSub.current_period_end ? format(new Date(detailSub.current_period_end), "MMM d, yyyy") : "—"}</p>
+                  </div>
+                </div>
+
+                {/* Send notification button */}
+                <div className="flex gap-2 pt-2">
+                  {detailSub.status === "trialing" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5"
+                      disabled={sendEmail.isPending}
+                      onClick={() => sendEmail.mutate({
+                        type: "trial_expiring",
+                        companyId: (detailSub.companies as any)?.id,
+                        metadata: { daysLeft: 3 },
+                      })}
+                    >
+                      <Mail className="w-3.5 h-3.5" /> Send Trial Warning
+                    </Button>
+                  )}
+                  {detailSub.status === "active" && detailSub.billing_cycle === "monthly" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5"
+                      disabled={sendEmail.isPending}
+                      onClick={() => sendEmail.mutate({
+                        type: "upgrade",
+                        companyId: (detailSub.companies as any)?.id,
+                        metadata: { newPlanName: (detailSub.plans as any)?.name },
+                      })}
+                    >
+                      <Mail className="w-3.5 h-3.5" /> Send Annual Prompt
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="usage" className="mt-3">
+                <CompanyUsageTab
+                  companyId={(detailSub.companies as any)?.id}
+                  companyName={(detailSub.companies as any)?.name}
+                  planSlug={(detailSub.plans as any)?.slug}
+                  maxUsers={(detailSub.plans as any)?.max_users}
+                  maxBranches={(detailSub.plans as any)?.max_branches}
+                  maxTrips={(detailSub.plans as any)?.max_trips}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Action Dialog */}
       <Dialog open={!!actionDialog} onOpenChange={() => { setActionDialog(null); setSelectedSub(null); }}>
@@ -257,7 +363,7 @@ export default function SubscriptionManagement() {
               </div>
             )}
             {actionDialog === "cancel" && (
-              <p className="text-sm">This will mark the subscription as cancelled. The company will retain access until the end of the current period.</p>
+              <p className="text-sm">This will mark the subscription as cancelled and send a notification email to the company admins.</p>
             )}
             {actionDialog === "reactivate" && (
               <p className="text-sm">This will reactivate the subscription and set status to active.</p>
@@ -266,7 +372,7 @@ export default function SubscriptionManagement() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setActionDialog(null); setSelectedSub(null); }}>Cancel</Button>
             <Button onClick={handleAction} disabled={updateSub.isPending || (actionDialog === "change_plan" && !actionValue) || (actionDialog === "extend_trial" && !actionValue)}>
-              {updateSub.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {updateSub.isPending && <Loader2 className="w-4 h-4 animate-spin me-2" />}
               Confirm
             </Button>
           </DialogFooter>
