@@ -90,6 +90,9 @@ export default function BookingsPage() {
   const isArabic = language === "ar";
   const [step, setStep] = useState(0);
 
+  const { limits, usagePercent, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
@@ -98,6 +101,14 @@ export default function BookingsPage() {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const handleNewBookingClick = () => {
+    if (!limits.canCreateTrip) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setShowNewDialog(true);
+  };
 
   const [newBooking, setNewBooking] = useState({
     title: "",
