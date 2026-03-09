@@ -860,7 +860,8 @@ export default function BillingPage() {
 
       {/* ─── Downgrade Dialog ─── */}
       <Dialog open={!!downgradeDialog} onOpenChange={() => setDowngradeDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:w-full max-sm:max-w-full">
+          <div className="sm:hidden w-10 h-1 rounded-full bg-muted mx-auto mb-2" />
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
               <AlertTriangle className="w-7 h-7 text-amber-600" />
