@@ -207,7 +207,23 @@ export default function BookingDetailPage() {
     enabled: !!companyId,
   });
 
-  const getProfileName = useCallback((userId: string | null) => {
+  // ─── Fetch existing share tokens ───
+  const { data: shareTokens = [], refetch: refetchShareTokens } = useQuery({
+    queryKey: ["booking-share-tokens", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_share_tokens")
+        .select("*")
+        .eq("booking_id", id!)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+
     if (!userId) return "System";
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
   }, [profiles]);
