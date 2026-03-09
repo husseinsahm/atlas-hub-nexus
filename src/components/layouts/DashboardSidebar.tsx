@@ -160,7 +160,7 @@ export function DashboardSidebar() {
           );
 
           return (
-            <SidebarGroup key={group.label} defaultOpen={hasActiveItem}>
+            <SidebarGroup key={group.label}>
               {!collapsed && (
                 <SidebarGroupLabel className="text-xs text-sidebar-foreground/70 font-medium px-2 py-2">
                   {group.label}
