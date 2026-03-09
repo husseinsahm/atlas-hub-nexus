@@ -960,7 +960,7 @@ export default function BillingPage() {
               className="flex-1 gap-2"
             >
               {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Confirm Downgrade
+              Submit Downgrade Request
             </Button>
           </DialogFooter>
         </DialogContent>
