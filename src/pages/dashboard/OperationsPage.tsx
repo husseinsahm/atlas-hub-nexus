@@ -5,6 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
 import { motion } from "framer-motion";
 import {
   Search, Filter, Calendar, Users, Plane, Hotel, Car, MapPin, User,
