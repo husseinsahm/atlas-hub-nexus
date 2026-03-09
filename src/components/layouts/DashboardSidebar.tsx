@@ -202,9 +202,9 @@ export function DashboardSidebar() {
               className="w-7 h-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent shrink-0 hidden lg:flex"
             >
               {collapsed ? (
-                <ChevronsRight className="w-4 h-4" />
+                <ChevronsLeft className="w-4 h-4 scale-x-[-1] rtl:scale-x-[1]" />
               ) : (
-                <ChevronsLeft className="w-4 h-4" />
+                <ChevronsRight className="w-4 h-4 scale-x-[-1] rtl:scale-x-[1]" />
               )}
             </Button>
           </div>
