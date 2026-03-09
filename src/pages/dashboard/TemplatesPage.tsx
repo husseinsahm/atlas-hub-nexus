@@ -404,7 +404,7 @@ export default function TemplatesPage() {
               <Label className="text-xs">{isArabic ? "المدن والوجهات" : "Cities & Destinations"}</Label>
               <MultiCityAutocomplete
                 value={newTemplate.cities}
-                onChange={(cities) => setNewTemplate({ ...newTemplate, cities })}
+                onValueChange={(cities) => setNewTemplate({ ...newTemplate, cities })}
                 placeholder={isArabic ? "أضف المدن..." : "Add cities..."}
                 className="mt-1"
               />
