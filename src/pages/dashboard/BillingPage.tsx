@@ -549,7 +549,7 @@ export default function BillingPage() {
           </div>
 
           {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {PLAN_TIERS.map((tier, i) => {
               const action = getPlanAction(tier.slug);
               const price = billingCycle === "yearly" ? tier.yearly : tier.monthly;
