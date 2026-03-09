@@ -362,6 +362,7 @@ export default function BillingPage() {
     <div className="space-y-6 animate-fade-in max-w-6xl">
       {showConfetti && <ConfettiEffect onComplete={() => setShowConfetti(false)} />}
       {limits.planDeactivated && <DeactivatedPlanBanner />}
+      <AnnualBillingBanner />
       <div>
         <h1 className="text-2xl font-bold font-display text-foreground">Billing & Subscription</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your plan, usage, and billing</p>
