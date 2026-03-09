@@ -534,7 +534,7 @@ function CompanyDashboard() {
         return acc;
       }, {
         total: 0, tentative: 0, confirmed: 0, inOperation: 0, completed: 0, cancelled: 0,
-        totalRevenue: 0, totalPaid: 0, currency: bookings[0]?.currency || "USD",
+        totalRevenue: 0, totalPaid: 0, totalBalance: 0, currency: bookings[0]?.currency || "USD",
       });
 
       stats.totalBalance = stats.totalRevenue - stats.totalPaid;
