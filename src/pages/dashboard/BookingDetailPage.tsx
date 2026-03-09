@@ -55,6 +55,7 @@ import { FileAttachments } from "@/components/FileAttachments";
 import { PaymentRecords } from "@/components/PaymentRecords";
 import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
+import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
