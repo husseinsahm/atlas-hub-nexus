@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UsageWarningBanner } from "@/components/plan/UsageWarningBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
