@@ -155,7 +155,7 @@ export default function QuotationDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/quotations")} className="shrink-0">
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 rtl:scale-x-[-1]" />
           </Button>
           <div className="min-w-0">
             <h1 className="text-xl font-bold font-display text-foreground flex items-center gap-2 flex-wrap">

@@ -344,7 +344,7 @@ export default function TripsPage() {
                       {/* Open arrow */}
                       <div className="flex justify-end pt-1">
                         <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                          <ArrowRight className="w-4 h-4" />
+                          <ArrowRight className="w-4 h-4 rtl:scale-x-[-1]" />
                         </div>
                       </div>
                     </CardContent>
