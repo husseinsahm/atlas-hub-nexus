@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { UsageWarningBanner } from "@/components/plan/UsageWarningBanner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
