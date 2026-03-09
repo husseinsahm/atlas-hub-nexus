@@ -132,8 +132,9 @@ export default function SharedBooking() {
     return () => { document.documentElement.dir = "ltr"; };
   }, [isRtl]);
 
+  // Static UI strings - these are hardcoded for basic UI
   const t = useMemo(() => {
-    const strings = {
+    const strings: Record<string, Record<string, string>> = {
       en: {
         itinerary: "Your Itinerary",
         days: "days",
@@ -167,6 +168,7 @@ export default function SharedBooking() {
         commentDesc: "Share any thoughts or questions",
         pickup: "Pickup",
         dropoff: "Drop-off",
+        selectLanguage: "Select Language",
       },
       ar: {
         itinerary: "برنامج رحلتك",
@@ -201,9 +203,10 @@ export default function SharedBooking() {
         commentDesc: "شارك أي أفكار أو أسئلة",
         pickup: "نقطة الالتقاط",
         dropoff: "نقطة الإنزال",
+        selectLanguage: "اختر اللغة",
       },
     };
-    return strings[lang];
+    return strings[lang] || strings.en;
   }, [lang]);
 
   // Fetch share token → booking
