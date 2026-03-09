@@ -408,6 +408,44 @@ export default function BookingDetailPage() {
     },
   });
 
+  // ─── Share link generation ───
+  const generateShareLink = async () => {
+    if (!booking || !companyId) return;
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase
+        .from("booking_share_tokens")
+        .insert({
+          booking_id: id!,
+          company_id: booking.company_id,
+          created_by: user?.id,
+          is_active: true,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      const shareUrl = `${window.location.origin}/booking/${data.token}`;
+      await navigator.clipboard.writeText(shareUrl);
+      await refetchShareTokens();
+      toast({
+        title: isArabic ? "تم نسخ الرابط!" : "Link copied!",
+        description: shareUrl,
+      });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
+  const previewClientItinerary = () => {
+    if (shareTokens.length > 0) {
+      window.open(`/booking/${shareTokens[0].token}`, "_blank");
+    } else {
+      setShowShareDialog(true);
+    }
+  };
+
   const advanceStatus = useCallback(() => {
     if (!booking) return;
     const next = STATUS_CONFIG[booking.status as BookingStatus]?.next;
