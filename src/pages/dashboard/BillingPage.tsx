@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfettiEffect } from "@/components/plan/ConfettiEffect";
 import { DeactivatedPlanBanner } from "@/components/plan/DeactivatedPlanBanner";
+import { AnnualBillingBanner } from "@/components/plan/AnnualBillingBanner";
 import {
   CreditCard, Crown, Users, Building2, Map, Sparkles, ArrowRight,
   Check, X, Zap, Shield, BarChart3, Globe, Mail, Phone, Star,
