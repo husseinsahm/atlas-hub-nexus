@@ -38,15 +38,15 @@ const navigationGroups = [
   {
     label: "Main",
     items: [
-      { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"], end: true },
+      { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"] as AppRole[], end: true },
     ]
   },
   {
     label: "Admin",
     items: [
-      { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] },
-      { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] },
-      { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] },
+      { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] as AppRole[] },
+      { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] as AppRole[] },
+      { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] as AppRole[] },
     ]
   },
   {
