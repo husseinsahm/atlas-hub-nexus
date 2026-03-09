@@ -540,6 +540,65 @@ export function ShareLinkSettingsModal({
                 </div>
               )}
             </div>
+
+            {/* AI Translation */}
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Languages className="w-4 h-4 text-muted-foreground" />
+                  <Label htmlFor="translation-toggle" className="text-sm font-medium cursor-pointer">
+                    {isArabic ? "ترجمة AI" : "AI Translation"}
+                  </Label>
+                  <Badge variant="secondary" className="text-[9px] gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    AI
+                  </Badge>
+                </div>
+                <Switch
+                  id="translation-toggle"
+                  checked={enableTranslation}
+                  onCheckedChange={setEnableTranslation}
+                />
+              </div>
+
+              {enableTranslation && (
+                <div className="space-y-3 pt-2">
+                  <Label className="text-xs text-muted-foreground">
+                    {isArabic ? "اختر اللغات المتاحة للعميل" : "Select languages available for the client"}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TRANSLATION_LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => toggleLanguage(lang.code)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all text-start",
+                          selectedLanguages.has(lang.code)
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        )}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium">{lang.nativeLabel}</span>
+                          <span className="text-[10px] text-muted-foreground ms-1">({lang.label})</span>
+                        </div>
+                        {selectedLanguages.has(lang.code) && (
+                          <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isArabic
+                      ? "سيتم ترجمة محتوى البرنامج تلقائياً باستخدام الذكاء الاصطناعي"
+                      : "Itinerary content will be automatically translated using AI"
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -549,12 +608,18 @@ export function ShareLinkSettingsModal({
           </Button>
           <Button
             onClick={() => createLink.mutate()}
-            disabled={createLink.isPending || (enablePassword && !password.trim())}
+            disabled={createLink.isPending || isTranslating || (enablePassword && !password.trim())}
             className="gold-gradient text-accent-foreground gap-2"
           >
-            {createLink.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            <Link2 className="w-4 h-4" />
-            {isArabic ? "إنشاء رابط" : "Create Link"}
+            {(createLink.isPending || isTranslating) && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isTranslating ? (
+              isArabic ? "جاري الترجمة..." : "Translating..."
+            ) : (
+              <>
+                <Link2 className="w-4 h-4" />
+                {isArabic ? "إنشاء رابط" : "Create Link"}
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
