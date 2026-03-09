@@ -349,6 +349,10 @@ export default function BillingPage() {
 
     if (!error) {
       toast({ title: "Subscription cancelled", description: "Your plan will remain active until the end of the current period." });
+      // Send cancellation email
+      supabase.functions.invoke("subscription-emails", {
+        body: { type: "cancellation", companyId },
+      }).catch(console.error);
       await refetchLimits();
     }
     setProcessing(false);
