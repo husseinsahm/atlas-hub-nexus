@@ -175,7 +175,10 @@ export default function OperationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isLockedForFree && (
+        <LockOverlay planRequired="Starter" featureName={isArabic ? "العمليات" : "Operations"} />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
