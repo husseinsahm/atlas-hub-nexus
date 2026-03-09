@@ -882,7 +882,7 @@ export default function BillingPage() {
             );
           })()}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setUpgradeDialog(null)} className="flex-1">Maybe Later</Button>
             <Button
               onClick={() => upgradeDialog && handleUpgrade(upgradeDialog)}
@@ -890,7 +890,7 @@ export default function BillingPage() {
               className="flex-1 bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
             >
               {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Confirm Upgrade
+              Submit Upgrade Request
             </Button>
           </DialogFooter>
         </DialogContent>
