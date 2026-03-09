@@ -82,7 +82,10 @@ export default function QuotationsPage() {
   }, [quotations]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {isInvoicingLocked && (
+        <LockOverlay planRequired="Starter" featureName="Quotations & Invoicing" />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
