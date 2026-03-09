@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { TrialExpiredOverlay } from "@/components/plan/TrialExpiredOverlay";
 
 export function DashboardLayout() {
   const isMobile = useIsMobile();
@@ -29,6 +30,9 @@ export function DashboardLayout() {
             </div>
           </main>
         </div>
+
+        {/* Trial expired full-page overlay */}
+        <TrialExpiredOverlay />
       </div>
     </SidebarProvider>
   );

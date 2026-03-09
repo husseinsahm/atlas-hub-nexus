@@ -1,5 +1,8 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UsageWarningBanner } from "@/components/plan/UsageWarningBanner";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -87,6 +90,9 @@ export default function BookingsPage() {
   const isArabic = language === "ar";
   const [step, setStep] = useState(0);
 
+  const { limits, usagePercent, refetch: refetchLimits } = usePlanLimits();
+  const [limitDialogOpen, setLimitDialogOpen] = useState(false);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
@@ -95,6 +101,14 @@ export default function BookingsPage() {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const handleNewBookingClick = () => {
+    if (!limits.canCreateTrip) {
+      setLimitDialogOpen(true);
+      return;
+    }
+    setShowNewDialog(true);
+  };
 
   const [newBooking, setNewBooking] = useState({
     title: "",
@@ -360,6 +374,12 @@ export default function BookingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Usage warnings */}
+      <UsageWarningBanner />
+
+      {/* Limit reached dialog */}
+      <LimitReachedDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} type="trips" />
+
       {/* ─── Premium Header ─── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -374,7 +394,7 @@ export default function BookingsPage() {
             {bookings.length} {isArabic ? "حجز إجمالي" : "total bookings"}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={handleNewBookingClick} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
           <Plus className="w-4 h-4" />
           {isArabic ? "حجز جديد" : "New Booking"}
         </Button>

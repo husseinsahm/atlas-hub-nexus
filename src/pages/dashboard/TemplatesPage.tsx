@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
 
 export default function TemplatesPage() {
   const { user } = useAuth();
@@ -30,6 +32,7 @@ export default function TemplatesPage() {
   const queryClient = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
+  const { limits } = usePlanLimits();
 
   const [search, setSearch] = useState("");
   const [showNewDialog, setShowNewDialog] = useState(false);

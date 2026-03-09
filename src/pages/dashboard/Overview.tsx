@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, memo } from "react";
+import { UsageWarningBanner } from "@/components/plan/UsageWarningBanner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -587,6 +588,8 @@ function CompanyDashboard() {
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8">
+      {/* Usage Warning Banners */}
+      <UsageWarningBanner />
       {/* Compact Professional Header */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}

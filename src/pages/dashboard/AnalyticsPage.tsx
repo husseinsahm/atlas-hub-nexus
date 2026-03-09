@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { FeatureGate } from "@/components/plan/FeatureGate";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -43,12 +45,15 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const { direction } = useLanguage();
+  const { limits } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
 
   const [dateRange, setDateRange] = useState<"3m" | "6m" | "12m" | "all">("6m");
   const [activeSection, setActiveSection] = useState<"overview" | "leads" | "bookings" | "agents" | "destinations" | "revenue">("overview");
   const [fromDate, setFromDate] = useState<Date | undefined>(subMonths(new Date(), 6));
   const [toDate, setToDate] = useState<Date | undefined>(new Date());
+
+  const isLockedOut = limits.isOnFreeTier || (limits.isTrialing && limits.planSlug === "free");
 
   // Update date range when preset changes
   const effectiveDates = useMemo(() => {
@@ -271,6 +276,22 @@ export default function AnalyticsPage() {
     { key: "destinations", label: "Destinations", icon: MapPin },
     { key: "revenue", label: "Revenue", icon: DollarSign },
   ] as const;
+
+  if (isLockedOut) {
+    return (
+      <div className="relative min-h-[60vh]">
+        <LockOverlay planRequired="Starter" featureName="Analytics & Reporting" />
+        <div className="opacity-30 pointer-events-none blur-sm p-8">
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">Detailed analytics and reporting for your business.</p>
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {[1,2,3].map(i => <div key={i} className="h-32 rounded-xl bg-muted" />)}
+          </div>
+          <div className="h-64 rounded-xl bg-muted mt-6" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <FeatureGate feature="Analytics">
