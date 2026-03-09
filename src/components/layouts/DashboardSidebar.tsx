@@ -252,8 +252,14 @@ export function DashboardSidebar() {
           ))}
         </SidebarContent>
 
+        {/* Trial / Plan badge */}
+        <div className="border-t border-sidebar-border px-3 py-2">
+          <TrialBadge collapsed={collapsed} />
+          {!limits.isTrialing && <PlanBadge collapsed={collapsed} />}
+        </div>
+
         {/* User info footer */}
-        <div className="border-t border-sidebar-border p-3 mt-auto">
+        <div className="border-t border-sidebar-border p-3">
           <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="w-7 h-7 shrink-0">
               <AvatarImage src={user?.profile?.avatarUrl} />
