@@ -587,6 +587,8 @@ export default function SettingsPage() {
           <PasswordChangeSection />
         </TabsContent>
       </Tabs>
+
+      <LimitReachedDialog open={branchLimitOpen} onOpenChange={setBranchLimitOpen} type="branches" />
     </div>
   );
 }
