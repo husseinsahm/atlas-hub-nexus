@@ -138,6 +138,19 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Smooth transitions for themed elements */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+  }
+
+  /* But keep transform/opacity transitions snappy */
+  [data-motion], .motion-safe\:transition-none {
+    transition-property: opacity, transform;
   }
 
   h1, h2, h3, h4, h5, h6 {
