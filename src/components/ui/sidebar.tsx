@@ -138,8 +138,18 @@ const Sidebar = React.forwardRef<
 >(({ side = "left", variant = "sidebar", collapsible = "offcanvas", className, children, ...props }, ref) => {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
   
-  // Auto-detect side based on document direction
-  const isRTL = document.documentElement.dir === 'rtl';
+  // Auto-detect side based on document direction (reactive)
+  const [isRTL, setIsRTL] = React.useState(() => document.documentElement.dir === 'rtl');
+  
+  React.useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsRTL(document.documentElement.dir === 'rtl');
+    });
+    
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['dir'] });
+    return () => observer.disconnect();
+  }, []);
+  
   const actualSide = isRTL ? "right" : "left";
 
   if (collapsible === "none") {
