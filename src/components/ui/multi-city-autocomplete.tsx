@@ -91,7 +91,7 @@ export function MultiCityAutocomplete({
                     <MapPin className="w-2.5 h-2.5" />
                     {isRtl && cityData ? cityData.nameAr : city}
                     <button
-                      className="ml-0.5 hover:text-destructive"
+                      className="ms-0.5 hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
                         removeCity(city);
