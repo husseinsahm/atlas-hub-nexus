@@ -74,6 +74,16 @@ const CATEGORY_META: Record<string, { label: string; labelAr: string; icon: Reac
   template:   { label: "Template",   labelAr: "نموذج",    icon: FileText,         gradient: "from-slate-500 to-gray-500" },
 };
 
+// Available languages with their display info
+const LANGUAGE_INFO: Record<string, { label: string; nativeLabel: string; flag: string; rtl: boolean }> = {
+  en: { label: "English", nativeLabel: "English", flag: "🇬🇧", rtl: false },
+  ar: { label: "Arabic", nativeLabel: "العربية", flag: "🇸🇦", rtl: true },
+  ja: { label: "Japanese", nativeLabel: "日本語", flag: "🇯🇵", rtl: false },
+  es: { label: "Spanish", nativeLabel: "Español", flag: "🇪🇸", rtl: false },
+  fr: { label: "French", nativeLabel: "Français", flag: "🇫🇷", rtl: false },
+  zh: { label: "Chinese", nativeLabel: "中文", flag: "🇨🇳", rtl: false },
+};
+
 const getTimeIcon = (time: string | null) => {
   if (!time) return Sun;
   const h = parseInt(time.split(":")[0]);
