@@ -568,8 +568,8 @@ export default function BookingDetailPage() {
                 <DropdownMenuItem onClick={previewClientItinerary}>
                   <ExternalLink className="w-4 h-4 me-2" />{isArabic ? "معاينة البرنامج للعميل" : "Preview Client Itinerary"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={generateShareLink}>
-                  <Share2 className="w-4 h-4 me-2" />{isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+                <DropdownMenuItem onClick={() => setShowShareDialog(true)}>
+                  <Share2 className="w-4 h-4 me-2" />{isArabic ? "إعدادات رابط المشاركة" : "Share Link Settings"}
                 </DropdownMenuItem>
                 {shareTokens.length > 0 && (
                   <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/booking/${shareTokens[0].token}`); toast({ title: isArabic ? "تم نسخ الرابط" : "Link copied" }); }}>
