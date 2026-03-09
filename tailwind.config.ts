@@ -17,6 +17,9 @@ export default {
         display: ["'Plus Jakarta Sans'", "sans-serif"],
         body: ["'Inter'", "sans-serif"],
       },
+      spacing: {
+        "section": "1.5rem",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -79,6 +82,12 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+      },
+      boxShadow: {
+        "card": "0 1px 3px hsl(220 30% 12% / 0.06), 0 1px 2px hsl(220 30% 12% / 0.04)",
+        "card-hover": "0 4px 6px -1px hsl(220 30% 12% / 0.06), 0 2px 4px -2px hsl(220 30% 12% / 0.04)",
+        "elevated": "0 10px 15px -3px hsl(220 30% 12% / 0.06), 0 4px 6px -4px hsl(220 30% 12% / 0.04)",
       },
       keyframes: {
         "accordion-down": {

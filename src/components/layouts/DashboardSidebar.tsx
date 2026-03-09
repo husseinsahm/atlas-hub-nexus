@@ -17,6 +17,8 @@ import {
   BookOpen,
   Briefcase,
   FolderOpen,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,6 +35,13 @@ import {
 import { useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const navigationGroups = [
   {
@@ -98,24 +107,65 @@ function getUserRole(user: ReturnType<typeof useAuth>["user"]): AppRole | null {
   return user.activeMembership?.role || null;
 }
 
+function SidebarNavItem({ item, collapsed, active, t }: {
+  item: typeof navigationGroups[0]["items"][0];
+  collapsed: boolean;
+  active: boolean;
+  t: (key: string) => string;
+}) {
+  const Icon = item.icon;
+  const itemEnd = (item as any).end;
+  const label = t(item.translationKey) || item.title;
+
+  const link = (
+    <NavLink
+      to={item.url}
+      end={itemEnd}
+      className={`
+        flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-150
+        ${active
+          ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
+          : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
+        }
+        ${collapsed ? 'justify-center px-2' : ''}
+      `}
+    >
+      <Icon className="w-[18px] h-[18px] shrink-0" />
+      {!collapsed && <span className="truncate">{label}</span>}
+    </NavLink>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          {link}
+        </TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return link;
+}
+
 export function DashboardSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const currentPath = location.pathname;
-  
+
   const collapsed = state === "collapsed";
   const currentRole = getUserRole(user);
-  
+
   const isActive = (path: string, end = false) => {
-    if (end) {
-      return currentPath === path;
-    }
+    if (end) return currentPath === path;
     return currentPath.startsWith(path);
   };
 
-  // Filter groups and items based on role
   const filteredGroups = navigationGroups.map(group => ({
     ...group,
     items: group.items.filter(item => currentRole && item.roles.includes(currentRole))
@@ -126,74 +176,70 @@ export function DashboardSidebar() {
   const companyName = user?.activeMembership?.companyName;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border bg-sidebar-background">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg gold-gradient flex items-center justify-center shrink-0">
-            <Compass className="w-5 h-5 text-accent-foreground" />
+    <TooltipProvider>
+      <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar-background">
+        <SidebarHeader className="p-3 border-b border-sidebar-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4 text-accent-foreground" />
+              </div>
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-sm font-bold text-sidebar-foreground font-display leading-tight">
+                    {t("app.name") || "Safar"}
+                  </h1>
+                  <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">
+                    {t("app.tagline") || "Travel CRM"}
+                  </p>
+                </div>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="w-7 h-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent shrink-0 hidden lg:flex"
+            >
+              {collapsed ? (
+                <ChevronsRight className="w-4 h-4" />
+              ) : (
+                <ChevronsLeft className="w-4 h-4" />
+              )}
+            </Button>
           </div>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-sidebar-foreground font-display">
-                {t("app.name") || "Safar"}
-              </h1>
-              <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">
-                {t("app.tagline") || "Travel CRM"}
-              </p>
+
+          {companyName && !collapsed && (
+            <div className="mt-2">
+              <Badge variant="outline" className="bg-sidebar-accent text-sidebar-accent-foreground text-[10px] border-sidebar-border">
+                {companyName}
+              </Badge>
             </div>
           )}
-        </div>
-        
-        {companyName && !collapsed && (
-          <div className="mt-3">
-            <Badge variant="outline" className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-              {companyName}
-            </Badge>
-          </div>
-        )}
-      </SidebarHeader>
+        </SidebarHeader>
 
-      <SidebarContent className="px-2">
-        {filteredGroups.map((group) => {
-          const hasActiveItem = group.items.some(item => 
-            isActive(item.url, (item as any).end)
-          );
-
-          return (
-            <SidebarGroup key={group.label}>
+        <SidebarContent className="px-2 py-2 scrollbar-thin">
+          {filteredGroups.map((group) => (
+            <SidebarGroup key={group.label} className="py-1">
               {!collapsed && (
-                <SidebarGroupLabel className="text-xs text-sidebar-foreground/70 font-medium px-2 py-2">
+                <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/50 font-semibold uppercase tracking-wider px-3 py-1.5">
                   {group.label}
                 </SidebarGroupLabel>
               )}
-              
+
               <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
+                <SidebarMenu className="space-y-0.5">
                   {group.items.map((item) => {
-                    const Icon = item.icon;
                     const active = isActive(item.url, (item as any).end);
-                    const itemEnd = (item as any).end;
-                    
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild>
-                          <NavLink 
-                            to={item.url} 
-                            end={itemEnd}
-                            className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
-                              ${active 
-                                ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm' 
-                                : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
-                              }
-                              ${collapsed ? 'justify-center' : ''}
-                            `}
-                          >
-                            <Icon className="w-[18px] h-[18px] shrink-0" />
-                            {!collapsed && (
-                              <span className="truncate">{t(item.translationKey) || item.title}</span>
-                            )}
-                          </NavLink>
+                          <SidebarNavItem
+                            item={item}
+                            collapsed={collapsed}
+                            active={active}
+                            t={t}
+                          />
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
@@ -201,31 +247,31 @@ export function DashboardSidebar() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-          );
-        })}
-      </SidebarContent>
-      
-      {/* User info footer */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
-          <Avatar className="w-8 h-8 shrink-0">
-            <AvatarImage src={user?.profile?.avatarUrl} />
-            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
-              {displayName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-sidebar-foreground truncate">
-                {displayName}
-              </p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize truncate">
-                {roleLabel}
-              </p>
-            </div>
-          )}
+          ))}
+        </SidebarContent>
+
+        {/* User info footer */}
+        <div className="border-t border-sidebar-border p-3 mt-auto">
+          <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
+            <Avatar className="w-7 h-7 shrink-0">
+              <AvatarImage src={user?.profile?.avatarUrl} />
+              <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-[10px]">
+                {displayName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-sidebar-foreground truncate leading-tight">
+                  {displayName}
+                </p>
+                <p className="text-[10px] text-sidebar-foreground/50 capitalize truncate">
+                  {roleLabel}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </Sidebar>
+      </Sidebar>
+    </TooltipProvider>
   );
 }

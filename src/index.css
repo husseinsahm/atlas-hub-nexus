@@ -9,11 +9,12 @@
     --font-display: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Luxury cream & navy palette */
-    --background: 40 33% 98%;
+    /* Modern SaaS neutral palette */
+    --background: 228 14% 96%;
     --foreground: 220 30% 12%;
 
-    --card: 40 25% 97%;
+    /* Pure white cards for hierarchy */
+    --card: 0 0% 100%;
     --card-foreground: 220 30% 12%;
 
     --popover: 0 0% 100%;
@@ -21,14 +22,14 @@
 
     /* Deep navy primary */
     --primary: 220 40% 13%;
-    --primary-foreground: 40 33% 96%;
+    --primary-foreground: 0 0% 100%;
 
     /* Warm sand secondary */
-    --secondary: 35 20% 93%;
+    --secondary: 228 14% 93%;
     --secondary-foreground: 220 30% 15%;
 
-    --muted: 35 15% 94%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 228 12% 93%;
+    --muted-foreground: 220 10% 46%;
 
     /* Warm gold accent */
     --accent: 38 65% 50%;
@@ -37,11 +38,11 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 35 18% 90%;
-    --input: 35 18% 88%;
+    --border: 228 14% 89%;
+    --input: 228 14% 87%;
     --ring: 38 65% 50%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
     /* Sidebar - deep navy */
     --sidebar-background: 220 40% 10%;
@@ -67,10 +68,11 @@
     --gradient-navy: linear-gradient(135deg, hsl(220 40% 10%), hsl(220 35% 18%));
     --gradient-luxury: linear-gradient(135deg, hsl(220 40% 10%), hsl(220 30% 18%), hsl(38 40% 25%));
 
-    /* Shadows */
-    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.04);
-    --shadow-md: 0 4px 12px hsl(220 30% 12% / 0.06);
-    --shadow-lg: 0 12px 40px hsl(220 30% 12% / 0.08);
+    /* Shadows - modern SaaS style */
+    --shadow-xs: 0 1px 2px hsl(220 30% 12% / 0.04);
+    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.06), 0 1px 2px hsl(220 30% 12% / 0.04);
+    --shadow-md: 0 4px 6px -1px hsl(220 30% 12% / 0.06), 0 2px 4px -2px hsl(220 30% 12% / 0.04);
+    --shadow-lg: 0 10px 15px -3px hsl(220 30% 12% / 0.06), 0 4px 6px -4px hsl(220 30% 12% / 0.04);
     --shadow-gold: 0 4px 20px hsl(38 65% 50% / 0.15);
   }
 
@@ -117,13 +119,12 @@
 
 @layer components {
   .luxury-card {
-    @apply bg-card rounded-xl border border-border;
+    @apply bg-card rounded-xl border border-border/60;
     box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
   .luxury-card:hover {
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
   }
 
   .gold-gradient {
@@ -139,7 +140,7 @@
   }
 
   .luxury-input {
-    @apply bg-background border border-input rounded-lg px-4 py-3 text-sm transition-all duration-200;
+    @apply bg-card border border-input rounded-lg px-4 py-3 text-sm transition-all duration-200;
     font-family: var(--font-body);
   }
   .luxury-input:focus {
@@ -150,16 +151,30 @@
 
   .glass-panel {
     @apply backdrop-blur-xl border border-border/50;
-    background: hsl(var(--background) / 0.8);
+    background: hsl(var(--card) / 0.8);
   }
 
-  /* Dark-header modals: make the dialog close button white */
+  /* Dark-header modals */
   .dark-header-dialog > button[class*="absolute"] {
     color: hsl(var(--primary-foreground));
     opacity: 0.7;
   }
   .dark-header-dialog > button[class*="absolute"]:hover {
     opacity: 1;
+  }
+
+  /* Modern table styles */
+  .modern-table tbody tr:nth-child(even) {
+    background: hsl(var(--muted) / 0.3);
+  }
+  .modern-table tbody tr {
+    transition: background-color 0.15s ease;
+  }
+  .modern-table tbody tr:hover {
+    background: hsl(var(--muted) / 0.5);
+  }
+  .modern-table th {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 }
 
@@ -185,13 +200,18 @@
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  
+
+  /* Section spacing */
+  .section-gap {
+    @apply space-y-6;
+  }
+
   /* Mobile touch targets */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Text truncation utilities */
   .line-clamp-1 {
     overflow: hidden;
@@ -199,98 +219,98 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
-  
+
   .line-clamp-2 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-  
+
   .line-clamp-3 {
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
-  
+
   /* Scrollbar utilities */
   .scrollbar-thin {
     scrollbar-width: thin;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background: hsl(var(--muted));
     border-radius: 3px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
-  
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
   /* Enhanced responsive utilities */
   .container-responsive {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
-  
+
   /* Card hover animations */
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
   }
-  
+
   /* Premium button styles */
   .btn-premium {
     @apply bg-gradient-to-r from-gold to-gold-dark text-accent-foreground hover:from-gold-dark hover:to-gold;
     box-shadow: 0 4px 12px hsl(var(--gold) / 0.3);
   }
-  
+
   /* Glass morphism effect */
   .glass-card {
-    @apply bg-background/60 backdrop-blur-xl border border-border/50;
+    @apply bg-card/60 backdrop-blur-xl border border-border/50;
   }
-  
+
   /* Status indicators */
   .status-dot {
     @apply w-2 h-2 rounded-full inline-block mr-2;
   }
-  
+
   .status-success { @apply bg-green-500; }
   .status-warning { @apply bg-yellow-500; }
   .status-error { @apply bg-red-500; }
   .status-info { @apply bg-blue-500; }
-  
+
   /* Typography scale for mobile */
   @media (max-width: 640px) {
     h1 { @apply text-xl; }
     h2 { @apply text-lg; }
     h3 { @apply text-base; }
   }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
-  }
-  
+
   /* Mobile responsive padding */
   .mobile-padding {
     @apply px-4 py-2 sm:px-6 sm:py-3;
   }
-  
+
   /* Grid responsive utilities */
   .mobile-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
   }
-  
+
   /* Safe area handling for mobile browsers */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
-  
+
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
