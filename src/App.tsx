@@ -33,6 +33,7 @@ import QuotationsPage from "./pages/dashboard/QuotationsPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
+import SharedBooking from "./pages/shared/SharedBooking";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import NotFound from "./pages/NotFound";
