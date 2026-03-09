@@ -337,6 +337,69 @@ export default function SharedBooking() {
   const tagline = settings?.tagline;
   const isLoading = tokenLoading || bookingLoading;
 
+  // Extract metadata for translations (before any returns)
+  const metadata = shareToken?.metadata as { 
+    password_hash?: string;
+    translations?: Record<string, any>;
+    available_languages?: string[];
+  } | null;
+  const isPasswordProtected = !!metadata?.password_hash;
+  const availableLanguages = metadata?.available_languages || ["en", "ar"];
+  const translations = metadata?.translations || {};
+
+  // Get translated content based on selected language (useMemo must be before returns)
+  const getTranslatedContent = useMemo(() => {
+    if (lang === "en" || !translations[lang]) {
+      return null; // Use original content
+    }
+    return translations[lang];
+  }, [lang, translations]);
+
+  // Helper to get translated text
+  const getTranslatedText = (original: string | null | undefined, path: string): string => {
+    if (!original) return "";
+    if (lang === "en") return original;
+    
+    const translated = getTranslatedContent;
+    if (!translated) return original;
+    
+    // Parse the path to get the value (e.g., "title" or "days.0.title")
+    const parts = path.split(".");
+    let value: any = translated;
+    for (const part of parts) {
+      if (value && typeof value === "object") {
+        value = value[part];
+      } else {
+        return original;
+      }
+    }
+    return typeof value === "string" ? value : original;
+  };
+
+  // Hash password for comparison
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordInput.trim()) return;
+    if (!metadata?.password_hash) {
+      setPasswordUnlocked(true);
+      return;
+    }
+    const inputHash = await hashPassword(passwordInput.trim());
+    if (inputHash === metadata.password_hash) {
+      setPasswordUnlocked(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
   /* ====== LOADING ====== */
   if (isLoading) {
     return (
@@ -368,70 +431,6 @@ export default function SharedBooking() {
       </div>
     );
   }
-
-  // Hash password for comparison
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!passwordInput.trim()) return;
-    const metadata = shareToken.metadata as { password_hash?: string } | null;
-    if (!metadata?.password_hash) {
-      setPasswordUnlocked(true);
-      return;
-    }
-    const inputHash = await hashPassword(passwordInput.trim());
-    if (inputHash === metadata.password_hash) {
-      setPasswordUnlocked(true);
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-    }
-  };
-
-  // Check if password protection is enabled and get available languages
-  const metadata = shareToken.metadata as { 
-    password_hash?: string;
-    translations?: Record<string, any>;
-    available_languages?: string[];
-  } | null;
-  const isPasswordProtected = !!metadata?.password_hash;
-  const availableLanguages = metadata?.available_languages || ["en", "ar"];
-  const translations = metadata?.translations || {};
-
-  // Get translated content based on selected language
-  const getTranslatedContent = useMemo(() => {
-    if (lang === "en" || !translations[lang]) {
-      return null; // Use original content
-    }
-    return translations[lang];
-  }, [lang, translations]);
-
-  // Helper to get translated text
-  const getTranslatedText = (original: string | null | undefined, path: string): string => {
-    if (!original) return "";
-    if (lang === "en") return original;
-    
-    const translated = getTranslatedContent;
-    if (!translated) return original;
-    
-    // Parse the path to get the value (e.g., "title" or "days.0.title")
-    const parts = path.split(".");
-    let value: any = translated;
-    for (const part of parts) {
-      if (value && typeof value === "object") {
-        value = value[part];
-      } else {
-        return original;
-      }
-    }
-    return typeof value === "string" ? value : original;
-  };
 
   /* ====== PASSWORD GATE ====== */
   if (isPasswordProtected && !passwordUnlocked) {
