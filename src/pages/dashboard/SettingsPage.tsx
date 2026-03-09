@@ -622,13 +622,13 @@ function PasswordChangeSection() {
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">New Password</label>
           <div className="relative">
-            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <KeyRound className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type={showNew ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Min 6 characters"
-              className="luxury-input w-full pl-9 pr-10"
+              className="luxury-input w-full ps-9 pe-10"
             />
             <button
               type="button"
