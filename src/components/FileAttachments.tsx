@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, Trash2, Download, FileText, Image as ImageIcon,
-  File, Loader2, Eye, Paperclip, Tag,
+  File, Loader2, Eye, Paperclip, Tag, AlertCircle,
   FileSpreadsheet, Receipt, Ticket, Shield, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -68,6 +69,7 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
 
   const [uploadCategory, setUploadCategory] = useState("other");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState("");
@@ -112,97 +114,258 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
   }, [profiles]);
 
-  // Upload handler
+  // Upload handler with enhanced error handling and progress
   const handleUpload = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    if (!user) {
+      toast({ title: "Please log in to upload files", variant: "destructive" });
+      return;
+    }
+
     setUploading(true);
+    setUploadProgress(0);
+    
+    const fileArray = Array.from(files);
+    let successCount = 0;
+    let failCount = 0;
 
     try {
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        setUploadProgress(((i + 1) / fileArray.length) * 100);
+
+        // Validate file size (10MB limit)
         if (file.size > 10 * 1024 * 1024) {
-          toast({ title: `${file.name} exceeds 10MB limit`, variant: "destructive" });
+          toast({ 
+            title: `File too large: ${file.name}`, 
+            description: "Maximum file size is 10MB",
+            variant: "destructive" 
+          });
+          failCount++;
           continue;
         }
 
-        const ext = file.name.split(".").pop();
-        const storagePath = `${companyId}/${entityType}/${entityId}/${Date.now()}_${file.name}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("attachments")
-          .upload(storagePath, file, { contentType: file.type });
-
-        if (uploadError) {
-          toast({ title: `Failed to upload ${file.name}`, variant: "destructive" });
-          continue;
-        }
-
-        // Insert record
-        const { error: dbError } = await supabase.from("entity_attachments").insert({
-          entity_type: entityType,
-          entity_id: entityId,
-          company_id: companyId,
-          file_name: file.name,
-          file_url: storagePath,
-          file_type: file.type,
-          file_size: file.size,
-          category: uploadCategory,
-          uploaded_by: user!.id,
+        // Validate file type
+        const allowedTypes = [
+          'image/*', 'application/pdf', 'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/plain', 'text/csv'
+        ];
+        
+        const isValidType = allowedTypes.some(type => {
+          if (type.endsWith('*')) {
+            return file.type.startsWith(type.slice(0, -1));
+          }
+          return file.type === type;
         });
 
-        if (dbError) {
-          toast({ title: `Failed to save ${file.name}`, variant: "destructive" });
+        if (!isValidType) {
+          toast({ 
+            title: `Invalid file type: ${file.name}`, 
+            description: "Only images, PDFs, and office documents are allowed",
+            variant: "destructive" 
+          });
+          failCount++;
+          continue;
+        }
+
+        // Create sanitized file path
+        const timestamp = Date.now();
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `${companyId}/${entityType}/${entityId}/${timestamp}_${randomSuffix}_${sanitizedName}`;
+
+        try {
+          // First create database record
+          const { data: dbRecord, error: dbError } = await supabase
+            .from("entity_attachments")
+            .insert({
+              entity_type: entityType,
+              entity_id: entityId,
+              company_id: companyId,
+              file_name: file.name,
+              file_url: storagePath,
+              file_type: file.type,
+              file_size: file.size,
+              category: uploadCategory,
+              uploaded_by: user.id,
+            })
+            .select()
+            .single();
+
+          if (dbError) {
+            console.error('Database error:', dbError);
+            toast({ 
+              title: `Database error for ${file.name}`, 
+              description: dbError.message,
+              variant: "destructive" 
+            });
+            failCount++;
+            continue;
+          }
+
+          // Then upload file to storage
+          const { error: uploadError } = await supabase.storage
+            .from("attachments")
+            .upload(storagePath, file, { 
+              contentType: file.type,
+              cacheControl: '3600'
+            });
+
+          if (uploadError) {
+            console.error('Storage error:', uploadError);
+            // Rollback database record if upload fails
+            await supabase.from("entity_attachments").delete().eq('id', dbRecord.id);
+            toast({ 
+              title: `Storage error for ${file.name}`, 
+              description: uploadError.message,
+              variant: "destructive" 
+            });
+            failCount++;
+            continue;
+          }
+
+          successCount++;
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast({ 
+            title: `Failed to upload ${file.name}`, 
+            description: error instanceof Error ? error.message : "Unknown error",
+            variant: "destructive" 
+          });
+          failCount++;
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
-      toast({ title: "Files uploaded successfully" });
-    } catch {
-      toast({ title: "Upload failed", variant: "destructive" });
+      // Show final result
+      if (successCount > 0) {
+        queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
+        toast({ 
+          title: `Successfully uploaded ${successCount} file${successCount === 1 ? '' : 's'}`,
+          ...(failCount > 0 && { description: `${failCount} file${failCount === 1 ? '' : 's'} failed` })
+        });
+      }
+      
+      if (successCount === 0 && failCount > 0) {
+        toast({ title: "All uploads failed", variant: "destructive" });
+      }
+
+    } catch (error) {
+      console.error('Upload handler error:', error);
+      toast({ 
+        title: "Upload failed", 
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive" 
+      });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [companyId, entityType, entityId, uploadCategory, user, toast, queryClient]);
 
-  // Delete handler
+  // Delete handler with better error handling
   const deleteAttachment = useMutation({
     mutationFn: async (attachment: Attachment) => {
-      await supabase.storage.from("attachments").remove([attachment.file_url]);
-      const { error } = await supabase.from("entity_attachments").delete().eq("id", attachment.id);
-      if (error) throw error;
+      // First delete from database
+      const { error: dbError } = await supabase
+        .from("entity_attachments")
+        .delete()
+        .eq("id", attachment.id);
+      
+      if (dbError) throw new Error(`Database error: ${dbError.message}`);
+      
+      // Then remove from storage
+      const { error: storageError } = await supabase.storage
+        .from("attachments")
+        .remove([attachment.file_url]);
+      
+      if (storageError) {
+        console.warn('Storage cleanup failed:', storageError);
+        // Don't throw here as the database record is already deleted
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["entity-attachments", entityType, entityId] });
-      toast({ title: "File deleted" });
+      toast({ title: "File deleted successfully" });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Failed to delete file", 
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive" 
+      });
     },
   });
 
-  // Get signed URL for download/preview
+  // Get signed URL for download/preview with error handling
   const getSignedUrl = useCallback(async (path: string) => {
-    const { data } = await supabase.storage
-      .from("attachments")
-      .createSignedUrl(path, 3600);
-    return data?.signedUrl || null;
-  }, []);
+    try {
+      const { data, error } = await supabase.storage
+        .from("attachments")
+        .createSignedUrl(path, 3600);
+      
+      if (error) {
+        console.error('Failed to create signed URL:', error);
+        toast({ 
+          title: "File access error", 
+          description: "Unable to access file. Please try again.",
+          variant: "destructive" 
+        });
+        return null;
+      }
+      
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Signed URL error:', error);
+      return null;
+    }
+  }, [toast]);
 
   const handleDownload = useCallback(async (attachment: Attachment) => {
-    const url = await getSignedUrl(attachment.file_url);
-    if (url) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = attachment.file_name;
-      a.click();
+    try {
+      const url = await getSignedUrl(attachment.file_url);
+      if (url) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = attachment.file_name;
+        a.target = "_blank"; // Fallback for some browsers
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      toast({ 
+        title: "Download failed", 
+        description: "Unable to download file. Please try again.",
+        variant: "destructive" 
+      });
     }
-  }, [getSignedUrl]);
+  }, [getSignedUrl, toast]);
 
   const handlePreview = useCallback(async (attachment: Attachment) => {
-    const url = await getSignedUrl(attachment.file_url);
-    if (url) {
-      setPreviewUrl(url);
-      setPreviewType(attachment.file_type);
-      setPreviewName(attachment.file_name);
+    try {
+      const url = await getSignedUrl(attachment.file_url);
+      if (url) {
+        setPreviewUrl(url);
+        setPreviewType(attachment.file_type);
+        setPreviewName(attachment.file_name);
+      } else {
+        toast({ 
+          title: "Preview unavailable", 
+          description: "Unable to generate preview for this file.",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      toast({ 
+        title: "Preview failed", 
+        description: "Unable to preview file. Please try again.",
+        variant: "destructive" 
+      });
     }
-  }, [getSignedUrl]);
+  }, [getSignedUrl, toast]);
 
   // Group by category
   const grouped = useMemo(() => {
@@ -257,7 +420,7 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
           size="sm"
           variant="outline"
           className="h-8 text-[11px] gap-1.5 flex-1"
-          disabled={uploading}
+          disabled={uploading || !user}
           onClick={() => fileInputRef.current?.click()}
         >
           {uploading ? (
@@ -268,20 +431,58 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
         </Button>
       </div>
 
+      {/* Upload progress */}
+      {uploading && uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Uploading files...</span>
+            <span>{Math.round(uploadProgress)}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
+      )}
+
       {/* Drag and drop zone */}
       <div
-        className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+        className={cn(
+          "border-2 border-dashed border-border rounded-lg p-4 text-center transition-colors",
+          uploading 
+            ? "cursor-not-allowed opacity-50" 
+            : "cursor-pointer hover:border-accent/50 hover:bg-accent/5",
+          !user && "cursor-not-allowed opacity-50"
+        )}
+        onClick={() => !uploading && user && fileInputRef.current?.click()}
+        onDragOver={e => { 
+          if (!uploading && user) {
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            e.currentTarget.classList.add('border-accent', 'bg-accent/10');
+          }
+        }}
+        onDragLeave={e => {
+          e.currentTarget.classList.remove('border-accent', 'bg-accent/10');
+        }}
         onDrop={e => {
           e.preventDefault();
           e.stopPropagation();
-          handleUpload(e.dataTransfer.files);
+          e.currentTarget.classList.remove('border-accent', 'bg-accent/10');
+          if (!uploading && user) {
+            handleUpload(e.dataTransfer.files);
+          }
         }}
       >
-        <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-        <p className="text-[10px] text-muted-foreground">Drag & drop files here or click to browse</p>
-        <p className="text-[9px] text-muted-foreground mt-0.5">Max 10MB per file · Images, PDF, Documents</p>
+        {!user ? (
+          <>
+            <AlertCircle className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Please log in to upload files</p>
+          </>
+        ) : (
+          <>
+            <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Drag & drop files here or click to browse</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Max 10MB per file · Images, PDF, Documents</p>
+          </>
+        )}
       </div>
 
       {/* Files list grouped by category */}
@@ -363,9 +564,14 @@ export function FileAttachments({ entityType, entityId, companyId, className }: 
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6 text-destructive/60 hover:text-destructive"
+                              disabled={deleteAttachment.isPending}
                               onClick={() => deleteAttachment.mutate(file)}
                             >
-                              <Trash2 className="w-3 h-3" />
+                              {deleteAttachment.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3 h-3" />
+                              )}
                             </Button>
                           </div>
                         </motion.div>
