@@ -671,15 +671,15 @@ export default function BillingPage() {
           </div>
 
           {/* Feature Comparison Table */}
-          <div className="luxury-card overflow-hidden">
+          <div className="luxury-card overflow-hidden relative">
             <div className="p-6 border-b border-border">
               <h3 className="text-base font-bold font-display text-foreground">Feature Comparison</h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">Feature</th>
+                    <th className="text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3 sticky inset-inline-start-0 bg-muted/30 z-10 min-w-[140px]">Feature</th>
                     {PLAN_TIERS.map((t) => (
                       <th key={t.slug} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
                         {t.name}
@@ -691,25 +691,28 @@ export default function BillingPage() {
                   {COMPARISON_FEATURES.map((cat) => (
                     <>
                       <tr key={cat.category} className="bg-muted/20">
-                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{cat.category}</td>
+                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
                       </tr>
-                      {cat.items.map((item, idx) => (
-                        <tr key={item.name} className={cn("border-b border-border last:border-0", idx % 2 === 0 ? "bg-background" : "bg-muted/10")}>
-                          <td className="px-6 py-3 text-sm text-foreground">{item.name}</td>
-                          {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
-                            const val = item[plan];
-                            return (
-                              <td key={plan} className="px-4 py-3 text-center">
-                                {typeof val === "boolean" ? (
-                                  val ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />
-                                ) : (
-                                  <span className="text-sm font-semibold text-foreground">{val}</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
+                      {cat.items.map((item, idx) => {
+                        const rowBg = idx % 2 === 0 ? "bg-background" : "bg-muted/10";
+                        return (
+                          <tr key={item.name} className={cn("border-b border-border last:border-0", rowBg)}>
+                            <td className={cn("px-6 py-3 text-sm text-foreground sticky inset-inline-start-0 z-10 min-w-[140px]", rowBg)}>{item.name}</td>
+                            {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
+                              const val = item[plan];
+                              return (
+                                <td key={plan} className="px-4 py-3 text-center">
+                                  {typeof val === "boolean" ? (
+                                    val ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />
+                                  ) : (
+                                    <span className="text-sm font-semibold text-foreground">{val}</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
                     </>
                   ))}
                 </tbody>
