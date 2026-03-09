@@ -131,7 +131,7 @@ export function PlanOverviewCard() {
         {/* Upgrade CTA */}
         {limits.planSlug !== "enterprise" && (
           <Button
-            onClick={() => navigate("/dashboard/settings?tab=billing")}
+            onClick={() => navigate("/dashboard/billing")}
             className="w-full gap-2 text-sm bg-gradient-to-r from-accent to-amber-500 hover:from-accent/90 hover:to-amber-500/90 text-white shadow-lg shadow-accent/20"
           >
             <Sparkles className="w-4 h-4" />

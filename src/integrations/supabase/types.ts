@@ -64,6 +64,66 @@ export type Database = {
           },
         ]
       }
+      billing_history: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          invoice_date: string
+          metadata: Json | null
+          payment_method: string | null
+          pdf_url: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          amount?: number
+          company_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_date?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          invoice_date?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          pdf_url?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_activities: {
         Row: {
           activity_type: string

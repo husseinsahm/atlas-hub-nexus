@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { 
   LayoutDashboard,
   Building2,
@@ -32,6 +33,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { TrialBadge, PlanBadge } from "@/components/plan/TrialBadge";
 import { useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -96,6 +98,7 @@ const navigationGroups = [
     label: "Team & Settings",
     items: [
       { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] as AppRole[] },
+      { title: "Billing", translationKey: "nav.billing", url: "/dashboard/billing", icon: CreditCard, roles: ["company_admin"] as AppRole[] },
       { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] as AppRole[] },
     ]
   }
@@ -155,6 +158,7 @@ export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { limits } = usePlanLimits();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -250,8 +254,14 @@ export function DashboardSidebar() {
           ))}
         </SidebarContent>
 
+        {/* Trial / Plan badge */}
+        <div className="border-t border-sidebar-border px-3 py-2">
+          <TrialBadge collapsed={collapsed} />
+          {!limits.isTrialing && <PlanBadge collapsed={collapsed} />}
+        </div>
+
         {/* User info footer */}
-        <div className="border-t border-sidebar-border p-3 mt-auto">
+        <div className="border-t border-sidebar-border p-3">
           <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="w-7 h-7 shrink-0">
               <AvatarImage src={user?.profile?.avatarUrl} />
