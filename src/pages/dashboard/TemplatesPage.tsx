@@ -170,7 +170,7 @@ export default function TemplatesPage() {
         setIsGenerating(false);
       }
     } else {
-      createMutation.mutate();
+      createMutation.mutate(undefined);
     }
   };
 
