@@ -1000,7 +1000,7 @@ function CompanyDashboard() {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   {isArabic ? "الخطة الحالية" : "Current Plan"}
                 </h3>
-                {subscription && <PlanOverviewCard subscription={subscription} />}
+                <PlanOverviewCard />
               </div>
             </CollapsibleContent>
           </Collapsible>
