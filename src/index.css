@@ -336,7 +336,7 @@
 
   /* Status indicators */
   .status-dot {
-    @apply w-2 h-2 rounded-full inline-block mr-2;
+    @apply w-2 h-2 rounded-full inline-block me-2;
   }
 
   .status-success { @apply bg-green-500; }
