@@ -184,7 +184,7 @@ function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-
+export function DashboardSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const { t } = useLanguage();
