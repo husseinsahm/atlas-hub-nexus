@@ -20,20 +20,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Lock, Calendar as CalendarIcon, Loader2, Copy, ExternalLink,
-  Shield, Clock, Eye, EyeOff, Link2, Trash2, CheckCircle,
+  Shield, Clock, Eye, EyeOff, Link2, Trash2, CheckCircle, Languages, Sparkles,
 } from "lucide-react";
+
+// Available languages for AI translation
+const TRANSLATION_LANGUAGES = [
+  { code: "en", label: "English", nativeLabel: "English", flag: "🇬🇧" },
+  { code: "ar", label: "Arabic", nativeLabel: "العربية", flag: "🇸🇦" },
+  { code: "ja", label: "Japanese", nativeLabel: "日本語", flag: "🇯🇵" },
+  { code: "es", label: "Spanish", nativeLabel: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "French", nativeLabel: "Français", flag: "🇫🇷" },
+  { code: "zh", label: "Chinese", nativeLabel: "中文", flag: "🇨🇳" },
+] as const;
+
+type TranslationLangCode = typeof TRANSLATION_LANGUAGES[number]["code"];
 
 interface ShareToken {
   id: string;
@@ -45,6 +51,8 @@ interface ShareToken {
   metadata: {
     password_hash?: string;
     password_hint?: string;
+    translations?: Record<string, any>;
+    available_languages?: string[];
   } | null;
   created_at: string;
 }
@@ -58,6 +66,20 @@ interface ShareLinkSettingsModalProps {
   shareTokens: ShareToken[];
   onRefetch: () => void;
   isArabic?: boolean;
+  bookingData?: {
+    title: string;
+    description?: string;
+    days?: Array<{
+      title?: string;
+      description?: string;
+      short_description?: string;
+      city?: string;
+      items?: Array<{
+        custom_title?: string;
+        custom_description?: string;
+      }>;
+    }>;
+  };
 }
 
 // Simple hash function for password (for demo - in production use bcrypt on server)
