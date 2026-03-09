@@ -73,6 +73,8 @@ interface ShareLinkSettingsModalProps {
       description?: string;
       short_description?: string;
       city?: string;
+      pickup_location?: string;
+      dropoff_location?: string;
       items?: Array<{
         custom_title?: string;
         custom_description?: string;
