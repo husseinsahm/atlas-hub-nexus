@@ -648,6 +648,8 @@ interface DayCardProps {
   isUpdating: boolean;
   editingItemId: string | null;
   onSetEditingItemId: (id: string | null) => void;
+  libraryItemCount: number;
+  onOpenLibrary: () => void;
 }
 
 function DayCard({
