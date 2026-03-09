@@ -100,6 +100,7 @@ export function ShareLinkSettingsModal({
   shareTokens,
   onRefetch,
   isArabic = false,
+  bookingData,
 }: ShareLinkSettingsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -111,6 +112,11 @@ export function ShareLinkSettingsModal({
   const [enableExpiration, setEnableExpiration] = useState(false);
   const [expirationDate, setExpirationDate] = useState<Date | undefined>();
   const [expirationPreset, setExpirationPreset] = useState("");
+  
+  // AI Translation state
+  const [enableTranslation, setEnableTranslation] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<Set<TranslationLangCode>>(new Set(["en"]));
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -120,8 +126,23 @@ export function ShareLinkSettingsModal({
       setEnableExpiration(false);
       setExpirationDate(undefined);
       setExpirationPreset("");
+      setEnableTranslation(false);
+      setSelectedLanguages(new Set(["en"]));
     }
   }, [open]);
+
+  const toggleLanguage = (lang: TranslationLangCode) => {
+    setSelectedLanguages(prev => {
+      const next = new Set(prev);
+      if (next.has(lang)) {
+        // Don't allow removing all languages
+        if (next.size > 1) next.delete(lang);
+      } else {
+        next.add(lang);
+      }
+      return next;
+    });
+  };
 
   const handlePresetChange = (preset: string) => {
     setExpirationPreset(preset);
