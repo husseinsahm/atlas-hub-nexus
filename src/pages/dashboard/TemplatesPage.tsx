@@ -161,12 +161,11 @@ export default function TemplatesPage() {
         toast({
           title: isArabic ? "تحذير" : "Warning",
           description: isArabic 
-            ? "فشلت الترجمة بالذكاء الاصطناعي، سيتم إنشاء قالب فارغ"
+            ? "فشل الإنشاء بالذكاء الاصطناعي، سيتم إنشاء قالب فارغ"
             : "AI generation failed, creating empty template",
           variant: "destructive",
         });
-        // Fallback to empty template
-        await createMutation.mutateAsync();
+        await createMutation.mutateAsync(undefined);
       } finally {
         setIsGenerating(false);
       }
