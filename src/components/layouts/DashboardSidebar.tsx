@@ -156,7 +156,35 @@ function SidebarNavItem({ item, collapsed, active, t }: {
   return link;
 }
 
-export function DashboardSidebar() {
+function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
+  const navigate = useNavigate();
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
+          >
+            <Shield className="w-[18px] h-[18px]" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">Admin Panel</TooltipContent>
+      </Tooltip>
+    );
+  }
+  return (
+    <button
+      onClick={() => navigate("/admin")}
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors font-medium"
+    >
+      <Shield className="w-[18px] h-[18px]" />
+      <span>Admin Panel</span>
+    </button>
+  );
+}
+
+
   const { state, toggleSidebar } = useSidebar();
   const { user } = useAuth();
   const { t } = useLanguage();
