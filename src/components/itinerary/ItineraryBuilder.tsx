@@ -615,7 +615,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
                   isAiGenerating={generatingDayId === day.id}
                   isUpdating={updateDay.isPending}
                   libraryItemCount={libraryItems.length}
-                  onOpenLibrary={() => setShowLibraryPicker(true)}
+                  onOpenLibrary={() => setShowLibraryPicker(day.id)}
                 />
               ))}
             </AnimatePresence>
