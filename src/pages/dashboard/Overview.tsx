@@ -501,12 +501,11 @@ function CompanyDashboard() {
     const monthStart = startOfMonth(now).toISOString();
     const monthEnd = endOfMonth(now).toISOString();
 
-    const [membersRes, subRes, bookingsRes, leadsRes, activitiesRes] = await Promise.all([
+    const [membersRes, subRes, bookingsRes, leadsRes] = await Promise.all([
       supabase.from("company_memberships").select("id, user_id").eq("company_id", companyId!).eq("is_active", true),
       supabase.from("subscriptions").select("*, plans(name, price_monthly, price_yearly)").eq("company_id", companyId!).maybeSingle(),
       supabase.from("bookings").select("id, booking_number, title, status, arrival_date, selling_price, amount_paid, currency, assigned_to, customer_id, customers(full_name), created_at").eq("company_id", companyId!).is("deleted_at", null).order("created_at", { ascending: false }),
       supabase.from("leads").select("id, status, created_at").eq("company_id", companyId!).is("deleted_at", null),
-      supabase.from("booking_activities").select("id, title, created_at, activity_type").eq("company_id", companyId).order("created_at", { ascending: false }).limit(10),
     ]);
 
     setTeamCount(membersRes.data?.length || 0);
