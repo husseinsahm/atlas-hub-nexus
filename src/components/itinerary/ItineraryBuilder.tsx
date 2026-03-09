@@ -477,6 +477,17 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
           >
             <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة يوم" : "Add Day"}
           </Button>
+          {templates.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-[11px] gap-1.5 h-8"
+              onClick={() => setShowTemplateImport(true)}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              {isArabic ? "استيراد قالب" : "From Template"}
+            </Button>
+          )}
         </div>
       </div>
 
