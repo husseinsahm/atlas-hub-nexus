@@ -595,11 +595,11 @@ export default function SharedBooking() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold font-display text-primary-foreground leading-tight mb-4">
-              {booking.title}
+              {getTranslatedText(booking.title, "title")}
             </h1>
             {booking.description && (
               <p className="text-sm md:text-base text-primary-foreground/60 max-w-xl leading-relaxed mb-6">
-                {booking.description}
+                {getTranslatedText(booking.description, "description")}
               </p>
             )}
           </motion.div>

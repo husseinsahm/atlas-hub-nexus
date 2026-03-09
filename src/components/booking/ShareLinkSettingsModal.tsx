@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, addDays, addWeeks, addMonths } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Lock, Calendar as CalendarIcon, Loader2, Copy, ExternalLink,
