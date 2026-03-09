@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { FeatureGate } from "@/components/plan/FeatureGate";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
