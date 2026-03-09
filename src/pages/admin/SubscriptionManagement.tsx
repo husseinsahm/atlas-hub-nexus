@@ -244,6 +244,37 @@ export default function SubscriptionManagement() {
           </Card>
         ))}
       </div>
+      {/* Pending Requests Alert */}
+      {pendingRequests.length > 0 && (
+        <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+            <Inbox className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              {pendingRequests.length} pending upgrade request{pendingRequests.length > 1 ? "s" : ""}
+            </p>
+            <p className="text-xs text-muted-foreground">Companies are waiting for your approval to change their plans.</p>
+          </div>
+        </div>
+      )}
+
+      <Tabs defaultValue={pendingRequests.length > 0 ? "requests" : "subscriptions"} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="subscriptions" className="text-xs gap-1.5">
+            <CreditCard className="w-3.5 h-3.5" /> Subscriptions
+          </TabsTrigger>
+          <TabsTrigger value="requests" className="text-xs gap-1.5 relative">
+            <Inbox className="w-3.5 h-3.5" /> Requests
+            {pendingRequests.length > 0 && (
+              <span className="ms-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-amber-500 text-white">
+                {pendingRequests.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="subscriptions" className="space-y-4">
 
       {/* Filters */}
       <div className="flex gap-3">
