@@ -2,7 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { useNavigate } from "react-router-dom";
+
 import { 
   LayoutDashboard,
   Building2,
