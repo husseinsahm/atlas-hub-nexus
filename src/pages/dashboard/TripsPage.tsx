@@ -334,7 +334,7 @@ export default function TripsPage() {
                           <span>{format(new Date(trip.start_date), "MMM d, yyyy")}</span>
                           {trip.end_date && (
                             <>
-                              <ArrowRight className="w-3 h-3" />
+                              <ArrowRight className="w-3 h-3 rtl:scale-x-[-1]" />
                               <span>{format(new Date(trip.end_date), "MMM d, yyyy")}</span>
                             </>
                           )}
