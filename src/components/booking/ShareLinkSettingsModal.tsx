@@ -385,6 +385,12 @@ export function ShareLinkSettingsModal({
                             {isArabic ? "بدون قيود" : "No restrictions"}
                           </Badge>
                         )}
+                        {token.metadata?.available_languages && token.metadata.available_languages.length > 1 && (
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Languages className="w-3 h-3" />
+                            {token.metadata.available_languages.length} {isArabic ? "لغات" : "languages"}
+                          </Badge>
+                        )}
                       </div>
 
                       <p className="text-[10px] text-muted-foreground">
