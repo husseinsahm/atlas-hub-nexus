@@ -528,12 +528,11 @@ export default function BookingDetailPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={generateShareLink}
-              disabled={generatingLink}
+              onClick={() => setShowShareDialog(true)}
               className="h-8 text-xs gap-1.5 border-border"
             >
-              {generatingLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link className="w-3.5 h-3.5" />}
-              {isArabic ? "إنشاء رابط مشاركة" : "Generate Share Link"}
+              <Link className="w-3.5 h-3.5" />
+              {isArabic ? "رابط المشاركة" : "Share Link"}
             </Button>
             {sc.next && (
               <Button
