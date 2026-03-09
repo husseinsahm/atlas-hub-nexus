@@ -254,89 +254,72 @@ export default function BillingPage() {
     return "downgrade";
   };
 
+  // Fetch pending upgrade requests for this company
+  const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
+    queryKey: ["upgrade-requests", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase
+        .from("upgrade_requests")
+        .select("*, plans!upgrade_requests_requested_plan_id_fkey(name, slug)")
+        .eq("company_id", companyId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const handleUpgrade = async (targetSlug: string) => {
     setProcessing(true);
     const targetPlan = dbPlans.find((p: any) => p.slug === targetSlug);
-    if (!targetPlan || !companyId) {
+    if (!targetPlan || !companyId || !user) {
       toast({ title: "Error", description: "Plan not found", variant: "destructive" });
       setProcessing(false);
       return;
     }
 
-    const now = new Date();
-    const periodEnd = billingCycle === "yearly"
-      ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
-      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // Check if there's already a pending request for this plan
+    const existingRequest = pendingRequests.find(
+      (r: any) => r.requested_plan_id === targetPlan.id && r.status === "pending"
+    );
+    if (existingRequest) {
+      toast({ title: "Request already pending", description: "You already have a pending request for this plan.", variant: "destructive" });
+      setProcessing(false);
+      setUpgradeDialog(null);
+      setDowngradeDialog(null);
+      return;
+    }
 
-    const price = billingCycle === "yearly" ? targetPlan.price_yearly : targetPlan.price_monthly;
-    const isUpgrade = planOrder.indexOf(targetSlug) > currentIdx;
+    // Submit upgrade request instead of directly changing the subscription
+    const { error } = await supabase.from("upgrade_requests").insert({
+      company_id: companyId,
+      subscription_id: limits.subscriptionId,
+      requested_by: user.id,
+      requested_plan_id: targetPlan.id,
+      requested_billing_cycle: billingCycle,
+      current_plan_id: limits.planId,
+      status: "pending",
+    });
 
-    if (limits.subscriptionId) {
-      const { error } = await supabase.from("subscriptions").update({
-        plan_id: targetPlan.id,
-        status: "active",
-        billing_cycle: billingCycle,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        trial_ends_at: null,
-        canceled_at: null,
-      }).eq("id", limits.subscriptionId);
-
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        // Insert billing history record
-        await supabase.from("billing_history").insert({
-          company_id: companyId,
-          invoice_date: now.toISOString(),
-          amount: price,
-          currency: targetPlan.currency || "USD",
-          status: "paid",
-          description: `${isUpgrade ? "Upgraded" : "Downgraded"} to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
-          subscription_id: limits.subscriptionId,
-        });
-
-        toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
-        if (isUpgrade) setShowConfetti(true);
-        // Send email notification
-        supabase.functions.invoke("subscription-emails", {
-          body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name } },
-        }).catch(console.error);
-      }
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      const { data: newSub, error } = await supabase.from("subscriptions").insert({
-        company_id: companyId,
-        plan_id: targetPlan.id,
-        status: "active",
-        billing_cycle: billingCycle,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        payment_status: "paid",
-      }).select("id").single();
-
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        await supabase.from("billing_history").insert({
-          company_id: companyId,
-          invoice_date: now.toISOString(),
-          amount: price,
-          currency: targetPlan.currency || "USD",
-          status: "paid",
-          description: `Subscribed to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
-          subscription_id: newSub?.id || null,
-        });
-
-        toast({ title: "Subscribed! 🎉", description: `Welcome to ${targetPlan.name}` });
-        setShowConfetti(true);
-      }
+      const isUpgrade = planOrder.indexOf(targetSlug) > currentIdx;
+      toast({
+        title: isUpgrade ? "Upgrade request submitted! 📨" : "Plan change request submitted! 📨",
+        description: "Your request has been sent to the admin for review. You'll be notified once it's approved.",
+      });
+      // Send email notification about the request
+      supabase.functions.invoke("subscription-emails", {
+        body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name, isRequest: true } },
+      }).catch(console.error);
     }
 
     setProcessing(false);
     setUpgradeDialog(null);
     setDowngradeDialog(null);
-    // Refresh plan limits without full page reload
-    await refetchLimits();
+    await refetchRequests();
   };
 
   const handleCancel = async () => {
