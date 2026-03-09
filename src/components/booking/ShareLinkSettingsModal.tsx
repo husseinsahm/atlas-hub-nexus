@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format, addDays, addWeeks, addMonths } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import {
   Lock, Calendar as CalendarIcon, Loader2, Copy, ExternalLink,
@@ -74,6 +73,8 @@ interface ShareLinkSettingsModalProps {
       description?: string;
       short_description?: string;
       city?: string;
+      pickup_location?: string;
+      dropoff_location?: string;
       items?: Array<{
         custom_title?: string;
         custom_description?: string;
@@ -103,7 +104,6 @@ export function ShareLinkSettingsModal({
   bookingData,
 }: ShareLinkSettingsModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Form state
   const [enablePassword, setEnablePassword] = useState(false);
@@ -183,6 +183,8 @@ export function ShareLinkSettingsModal({
             description: day.description || "",
             short_description: day.short_description || "",
             city: day.city || "",
+            pickup_location: day.pickup_location || "",
+            dropoff_location: day.dropoff_location || "",
             items: day.items?.map(item => ({
               custom_title: item.custom_title || "",
               custom_description: item.custom_description || "",
