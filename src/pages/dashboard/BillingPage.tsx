@@ -298,6 +298,10 @@ export default function BillingPage() {
 
         toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
         if (isUpgrade) setShowConfetti(true);
+        // Send email notification
+        supabase.functions.invoke("subscription-emails", {
+          body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name } },
+        }).catch(console.error);
       }
     } else {
       const { data: newSub, error } = await supabase.from("subscriptions").insert({
