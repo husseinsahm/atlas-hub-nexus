@@ -35,7 +35,9 @@ export default function QuotationsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { direction } = useLanguage();
+  const { limits, hasFeature } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
+  const isInvoicingLocked = !hasFeature("invoicing") && limits.planSlug === "free";
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
