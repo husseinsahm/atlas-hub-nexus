@@ -564,9 +564,7 @@ function CompanyDashboard() {
       setLeadStats(stats);
     }
 
-    if (activitiesRes.data) {
-      setRecentActivities(activitiesRes.data);
-    }
+    setRecentActivities([]);
 
     // Mock agent performance data
     setAgentPerformance([
