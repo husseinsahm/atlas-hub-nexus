@@ -57,6 +57,97 @@ export default function SubscriptionManagement() {
     },
   });
 
+  // Fetch upgrade requests
+  const { data: upgradeRequests = [] } = useQuery({
+    queryKey: ["admin-upgrade-requests"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("upgrade_requests")
+        .select(`
+          *,
+          companies(id, name, slug, email),
+          requested_plan:plans!upgrade_requests_requested_plan_id_fkey(id, name, slug, price_monthly, price_yearly),
+          current_plan:plans!upgrade_requests_current_plan_id_fkey(id, name, slug)
+        `)
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+  });
+
+  const pendingRequests = useMemo(() => upgradeRequests.filter((r: any) => r.status === "pending"), [upgradeRequests]);
+
+  const [reviewDialog, setReviewDialog] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  const approveRequest = useMutation({
+    mutationFn: async ({ request, approved }: { request: any; approved: boolean }) => {
+      // Update the request status
+      const { error: reqError } = await supabase
+        .from("upgrade_requests")
+        .update({
+          status: approved ? "approved" : "rejected",
+          admin_notes: reviewNotes || null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", request.id);
+      if (reqError) throw reqError;
+
+      // If approved, actually update the subscription
+      if (approved && request.subscription_id) {
+        const now = new Date();
+        const periodEnd = request.requested_billing_cycle === "yearly"
+          ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+          : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+        const targetPlan = request.requested_plan;
+        const price = request.requested_billing_cycle === "yearly"
+          ? targetPlan?.price_yearly : targetPlan?.price_monthly;
+
+        const { error: subError } = await supabase
+          .from("subscriptions")
+          .update({
+            plan_id: request.requested_plan_id,
+            status: "active",
+            billing_cycle: request.requested_billing_cycle,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            trial_ends_at: null,
+            canceled_at: null,
+          })
+          .eq("id", request.subscription_id);
+        if (subError) throw subError;
+
+        // Insert billing history
+        await supabase.from("billing_history").insert({
+          company_id: request.company_id,
+          invoice_date: now.toISOString(),
+          amount: price || 0,
+          currency: "USD",
+          status: "paid",
+          description: `Plan changed to ${targetPlan?.name} - ${request.requested_billing_cycle === "yearly" ? "Annual" : "Monthly"} (Admin approved)`,
+          subscription_id: request.subscription_id,
+        });
+
+        // Send notification email
+        supabase.functions.invoke("subscription-emails", {
+          body: {
+            type: "upgrade",
+            companyId: request.company_id,
+            metadata: { newPlanName: targetPlan?.name, approved: true },
+          },
+        }).catch(console.error);
+      }
+    },
+    onSuccess: (_, { approved }) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-upgrade-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+      setReviewDialog(null);
+      setReviewNotes("");
+      toast({ title: approved ? "Request approved ✅" : "Request rejected", description: approved ? "The subscription has been updated." : "The company has been notified." });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const filtered = useMemo(() => {
     let list = subscriptions;
     if (statusFilter !== "all") list = list.filter((s: any) => s.status === statusFilter);
