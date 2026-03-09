@@ -1136,6 +1136,22 @@ function DayCard({
                       </button>
                     );
                   })}
+                  {/* From Library button */}
+                  {libraryItems.length > 0 && (
+                    <button
+                      className="flex items-start gap-2.5 rounded-xl border-2 border-dashed px-3 py-3 text-start transition-all hover:scale-[1.01] hover:border-solid hover:shadow-sm cursor-pointer text-primary bg-primary/5 border-primary/30 hover:bg-primary/10 col-span-2"
+                      onClick={() => setShowLibraryPicker(day.id)}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold block">{isArabic ? "من المكتبة" : "From Library"}</span>
+                        <span className="text-[10px] opacity-70 font-normal block mt-0.5">{isArabic ? "اختر خدمة من مكتبة المنتجات" : "Pick from your product library"}</span>
+                      </div>
+                      <BookOpen className="w-3.5 h-3.5 shrink-0 opacity-40 mt-1 ms-auto" />
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
