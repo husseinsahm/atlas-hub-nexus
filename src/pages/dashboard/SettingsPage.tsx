@@ -9,6 +9,9 @@ import {
   Image as ImageIcon, KeyRound, Eye, EyeOff, ShieldCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LockOverlay } from "@/components/plan/LockOverlay";
+import { LimitReachedDialog } from "@/components/plan/LimitReachedDialog";
 
 interface CompanyData {
   id: string; name: string; slug: string; email: string | null;
