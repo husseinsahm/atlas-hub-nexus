@@ -171,7 +171,8 @@ export function DashboardSidebar() {
                 <SidebarMenu className="space-y-1">
                   {group.items.map((item) => {
                     const Icon = item.icon;
-                    const active = isActive(item.url, item.end);
+                    const active = isActive(item.url, (item as any).end);
+                    const itemEnd = (item as any).end;
                     
                     return (
                       <SidebarMenuItem key={item.title}>
