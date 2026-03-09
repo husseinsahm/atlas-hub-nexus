@@ -336,6 +336,7 @@ export default function BillingPage() {
 
     if (!error) {
       toast({ title: "Subscription cancelled", description: "Your plan will remain active until the end of the current period." });
+      await refetchLimits();
     }
     setProcessing(false);
     setCancelDialog(false);
