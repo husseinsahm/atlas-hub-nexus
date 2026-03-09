@@ -674,10 +674,10 @@ export default function SharedBooking() {
                       {(day.pickup_location || day.dropoff_location) && (
                         <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                           {day.pickup_location && (
-                            <span className="flex items-center gap-1">📍 {t.pickup}: {day.pickup_location} {day.pickup_time && `@ ${day.pickup_time}`}</span>
+                            <span className="flex items-center gap-1">📍 {t.pickup}: {getTranslatedText(day.pickup_location, `days.${dayIdx}.pickup_location`)} {day.pickup_time && `@ ${day.pickup_time}`}</span>
                           )}
                           {day.dropoff_location && (
-                            <span className="flex items-center gap-1">🏁 {t.dropoff}: {day.dropoff_location}</span>
+                            <span className="flex items-center gap-1">🏁 {t.dropoff}: {getTranslatedText(day.dropoff_location, `days.${dayIdx}.dropoff_location`)}</span>
                           )}
                         </div>
                       )}
