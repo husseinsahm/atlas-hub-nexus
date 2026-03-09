@@ -32,6 +32,7 @@ export default function TemplatesPage() {
   const queryClient = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
+  const { limits } = usePlanLimits();
 
   const [search, setSearch] = useState("");
   const [showNewDialog, setShowNewDialog] = useState(false);

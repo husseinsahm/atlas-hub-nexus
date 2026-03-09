@@ -430,7 +430,7 @@ export default function BillingPage() {
                     status: "active", canceled_at: null,
                   }).eq("id", limits.subscriptionId);
                   toast({ title: "Subscription reactivated!" });
-                  window.location.reload();
+                  await refetchLimits();
                 }}
               >
                 Reactivate
