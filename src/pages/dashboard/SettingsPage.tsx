@@ -44,7 +44,10 @@ const LANGUAGES = [
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { toast } = useToast();
+  const { limits, hasFeature } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
+  const isBrandingLocked = !hasFeature("custom_branding") && limits.planSlug !== "professional" && limits.planSlug !== "enterprise";
+  const [branchLimitOpen, setBranchLimitOpen] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
