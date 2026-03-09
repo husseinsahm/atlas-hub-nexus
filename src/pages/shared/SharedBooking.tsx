@@ -494,11 +494,11 @@ export default function SharedBooking() {
           </div>
 
           <button
-            onClick={() => setLang(l => l === "en" ? "ar" : "en")}
+            onClick={() => setShowLangPicker(true)}
             className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all text-xs"
           >
             <Globe className="w-3.5 h-3.5" />
-            {lang === "en" ? "العربية" : "English"}
+            {LANGUAGE_INFO[lang]?.nativeLabel || "English"}
           </button>
         </motion.div>
       </div>
