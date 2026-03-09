@@ -591,6 +591,7 @@ function CompanyDashboard() {
     <div className="max-w-[1400px] mx-auto space-y-8">
       {/* Usage Warning Banners */}
       <UsageWarningBanner />
+      <AnnualBillingBanner />
       {/* Compact Professional Header */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
