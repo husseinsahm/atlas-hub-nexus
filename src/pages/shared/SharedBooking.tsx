@@ -109,6 +109,10 @@ export default function SharedBooking() {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordUnlocked, setPasswordUnlocked] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const isRtl = lang === "ar";
 
   useEffect(() => {
