@@ -141,7 +141,7 @@ export default function QuotationDetailPage() {
         <p className="text-sm font-medium text-foreground">Quotation not found</p>
         <p className="text-xs text-muted-foreground">This quotation may have been deleted or you don't have access.</p>
         <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/quotations")} className="gap-1.5">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Quotations
+          <ArrowLeft className="w-3.5 h-3.5 rtl:scale-x-[-1]" /> Back to Quotations
         </Button>
       </div>
     );
@@ -155,7 +155,7 @@ export default function QuotationDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/quotations")} className="shrink-0">
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 rtl:scale-x-[-1]" />
           </Button>
           <div className="min-w-0">
             <h1 className="text-xl font-bold font-display text-foreground flex items-center gap-2 flex-wrap">

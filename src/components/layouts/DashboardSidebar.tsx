@@ -177,7 +177,7 @@ export function DashboardSidebar() {
 
   return (
     <TooltipProvider>
-      <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar-background">
+      <Sidebar collapsible="icon" className="border-e border-sidebar-border bg-sidebar-background">
         <SidebarHeader className="p-3 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -202,9 +202,9 @@ export function DashboardSidebar() {
               className="w-7 h-7 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent shrink-0 hidden lg:flex"
             >
               {collapsed ? (
-                <ChevronsRight className="w-4 h-4" />
+                <ChevronsLeft className="w-4 h-4 scale-x-[-1] rtl:scale-x-[1]" />
               ) : (
-                <ChevronsLeft className="w-4 h-4" />
+                <ChevronsRight className="w-4 h-4 scale-x-[-1] rtl:scale-x-[1]" />
               )}
             </Button>
           </div>

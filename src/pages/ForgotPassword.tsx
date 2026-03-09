@@ -91,7 +91,7 @@ export default function ForgotPassword() {
           ) : (
             <span className="flex items-center gap-2">
               {t("auth.sendReset")}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 rtl:scale-x-[-1]" />
             </span>
           )}
         </Button>

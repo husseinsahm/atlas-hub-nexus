@@ -91,7 +91,7 @@ export function MultiCityAutocomplete({
                     <MapPin className="w-2.5 h-2.5" />
                     {isRtl && cityData ? cityData.nameAr : city}
                     <button
-                      className="ml-0.5 hover:text-destructive"
+                      className="ms-0.5 hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
                         removeCity(city);
@@ -109,7 +109,7 @@ export function MultiCityAutocomplete({
               </span>
             )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[320px] p-0" align="start">
