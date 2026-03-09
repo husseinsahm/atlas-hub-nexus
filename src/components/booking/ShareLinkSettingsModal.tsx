@@ -160,9 +160,66 @@ export function ShareLinkSettingsModal({
 
   const createLink = useMutation({
     mutationFn: async () => {
-      const metadata: { password_hash?: string } = {};
+      const metadata: { 
+        password_hash?: string;
+        translations?: Record<string, any>;
+        available_languages?: string[];
+      } = {};
+      
       if (enablePassword && password.trim()) {
         metadata.password_hash = await hashPassword(password.trim());
+      }
+
+      // Handle AI translation if enabled
+      if (enableTranslation && selectedLanguages.size > 1 && bookingData) {
+        setIsTranslating(true);
+        
+        // Prepare content for translation
+        const contentToTranslate = {
+          title: bookingData.title,
+          description: bookingData.description || "",
+          days: bookingData.days?.map(day => ({
+            title: day.title || "",
+            description: day.description || "",
+            short_description: day.short_description || "",
+            city: day.city || "",
+            items: day.items?.map(item => ({
+              custom_title: item.custom_title || "",
+              custom_description: item.custom_description || "",
+            })) || [],
+          })) || [],
+        };
+
+        const targetLanguages = Array.from(selectedLanguages).filter(l => l !== "en");
+        
+        if (targetLanguages.length > 0) {
+          const { data: translateData, error: translateError } = await supabase.functions.invoke(
+            "translate-booking",
+            {
+              body: {
+                content: contentToTranslate,
+                targetLanguages,
+                sourceLanguage: "en",
+              },
+            }
+          );
+
+          if (translateError) {
+            console.error("Translation error:", translateError);
+            toast({
+              title: isArabic ? "تحذير" : "Warning",
+              description: isArabic 
+                ? "فشلت الترجمة، سيتم إنشاء الرابط بدون ترجمات"
+                : "Translation failed, link will be created without translations",
+              variant: "destructive",
+            });
+          } else if (translateData?.translations) {
+            metadata.translations = translateData.translations;
+          }
+        }
+        
+        metadata.available_languages = Array.from(selectedLanguages);
+        setIsTranslating(false);
       }
 
       const { data, error } = await supabase
@@ -192,6 +249,7 @@ export function ShareLinkSettingsModal({
       onOpenChange(false);
     },
     onError: (error: any) => {
+      setIsTranslating(false);
       toast({
         title: isArabic ? "خطأ" : "Error",
         description: error.message,
