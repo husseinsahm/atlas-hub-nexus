@@ -9,6 +9,7 @@ import {
   FileText, ChevronDown, Loader2, AlertCircle,
   Sun, Moon, Sunrise, Sunset,
   MessageCircle, CheckCircle, RefreshCw, Send, User,
+  Lock, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
