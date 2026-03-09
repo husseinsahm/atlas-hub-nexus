@@ -52,42 +52,42 @@ const navigationGroups = [
   {
     label: "Sales & CRM",
     items: [
-      { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
-      { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] },
+      { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] as AppRole[] },
+      { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] as AppRole[] },
     ]
   },
   {
     label: "Operations",
     items: [
-      { title: "Bookings", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations", "finance"] },
-      { title: "Operations", translationKey: "nav.operations", url: "/dashboard/operations", icon: Compass, roles: ["company_admin", "operations"] },
+      { title: "Bookings", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations", "finance"] as AppRole[] },
+      { title: "Operations", translationKey: "nav.operations", url: "/dashboard/operations", icon: Compass, roles: ["company_admin", "operations"] as AppRole[] },
     ]
   },
   {
     label: "Product",
     items: [
-      { title: "Templates", translationKey: "nav.templates", url: "/dashboard/templates", icon: FolderOpen, roles: ["company_admin", "agent", "operations"] },
-      { title: "Library", translationKey: "nav.library", url: "/dashboard/library", icon: BookOpen, roles: ["company_admin", "agent", "operations"] },
+      { title: "Templates", translationKey: "nav.templates", url: "/dashboard/templates", icon: FolderOpen, roles: ["company_admin", "agent", "operations"] as AppRole[] },
+      { title: "Library", translationKey: "nav.library", url: "/dashboard/library", icon: BookOpen, roles: ["company_admin", "agent", "operations"] as AppRole[] },
     ]
   },
   {
     label: "Finance",
     items: [
-      { title: "Quotations", translationKey: "nav.quotations", url: "/dashboard/quotations", icon: FileText, roles: ["company_admin", "agent", "finance"] },
-      { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] },
+      { title: "Quotations", translationKey: "nav.quotations", url: "/dashboard/quotations", icon: FileText, roles: ["company_admin", "agent", "finance"] as AppRole[] },
+      { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] as AppRole[] },
     ]
   },
   {
     label: "Analytics",
     items: [
-      { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] },
+      { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] as AppRole[] },
     ]
   },
   {
     label: "Team & Settings",
     items: [
-      { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] },
-      { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] },
+      { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] as AppRole[] },
+      { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] as AppRole[] },
     ]
   }
 ];
