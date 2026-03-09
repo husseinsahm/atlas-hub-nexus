@@ -16,6 +16,7 @@ import {
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
+  Link, ExternalLink, Share2,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
