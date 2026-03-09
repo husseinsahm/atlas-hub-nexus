@@ -44,8 +44,10 @@ export default function OperationsPage() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { limits, hasFeature } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
+  const isLockedForFree = limits.planSlug === "free" && !hasFeature("operations");
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
