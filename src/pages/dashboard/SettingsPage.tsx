@@ -311,7 +311,10 @@ export default function SettingsPage() {
 
         {/* ── Brand Tab ── */}
         <TabsContent value="brand">
-          <div className="luxury-card p-6 space-y-6">
+          <div className="luxury-card p-6 space-y-6 relative">
+            {isBrandingLocked && (
+              <LockOverlay planRequired="Professional" featureName="Custom Branding" />
+            )}
             <div>
               <h3 className="font-semibold font-display text-foreground mb-1">Brand Settings</h3>
               <p className="text-xs text-muted-foreground">Your company logo, tagline, and website</p>
