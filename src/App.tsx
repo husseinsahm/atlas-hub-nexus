@@ -33,6 +33,7 @@ import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
+import BillingPage from "./pages/dashboard/BillingPage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
