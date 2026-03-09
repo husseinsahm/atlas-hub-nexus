@@ -533,7 +533,10 @@ export default function BillingPage() {
             <span className={cn("text-sm font-medium", billingCycle === "monthly" ? "text-foreground" : "text-muted-foreground")}>Monthly</span>
             <Switch
               checked={billingCycle === "yearly"}
-              onCheckedChange={(v) => setBillingCycle(v ? "yearly" : "monthly")}
+              onCheckedChange={(v) => {
+                setBillingCycle(v ? "yearly" : "monthly");
+                setPriceKey(prev => prev + 1);
+              }}
             />
             <span className={cn("text-sm font-medium", billingCycle === "yearly" ? "text-foreground" : "text-muted-foreground")}>
               Yearly
