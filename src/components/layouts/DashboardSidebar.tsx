@@ -256,6 +256,13 @@ export function DashboardSidebar() {
           ))}
         </SidebarContent>
 
+        {/* Admin Panel Link - super_admin only */}
+        {user?.isSuperAdmin && (
+          <div className="border-t border-sidebar-border px-3 py-2">
+            <AdminPanelLink collapsed={collapsed} />
+          </div>
+        )}
+
         {/* Trial / Plan badge */}
         <div className="border-t border-sidebar-border px-3 py-2">
           <TrialBadge collapsed={collapsed} />
