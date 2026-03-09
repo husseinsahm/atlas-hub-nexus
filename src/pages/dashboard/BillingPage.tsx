@@ -254,106 +254,103 @@ export default function BillingPage() {
     return "downgrade";
   };
 
+  // Fetch pending upgrade requests for this company
+  const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
+    queryKey: ["upgrade-requests", companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+      const { data } = await supabase
+        .from("upgrade_requests")
+        .select("*, plans!upgrade_requests_requested_plan_id_fkey(name, slug)")
+        .eq("company_id", companyId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
   const handleUpgrade = async (targetSlug: string) => {
     setProcessing(true);
     const targetPlan = dbPlans.find((p: any) => p.slug === targetSlug);
-    if (!targetPlan || !companyId) {
+    if (!targetPlan || !companyId || !user) {
       toast({ title: "Error", description: "Plan not found", variant: "destructive" });
       setProcessing(false);
       return;
     }
 
-    const now = new Date();
-    const periodEnd = billingCycle === "yearly"
-      ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
-      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // Check if there's already a pending request for this plan
+    const existingRequest = pendingRequests.find(
+      (r: any) => r.requested_plan_id === targetPlan.id && r.status === "pending"
+    );
+    if (existingRequest) {
+      toast({ title: "Request already pending", description: "You already have a pending request for this plan.", variant: "destructive" });
+      setProcessing(false);
+      setUpgradeDialog(null);
+      setDowngradeDialog(null);
+      return;
+    }
 
-    const price = billingCycle === "yearly" ? targetPlan.price_yearly : targetPlan.price_monthly;
-    const isUpgrade = planOrder.indexOf(targetSlug) > currentIdx;
+    // Submit upgrade request instead of directly changing the subscription
+    const { error } = await supabase.from("upgrade_requests").insert({
+      company_id: companyId,
+      subscription_id: limits.subscriptionId,
+      requested_by: user.id,
+      requested_plan_id: targetPlan.id,
+      requested_billing_cycle: billingCycle,
+      current_plan_id: limits.planId,
+      status: "pending",
+    });
 
-    if (limits.subscriptionId) {
-      const { error } = await supabase.from("subscriptions").update({
-        plan_id: targetPlan.id,
-        status: "active",
-        billing_cycle: billingCycle,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        trial_ends_at: null,
-        canceled_at: null,
-      }).eq("id", limits.subscriptionId);
-
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        // Insert billing history record
-        await supabase.from("billing_history").insert({
-          company_id: companyId,
-          invoice_date: now.toISOString(),
-          amount: price,
-          currency: targetPlan.currency || "USD",
-          status: "paid",
-          description: `${isUpgrade ? "Upgraded" : "Downgraded"} to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
-          subscription_id: limits.subscriptionId,
-        });
-
-        toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
-        if (isUpgrade) setShowConfetti(true);
-        // Send email notification
-        supabase.functions.invoke("subscription-emails", {
-          body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name } },
-        }).catch(console.error);
-      }
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      const { data: newSub, error } = await supabase.from("subscriptions").insert({
-        company_id: companyId,
-        plan_id: targetPlan.id,
-        status: "active",
-        billing_cycle: billingCycle,
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        payment_status: "paid",
-      }).select("id").single();
-
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        await supabase.from("billing_history").insert({
-          company_id: companyId,
-          invoice_date: now.toISOString(),
-          amount: price,
-          currency: targetPlan.currency || "USD",
-          status: "paid",
-          description: `Subscribed to ${targetPlan.name} - ${billingCycle === "yearly" ? "Annual" : "Monthly"}`,
-          subscription_id: newSub?.id || null,
-        });
-
-        toast({ title: "Subscribed! 🎉", description: `Welcome to ${targetPlan.name}` });
-        setShowConfetti(true);
-      }
+      const isUpgrade = planOrder.indexOf(targetSlug) > currentIdx;
+      toast({
+        title: isUpgrade ? "Upgrade request submitted! 📨" : "Plan change request submitted! 📨",
+        description: "Your request has been sent to the admin for review. You'll be notified once it's approved.",
+      });
+      // Send email notification about the request
+      supabase.functions.invoke("subscription-emails", {
+        body: { type: isUpgrade ? "upgrade" : "downgrade", companyId, metadata: { newPlanName: targetPlan.name, isRequest: true } },
+      }).catch(console.error);
     }
 
     setProcessing(false);
     setUpgradeDialog(null);
     setDowngradeDialog(null);
-    // Refresh plan limits without full page reload
-    await refetchLimits();
+    await refetchRequests();
   };
 
   const handleCancel = async () => {
-    if (!limits.subscriptionId) return;
+    if (!limits.subscriptionId || !companyId || !user) return;
     setProcessing(true);
-    const { error } = await supabase.from("subscriptions").update({
-      status: "canceled",
-      canceled_at: new Date().toISOString(),
-    }).eq("id", limits.subscriptionId);
+
+    // Find the free plan to request downgrade to
+    const freePlan = dbPlans.find((p: any) => p.slug === "free");
+    if (!freePlan) {
+      toast({ title: "Error", description: "Could not find free plan", variant: "destructive" });
+      setProcessing(false);
+      setCancelDialog(false);
+      return;
+    }
+
+    const { error } = await supabase.from("upgrade_requests").insert({
+      company_id: companyId,
+      subscription_id: limits.subscriptionId,
+      requested_by: user.id,
+      requested_plan_id: freePlan.id,
+      requested_billing_cycle: "monthly",
+      current_plan_id: limits.planId,
+      status: "pending",
+    });
 
     if (!error) {
-      toast({ title: "Subscription cancelled", description: "Your plan will remain active until the end of the current period." });
-      // Send cancellation email
+      toast({ title: "Cancellation request submitted 📨", description: "Your request has been sent to the admin for review." });
       supabase.functions.invoke("subscription-emails", {
-        body: { type: "cancellation", companyId },
+        body: { type: "cancellation", companyId, metadata: { isRequest: true } },
       }).catch(console.error);
-      await refetchLimits();
+      await refetchRequests();
     }
     setProcessing(false);
     setCancelDialog(false);
@@ -392,6 +389,28 @@ export default function BillingPage() {
 
         {/* ─── Overview Tab ─── */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Pending Requests Banner */}
+          {pendingRequests.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 flex items-center gap-4"
+            >
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  Plan change request pending
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Your request to switch to <strong>{(pendingRequests[0] as any)?.plans?.name}</strong> is awaiting admin approval.
+                </p>
+              </div>
+              <Badge variant="secondary" className="shrink-0 text-xs">Pending</Badge>
+            </motion.div>
+          )}
+
           {/* Trial Banner */}
           {limits.isTrialing && limits.trialDaysRemaining !== null && (
             <motion.div
@@ -445,12 +464,21 @@ export default function BillingPage() {
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  if (!limits.subscriptionId) return;
-                  await supabase.from("subscriptions").update({
-                    status: "active", canceled_at: null,
-                  }).eq("id", limits.subscriptionId);
-                  toast({ title: "Subscription reactivated!" });
-                  await refetchLimits();
+                  if (!limits.subscriptionId || !companyId || !user) return;
+                  // Submit a reactivation request
+                  const currentPlan = dbPlans.find((p: any) => p.id === limits.planId);
+                  if (!currentPlan) return;
+                  await supabase.from("upgrade_requests").insert({
+                    company_id: companyId,
+                    subscription_id: limits.subscriptionId,
+                    requested_by: user.id,
+                    requested_plan_id: currentPlan.id,
+                    requested_billing_cycle: limits.billingCycle,
+                    current_plan_id: limits.planId,
+                    status: "pending",
+                  });
+                  toast({ title: "Reactivation request submitted 📨", description: "The admin will review your request." });
+                  await refetchRequests();
                 }}
               >
                 Reactivate
@@ -854,7 +882,7 @@ export default function BillingPage() {
             );
           })()}
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setUpgradeDialog(null)} className="flex-1">Maybe Later</Button>
             <Button
               onClick={() => upgradeDialog && handleUpgrade(upgradeDialog)}
@@ -862,7 +890,7 @@ export default function BillingPage() {
               className="flex-1 bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
             >
               {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Confirm Upgrade
+              Submit Upgrade Request
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -932,7 +960,7 @@ export default function BillingPage() {
               className="flex-1 gap-2"
             >
               {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Confirm Downgrade
+              Submit Downgrade Request
             </Button>
           </DialogFooter>
         </DialogContent>
