@@ -74,7 +74,7 @@ export function UpgradeBanner({ type, className }: UpgradeBannerProps) {
       </Button>
       <button
         onClick={() => setDismissed(true)}
-        className="absolute top-2 right-2 p-1 text-amber-600 hover:text-amber-800 dark:text-amber-400"
+        className="absolute top-2 end-2 p-1 text-amber-600 hover:text-amber-800 dark:text-amber-400"
       >
         <X className="w-4 h-4" />
       </button>

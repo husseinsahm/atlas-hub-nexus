@@ -1,8 +1,9 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
-  LayoutDashboard, CreditCard, DollarSign, BarChart3, Settings, ArrowLeft,
+  LayoutDashboard, CreditCard, DollarSign, BarChart3, Settings, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,14 +20,18 @@ export function AdminLayout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { direction } = useLanguage();
+  const isRTL = direction === "rtl";
 
   if (!user?.isSuperAdmin) {
     navigate("/dashboard", { replace: true });
     return null;
   }
 
+  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
+
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background" dir={direction}>
       {/* Sidebar */}
       <aside className="w-56 border-e border-border bg-card flex flex-col shrink-0">
         <div className="p-4 border-b border-border">
@@ -64,7 +69,7 @@ export function AdminLayout() {
             className="w-full justify-start gap-2 text-xs text-muted-foreground"
             onClick={() => navigate("/dashboard")}
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Dashboard
+            <BackIcon className="w-3.5 h-3.5" /> Back to Dashboard
           </Button>
         </div>
       </aside>

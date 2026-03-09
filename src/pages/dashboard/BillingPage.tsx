@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfettiEffect } from "@/components/plan/ConfettiEffect";
+import { DeactivatedPlanBanner } from "@/components/plan/DeactivatedPlanBanner";
 import {
   CreditCard, Crown, Users, Building2, Map, Sparkles, ArrowRight,
   Check, X, Zap, Shield, BarChart3, Globe, Mail, Phone, Star,
@@ -208,6 +210,8 @@ export default function BillingPage() {
   const [processing, setProcessing] = useState(false);
   const [paymentDialog, setPaymentDialog] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvv: "", name: "" });
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [priceKey, setPriceKey] = useState(0);
 
   // Fetch billing history
   const { data: billingHistory = [] } = useQuery({
@@ -292,6 +296,7 @@ export default function BillingPage() {
         });
 
         toast({ title: isUpgrade ? "Plan upgraded! 🎉" : "Plan changed", description: `Welcome to ${targetPlan.name}` });
+        if (isUpgrade) setShowConfetti(true);
       }
     } else {
       const { data: newSub, error } = await supabase.from("subscriptions").insert({
@@ -318,6 +323,7 @@ export default function BillingPage() {
         });
 
         toast({ title: "Subscribed! 🎉", description: `Welcome to ${targetPlan.name}` });
+        setShowConfetti(true);
       }
     }
 
@@ -354,6 +360,8 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-6xl">
+      {showConfetti && <ConfettiEffect onComplete={() => setShowConfetti(false)} />}
+      {limits.planDeactivated && <DeactivatedPlanBanner />}
       <div>
         <h1 className="text-2xl font-bold font-display text-foreground">Billing & Subscription</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your plan, usage, and billing</p>
@@ -525,7 +533,10 @@ export default function BillingPage() {
             <span className={cn("text-sm font-medium", billingCycle === "monthly" ? "text-foreground" : "text-muted-foreground")}>Monthly</span>
             <Switch
               checked={billingCycle === "yearly"}
-              onCheckedChange={(v) => setBillingCycle(v ? "yearly" : "monthly")}
+              onCheckedChange={(v) => {
+                setBillingCycle(v ? "yearly" : "monthly");
+                setPriceKey(prev => prev + 1);
+              }}
             />
             <span className={cn("text-sm font-medium", billingCycle === "yearly" ? "text-foreground" : "text-muted-foreground")}>
               Yearly
@@ -538,7 +549,7 @@ export default function BillingPage() {
           </div>
 
           {/* Plan Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {PLAN_TIERS.map((tier, i) => {
               const action = getPlanAction(tier.slug);
               const price = billingCycle === "yearly" ? tier.yearly : tier.monthly;
@@ -577,9 +588,14 @@ export default function BillingPage() {
                     </div>
 
                     {/* Price */}
-                    <div className="mb-5">
+                    <div className="mb-5 min-h-[60px]">
                       {price !== null ? (
-                        <>
+                        <motion.div
+                          key={`${tier.slug}-${priceKey}`}
+                          initial={{ opacity: 0, y: -8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
                           <div className="flex items-baseline gap-1">
                             <span className="text-3xl font-extrabold font-display text-foreground tabular-nums">${price}</span>
                             <span className="text-sm text-muted-foreground">/{billingCycle === "yearly" ? "yr" : "mo"}</span>
@@ -589,7 +605,7 @@ export default function BillingPage() {
                               ${Math.round(tier.yearly! / 12)}/mo billed annually
                             </p>
                           )}
-                        </>
+                        </motion.div>
                       ) : (
                         <span className="text-2xl font-extrabold font-display text-foreground">Custom</span>
                       )}
@@ -655,15 +671,15 @@ export default function BillingPage() {
           </div>
 
           {/* Feature Comparison Table */}
-          <div className="luxury-card overflow-hidden">
+          <div className="luxury-card overflow-hidden relative">
             <div className="p-6 border-b border-border">
               <h3 className="text-base font-bold font-display text-foreground">Feature Comparison</h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3">Feature</th>
+                    <th className="text-start text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-6 py-3 sticky inset-inline-start-0 bg-muted/30 z-10 min-w-[140px]">Feature</th>
                     {PLAN_TIERS.map((t) => (
                       <th key={t.slug} className="text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">
                         {t.name}
@@ -675,25 +691,28 @@ export default function BillingPage() {
                   {COMPARISON_FEATURES.map((cat) => (
                     <>
                       <tr key={cat.category} className="bg-muted/20">
-                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{cat.category}</td>
+                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
                       </tr>
-                      {cat.items.map((item, idx) => (
-                        <tr key={item.name} className={cn("border-b border-border last:border-0", idx % 2 === 0 ? "bg-background" : "bg-muted/10")}>
-                          <td className="px-6 py-3 text-sm text-foreground">{item.name}</td>
-                          {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
-                            const val = item[plan];
-                            return (
-                              <td key={plan} className="px-4 py-3 text-center">
-                                {typeof val === "boolean" ? (
-                                  val ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />
-                                ) : (
-                                  <span className="text-sm font-semibold text-foreground">{val}</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
+                      {cat.items.map((item, idx) => {
+                        const rowBg = idx % 2 === 0 ? "bg-background" : "bg-muted/10";
+                        return (
+                          <tr key={item.name} className={cn("border-b border-border last:border-0", rowBg)}>
+                            <td className={cn("px-6 py-3 text-sm text-foreground sticky inset-inline-start-0 z-10 min-w-[140px]", rowBg)}>{item.name}</td>
+                            {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
+                              const val = item[plan];
+                              return (
+                                <td key={plan} className="px-4 py-3 text-center">
+                                  {typeof val === "boolean" ? (
+                                    val ? <Check className="w-4 h-4 text-emerald-500 mx-auto" /> : <Minus className="w-4 h-4 text-muted-foreground/30 mx-auto" />
+                                  ) : (
+                                    <span className="text-sm font-semibold text-foreground">{val}</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
                     </>
                   ))}
                 </tbody>
@@ -780,7 +799,8 @@ export default function BillingPage() {
 
       {/* ─── Upgrade Dialog ─── */}
       <Dialog open={!!upgradeDialog} onOpenChange={() => setUpgradeDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:w-full max-sm:max-w-full">
+          <div className="sm:hidden w-10 h-1 rounded-full bg-muted mx-auto mb-2" />
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-gradient-to-br from-accent to-amber-500 flex items-center justify-center mb-4">
               <Sparkles className="w-7 h-7 text-white" />
@@ -840,7 +860,8 @@ export default function BillingPage() {
 
       {/* ─── Downgrade Dialog ─── */}
       <Dialog open={!!downgradeDialog} onOpenChange={() => setDowngradeDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:w-full max-sm:max-w-full">
+          <div className="sm:hidden w-10 h-1 rounded-full bg-muted mx-auto mb-2" />
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
               <AlertTriangle className="w-7 h-7 text-amber-600" />
@@ -909,7 +930,8 @@ export default function BillingPage() {
 
       {/* ─── Cancel Dialog ─── */}
       <Dialog open={cancelDialog} onOpenChange={setCancelDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-sm:fixed max-sm:bottom-0 max-sm:top-auto max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:w-full max-sm:max-w-full">
+          <div className="sm:hidden w-10 h-1 rounded-full bg-muted mx-auto mb-2" />
           <DialogHeader className="text-center sm:text-center">
             <div className="mx-auto w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
               <AlertTriangle className="w-7 h-7 text-destructive" />

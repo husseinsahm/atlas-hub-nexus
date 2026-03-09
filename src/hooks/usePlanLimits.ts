@@ -7,41 +7,38 @@ export interface PlanLimits {
   planId: string | null;
   planName: string;
   planSlug: string;
-  // Limits
   maxUsers: number | null;
   maxBranches: number | null;
   maxTripsPerMonth: number | null;
-  // Features
   features: string[];
-  // Usage
   currentUsers: number;
   currentBranches: number;
   tripsThisMonth: number;
-  // Computed
+  // Computed — NOTE: If a plan's max is reduced (e.g., max_users from 10 to 5)
+  // but a company already has 8 users, canAddUser will be false but existing
+  // users are NOT blocked. Only new additions are prevented.
   canAddUser: boolean;
   canAddBranch: boolean;
   canCreateTrip: boolean;
   usersRemaining: number | null;
   branchesRemaining: number | null;
   tripsRemaining: number | null;
-  // Plan status
   isOnFreeTier: boolean;
   hasSubscription: boolean;
-  // Subscription info
   subscriptionId: string | null;
   subscriptionStatus: string;
   billingCycle: string;
   currentPeriodEnd: string | null;
   canceledAt: string | null;
-  // Trial info
   isTrialing: boolean;
   trialEndsAt: string | null;
   trialDaysRemaining: number | null;
   trialExpired: boolean;
-  // Pricing
   priceMonthly: number;
   priceYearly: number;
   currency: string;
+  /** True if the company's current plan has been deactivated by admin */
+  planDeactivated: boolean;
 }
 
 const DEFAULT_LIMITS: PlanLimits = {
@@ -75,6 +72,7 @@ const DEFAULT_LIMITS: PlanLimits = {
   priceMonthly: 0,
   priceYearly: 0,
   currency: "USD",
+  planDeactivated: false,
 };
 
 export function usePlanLimits() {
@@ -108,7 +106,8 @@ export function usePlanLimits() {
             features,
             price_monthly,
             price_yearly,
-            currency
+            currency,
+            is_active
           )
         `)
         .eq("company_id", companyId)
@@ -160,6 +159,7 @@ export function usePlanLimits() {
       }
 
       const plan = subscription.plans as any;
+      const planDeactivated = plan.is_active === false;
       const maxUsers = plan.max_users;
       const maxBranches = plan.max_branches;
       const maxTripsPerMonth = plan.max_trips;
@@ -219,6 +219,7 @@ export function usePlanLimits() {
         priceMonthly: plan.price_monthly || 0,
         priceYearly: plan.price_yearly || 0,
         currency: plan.currency || "USD",
+        planDeactivated,
       };
     },
     enabled: !!companyId,
