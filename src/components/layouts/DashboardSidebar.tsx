@@ -1,4 +1,7 @@
-import {
+import { NavLink } from "@/components/NavLink";
+import { useAuth, type AppRole } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { 
   LayoutDashboard,
   Building2,
   Users,
@@ -9,20 +12,27 @@ import {
   FileText,
   Receipt,
   Compass,
-  ChevronLeft,
-  ChevronRight,
   DollarSign,
   Heart,
   BookOpen,
   Briefcase,
   FolderOpen,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
-import { useAuth, type AppRole } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { useLocation } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface NavItem {
   title: string;
