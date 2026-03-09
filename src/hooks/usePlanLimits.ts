@@ -106,7 +106,8 @@ export function usePlanLimits() {
             features,
             price_monthly,
             price_yearly,
-            currency
+            currency,
+            is_active
           )
         `)
         .eq("company_id", companyId)
