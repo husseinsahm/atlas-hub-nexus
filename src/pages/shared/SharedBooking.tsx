@@ -354,6 +354,107 @@ export default function SharedBooking() {
     );
   }
 
+  // Hash password for comparison
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordInput.trim()) return;
+    const metadata = shareToken.metadata as { password_hash?: string } | null;
+    if (!metadata?.password_hash) {
+      setPasswordUnlocked(true);
+      return;
+    }
+    const inputHash = await hashPassword(passwordInput.trim());
+    if (inputHash === metadata.password_hash) {
+      setPasswordUnlocked(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
+
+  // Check if password protection is enabled
+  const metadata = shareToken.metadata as { password_hash?: string } | null;
+  const isPasswordProtected = !!metadata?.password_hash;
+
+  /* ====== PASSWORD GATE ====== */
+  if (isPasswordProtected && !passwordUnlocked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center max-w-sm w-full"
+        >
+          <div className="w-16 h-16 rounded-2xl gold-gradient flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-accent-foreground" />
+          </div>
+          <h1 className="text-xl font-bold font-display text-foreground mb-2">
+            {lang === "ar" ? "محمي بكلمة مرور" : "Password Protected"}
+          </h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            {lang === "ar" 
+              ? "هذا البرنامج محمي. أدخل كلمة المرور للمتابعة."
+              : "This itinerary is protected. Enter the password to continue."
+            }
+          </p>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <Input
+                type={showPw ? "text" : "password"}
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+                placeholder={lang === "ar" ? "كلمة المرور" : "Enter password"}
+                className={cn(
+                  "pe-10 h-12 text-center text-lg",
+                  passwordError && "border-destructive"
+                )}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute end-0 top-0 h-full w-12"
+                onClick={() => setShowPw(!showPw)}
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+            </div>
+            
+            {passwordError && (
+              <p className="text-sm text-destructive">
+                {lang === "ar" ? "كلمة المرور غير صحيحة" : "Incorrect password"}
+              </p>
+            )}
+            
+            <Button
+              onClick={handlePasswordSubmit}
+              className="w-full h-11 gold-gradient text-accent-foreground font-semibold"
+            >
+              {lang === "ar" ? "فتح" : "Unlock"}
+            </Button>
+          </div>
+
+          <button
+            onClick={() => setLang(l => l === "en" ? "ar" : "en")}
+            className="mt-6 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all text-xs"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            {lang === "en" ? "العربية" : "English"}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   const sellingPrice = booking.selling_price || 0;
   const totalPax = (booking.adults || 1) + (booking.children || 0);
   const perPerson = totalPax > 0 ? Math.round(sellingPrice / totalPax) : 0;
