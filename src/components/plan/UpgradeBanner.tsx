@@ -66,7 +66,7 @@ export function UpgradeBanner({ type, className }: UpgradeBannerProps) {
       </div>
       <Button
         size="sm"
-        onClick={() => navigate("/dashboard/settings?tab=billing")}
+        onClick={() => navigate("/dashboard/billing")}
         className="gold-gradient text-accent-foreground gap-1.5 shrink-0"
       >
         <Sparkles className="w-3.5 h-3.5" />

@@ -49,7 +49,7 @@ export function FeatureGate({
         Upgrade to access {feature} and more premium features.
       </p>
       <Button 
-        onClick={() => navigate("/dashboard/settings?tab=billing")}
+        onClick={() => navigate("/dashboard/billing")}
         className="gold-gradient text-accent-foreground gap-2"
       >
         <Sparkles className="w-4 h-4" />

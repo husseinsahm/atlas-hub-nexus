@@ -43,7 +43,7 @@ export function LimitReachedDialog({ open, onOpenChange, type }: LimitReachedDia
 
   const handleUpgrade = () => {
     onOpenChange(false);
-    navigate("/dashboard/settings?tab=billing");
+    navigate("/dashboard/billing");
   };
 
   return (
