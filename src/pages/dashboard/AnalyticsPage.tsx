@@ -45,7 +45,25 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const { direction } = useLanguage();
+  const { limits } = usePlanLimits();
   const companyId = user?.activeMembership?.companyId;
+
+  // Free trial users get a lock overlay on the entire page
+  if (limits.isOnFreeTier || (limits.isTrialing && limits.planSlug === "free")) {
+    return (
+      <div className="relative min-h-[60vh]">
+        <LockOverlay planRequired="Starter" featureName="Analytics & Reporting" />
+        <div className="opacity-30 pointer-events-none blur-sm p-8">
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <p className="text-muted-foreground mt-1">Detailed analytics and reporting for your business.</p>
+          <div className="grid grid-cols-3 gap-4 mt-6">
+            {[1,2,3].map(i => <div key={i} className="h-32 rounded-xl bg-muted" />)}
+          </div>
+          <div className="h-64 rounded-xl bg-muted mt-6" />
+        </div>
+      </div>
+    );
+  }
 
   const [dateRange, setDateRange] = useState<"3m" | "6m" | "12m" | "all">("6m");
   const [activeSection, setActiveSection] = useState<"overview" | "leads" | "bookings" | "agents" | "destinations" | "revenue">("overview");
