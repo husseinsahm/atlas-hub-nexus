@@ -358,6 +358,62 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
     }
   }, [bookingId, booking, toast, isArabic]);
 
+  // Import template into booking
+  const importTemplate = useCallback(async (template: any) => {
+    try {
+      const templateDays = template.template_days || [];
+      if (templateDays.length === 0) {
+        toast({ title: isArabic ? "القالب فارغ" : "Template is empty", variant: "destructive" });
+        return;
+      }
+      for (const tDay of templateDays) {
+        let dayDate: string | null = null;
+        if (booking?.arrival_date || booking?.start_date) {
+          const startDate = new Date(booking.arrival_date || booking.start_date);
+          startDate.setDate(startDate.getDate() + (tDay.day_number - 1));
+          dayDate = startDate.toISOString().split("T")[0];
+        }
+        const nextDayNum = itineraryDays.length + tDay.day_number;
+        const { data: newDay } = await supabase.from("booking_days").insert({
+          booking_id: bookingId,
+          day_number: nextDayNum,
+          title: tDay.title || `Day ${nextDayNum}`,
+          description: tDay.description || null,
+          city: tDay.city || null,
+          date: dayDate,
+        }).select("id").single();
+        if (newDay && tDay.template_day_items?.length) {
+          const itemsToInsert = tDay.template_day_items.map((item: any, idx: number) => ({
+            booking_day_id: newDay.id,
+            category: item.category || "activity",
+            custom_title: item.custom_title || "",
+            custom_description: item.custom_description || null,
+            library_item_id: item.library_item_id || null,
+            duration_minutes: item.duration_minutes || null,
+            unit_price: item.unit_price || 0,
+            total_price: item.total_price || 0,
+            quantity: item.quantity || 1,
+            currency: item.currency || booking?.currency || "USD",
+            sort_order: idx,
+          }));
+          await supabase.from("booking_day_items").insert(itemsToInsert);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      setShowTemplateImport(false);
+      toast({ title: isArabic ? "تم استيراد القالب بنجاح" : "Template imported successfully" });
+    } catch (err: any) {
+      console.error("Import template error:", err);
+      toast({ title: "Error", description: err?.message, variant: "destructive" });
+    }
+  }, [bookingId, booking, itineraryDays, queryClient, toast, isArabic]);
+
+  const filteredLibrary = libraryItems.filter((item: any) => {
+    if (!librarySearch.trim()) return true;
+    const q = librarySearch.toLowerCase();
+    return item.title?.toLowerCase().includes(q) || item.city?.toLowerCase().includes(q) || item.category?.toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4">
       {/* Header */}
