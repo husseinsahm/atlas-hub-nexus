@@ -346,6 +346,47 @@ export type Database = {
           },
         ]
       }
+      booking_feedback: {
+        Row: {
+          booking_id: string
+          client_email: string | null
+          client_name: string
+          created_at: string
+          feedback_type: string
+          id: string
+          message: string | null
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_feedback_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_services: {
         Row: {
           booking_id: string
@@ -460,6 +501,54 @@ export type Database = {
             columns: ["library_item_id"]
             isOneToOne: false
             referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_share_tokens: {
+        Row: {
+          booking_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          token: string
+        }
+        Insert: {
+          booking_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          token?: string
+        }
+        Update: {
+          booking_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_share_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_share_tokens_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
