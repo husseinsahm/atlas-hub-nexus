@@ -15,6 +15,7 @@ import {
   ChevronDown, ChevronUp, User, Shield,
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
+  MoreVertical, Printer, Download, Copy, Archive,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -28,9 +29,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
@@ -41,12 +57,12 @@ import { createNotification } from "@/hooks/useNotifications";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; next?: BookingStatus }> = {
-  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-slate-700", bg: "bg-slate-100", next: "confirmed" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700", bg: "bg-blue-50", next: "in_operation" },
-  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-amber-700", bg: "bg-amber-50", next: "completed" },
-  completed: { label: "Completed", labelAr: "مكتمل", color: "text-emerald-700", bg: "bg-emerald-50" },
-  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700", bg: "bg-red-50" },
+const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; pillBg: string; pillText: string; next?: BookingStatus }> = {
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", pillBg: "bg-amber-100 dark:bg-amber-900/50", pillText: "text-amber-700 dark:text-amber-300", next: "confirmed" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", pillBg: "bg-blue-100 dark:bg-blue-900/50", pillText: "text-blue-700 dark:text-blue-300", next: "in_operation" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", pillBg: "bg-emerald-100 dark:bg-emerald-900/50", pillText: "text-emerald-700 dark:text-emerald-300", next: "completed" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-800/40", pillBg: "bg-slate-100 dark:bg-slate-800/50", pillText: "text-slate-600 dark:text-slate-400" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40", pillBg: "bg-red-100 dark:bg-red-900/50", pillText: "text-red-700 dark:text-red-300" },
 };
 
 const SERVICE_TYPES = [
@@ -391,10 +407,10 @@ export default function BookingDetailPage() {
     });
     return breakdown;
   }, [services]);
-  const servicesTotalCost = useMemo(() => 
+  const servicesTotalCost = useMemo(() =>
     services.reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
   , [services]);
-  const servicesActiveCost = useMemo(() => 
+  const servicesActiveCost = useMemo(() =>
     services.filter((s: any) => s.status !== "cancelled").reduce((sum: number, s: any) => sum + Number(s.total_cost || 0), 0)
   , [services]);
 
@@ -407,7 +423,7 @@ export default function BookingDetailPage() {
       <div className="text-center py-20">
         <h2 className="text-lg font-semibold">{isArabic ? "الحجز غير موجود" : "Booking not found"}</h2>
         <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard/bookings")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> {isArabic ? "العودة" : "Back"}
+          <ArrowLeft className="w-4 h-4 me-2" /> {isArabic ? "العودة" : "Back"}
         </Button>
       </div>
     );
@@ -416,132 +432,129 @@ export default function BookingDetailPage() {
   const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
   const customer = (booking as any).customers;
   const balance = (booking.selling_price || 0) - (booking.amount_paid || 0);
+  const paidPercent = booking.selling_price ? Math.min(100, ((booking.amount_paid || 0) / booking.selling_price) * 100) : 0;
 
   return (
     <div className="space-y-0">
-      {/* ─── Premium Header ─── */}
-      <div className="relative -mx-6 -mt-6 px-6 pt-6 pb-6 mb-0 overflow-hidden border-b border-border bg-gradient-to-br from-card via-background to-secondary/30">
-        {/* Decorative accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 gold-gradient" />
-        {/* Subtle radial glow */}
-        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-[0.07] bg-[radial-gradient(circle,hsl(var(--gold)),transparent_70%)]" />
+      {/* ─── Premium Compact Header ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-0 overflow-hidden border-b border-border bg-card"
+      >
+        {/* Top accent line */}
+        <div className="absolute top-0 inset-x-0 h-0.5 gold-gradient" />
 
-        <div className="relative">
-          {/* Top row: Back + Actions */}
-          <div className="flex items-center justify-between mb-5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/dashboard/bookings")}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5 text-xs -ml-2"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              {isArabic ? "الحجوزات" : "Bookings"}
-            </Button>
-            <div className="flex items-center gap-2">
-              {sc.next && (
-                <Button
-                  size="sm"
-                  onClick={advanceStatus}
-                  className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
-                </Button>
-              )}
-              <Select
-                value={booking.status}
-                onValueChange={v => updateBooking.mutate({ status: v })}
+        {/* Top row: Back + Actions */}
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/dashboard/bookings")}
+            className="text-muted-foreground hover:text-foreground gap-1.5 text-xs -ms-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            {isArabic ? "الحجوزات" : "Bookings"}
+          </Button>
+          <div className="flex items-center gap-2">
+            {sc.next && (
+              <Button
+                size="sm"
+                onClick={advanceStatus}
+                className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
               >
-                <SelectTrigger className="h-8 w-auto border-border bg-background text-foreground text-xs gap-2">
-                  <div className={cn("w-2 h-2 rounded-full", sc.bg)} />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Booking identity */}
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center shadow-lg shrink-0 ring-4 ring-background">
-              <Briefcase className="w-7 h-7 text-accent-foreground" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{booking.booking_number}</span>
-                <Badge className={cn("border-0 text-[10px] font-semibold", sc.bg, sc.color)}>
-                  {isArabic ? sc.labelAr : sc.label}
-                </Badge>
-                {(booking as any).source && (
-                  <Badge variant="outline" className="text-[9px] capitalize">{(booking as any).source}</Badge>
-                )}
-              </div>
-              <h1 className="text-xl font-bold font-display text-foreground truncate">{booking.title}</h1>
-              {customer?.full_name && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-                  <User className="w-3 h-3" /> {customer.full_name}
-                  {customer?.phone && <span className="ml-2 flex items-center gap-0.5"><Phone className="w-2.5 h-2.5" />{customer.phone}</span>}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Quick stat pills */}
-          <div className="flex flex-wrap gap-2.5 mt-5">
-            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Plane className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">{booking.total_days} {isArabic ? "يوم" : "days"}</span>
-                {(booking as any).arrival_date && (
-                  <p className="text-[10px] text-muted-foreground leading-tight">
-                    {format(new Date((booking as any).arrival_date), "MMM d")} → {(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Users className="w-3.5 h-3.5 text-primary" />
-              </div>
-              <div>
-                <span className="font-semibold text-foreground">{booking.adults}A{booking.children > 0 ? ` · ${booking.children}C` : ""}</span>
-                <p className="text-[10px] text-muted-foreground leading-tight">{travelers.length} {isArabic ? "مسجل" : "registered"}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 rounded-xl bg-background border border-border px-4 py-2.5 text-xs shadow-sm">
-              <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
-                <DollarSign className="w-3.5 h-3.5 text-accent" />
-              </div>
-              <div>
-                <span className="font-semibold font-mono text-foreground">{Number(booking.selling_price || 0).toLocaleString()}</span>
-                <p className="text-[10px] text-muted-foreground leading-tight">{booking.currency}</p>
-              </div>
-            </div>
-            {balance > 0 && (
-              <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-2.5 text-xs shadow-sm">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                  <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <span className="font-semibold font-mono text-amber-700 dark:text-amber-300">{balance.toLocaleString()}</span>
-                  <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 leading-tight">{isArabic ? "متبقي" : "remaining"}</p>
-                </div>
-              </div>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
+              </Button>
             )}
+            <Select
+              value={booking.status}
+              onValueChange={v => updateBooking.mutate({ status: v })}
+            >
+              <SelectTrigger className="h-8 w-auto border-border bg-background text-foreground text-xs gap-2">
+                <div className={cn("w-2 h-2 rounded-full", sc.pillBg.split(" ")[0].replace("bg-", "bg-"))} style={{ background: sc.color.includes("amber") ? "#f59e0b" : sc.color.includes("blue") ? "#3b82f6" : sc.color.includes("emerald") ? "#10b981" : sc.color.includes("red") ? "#ef4444" : "#94a3b8" }} />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
+                <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
+                <DropdownMenuItem><Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ" : "Duplicate"}</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive focus:text-destructive"><Trash2 className="w-4 h-4 me-2" />{isArabic ? "حذف" : "Delete"}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      </div>
 
-      {/* ─── Tab Navigation — underline style ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-background/95 backdrop-blur-md border-b border-border">
-        <div className="flex gap-0 overflow-x-auto scrollbar-hide">
+        {/* Main info row */}
+        <div className="flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <h1 className="text-xl font-bold font-display text-foreground">
+                {customer?.full_name || booking.title}
+              </h1>
+              <Badge variant="outline" className="font-mono text-[10px] bg-muted/50">{booking.booking_number}</Badge>
+              <Badge className={cn("border-0 text-[10px] font-semibold", sc.pillBg, sc.pillText)}>
+                {isArabic ? sc.labelAr : sc.label}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+              {customer?.phone && (
+                <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                  <Phone className="w-3 h-3" /> {customer.phone}
+                </a>
+              )}
+              {customer?.email && (
+                <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                  <Mail className="w-3 h-3" /> {customer.email}
+                </a>
+              )}
+              {(booking as any).source && (
+                <span className="flex items-center gap-1 capitalize">
+                  <Globe className="w-3 h-3" /> {(booking as any).source}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick stat pills */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          {[
+            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" },
+            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40" },
+            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
+            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" }] : []),
+          ].map((pill, idx) => (
+            <div key={idx} className="flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-xs">
+              <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", pill.colorClass)}>
+                <pill.icon className="w-3 h-3" />
+              </div>
+              <div>
+                <span className="font-semibold text-foreground tabular-nums">{pill.label}</span>
+                {pill.sub && <p className="text-[10px] text-muted-foreground leading-tight">{pill.sub}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ─── Tab Navigation ─── */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-muted/40 backdrop-blur-md border-b border-border">
+        <div className="flex gap-0 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
             return (
@@ -549,7 +562,7 @@ export default function BookingDetailPage() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  "relative flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap transition-all shrink-0",
                   isActive
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -560,7 +573,7 @@ export default function BookingDetailPage() {
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
-                    className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-accent"
+                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-accent"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}
@@ -572,70 +585,61 @@ export default function BookingDetailPage() {
 
       {/* ─── Tab Content ─── */}
       <div className="pt-6">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
 
       {/* ─── TAB: Summary ─── */}
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-5">
-            {/* Booking Details Card */}
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
-                    <Briefcase className="w-3.5 h-3.5 text-accent-foreground" />
-                  </div>
+              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Briefcase className="w-3.5 h-3.5" />
                   {isArabic ? "تفاصيل الحجز" : "Booking Details"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-5 space-y-5">
-                {/* Booking Number & Status highlight */}
-                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/50">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Hash className="w-5 h-5 text-primary" />
-                  </div>
+              <CardContent className="p-5 space-y-4">
+                {/* Booking Number */}
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <Hash className="w-4 h-4 text-muted-foreground" />
                   <div className="flex-1">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "رقم الحجز" : "Booking Number"}</p>
-                    <p className="text-base font-bold font-mono text-foreground">{booking.booking_number}</p>
+                    <p className="text-sm font-bold font-mono text-foreground">{booking.booking_number}</p>
                   </div>
-                  <Badge className={cn("border-0 text-xs font-semibold px-3 py-1", sc.bg, sc.color)}>
+                  <Badge className={cn("border-0 text-xs font-semibold", sc.pillBg, sc.pillText)}>
                     {isArabic ? sc.labelAr : sc.label}
                   </Badge>
                 </div>
 
-                {/* Date range visual */}
+                {/* Date range */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                        <Plane className="w-3 h-3 text-emerald-600 dark:text-emerald-400 rotate-[-45deg]" />
-                      </div>
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ الوصول" : "Arrival"}</Label>
-                    </div>
+                  <div className="p-3 rounded-lg border border-border/50">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <Plane className="w-3 h-3 text-emerald-500 rotate-[-45deg]" />
+                      {isArabic ? "الوصول" : "Arrival"}
+                    </Label>
                     <Input
                       type="date"
-                      className="h-9 text-xs border-border/60 bg-transparent"
+                      className="h-9 text-xs border-border/60"
                       defaultValue={(booking as any).arrival_date || booking.start_date || ""}
                       onBlur={e => updateBooking.mutate({ arrival_date: e.target.value || null, start_date: e.target.value || null })}
                     />
                   </div>
-                  <div className="relative p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/30 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
-                        <Plane className="w-3 h-3 text-rose-600 dark:text-rose-400 rotate-45" />
-                      </div>
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "تاريخ المغادرة" : "Departure"}</Label>
-                    </div>
+                  <div className="p-3 rounded-lg border border-border/50">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <Plane className="w-3 h-3 text-rose-500 rotate-45" />
+                      {isArabic ? "المغادرة" : "Departure"}
+                    </Label>
                     <Input
                       type="date"
-                      className="h-9 text-xs border-border/60 bg-transparent"
+                      className="h-9 text-xs border-border/60"
                       defaultValue={(booking as any).departure_date || booking.end_date || ""}
                       onBlur={e => updateBooking.mutate({ departure_date: e.target.value || null, end_date: e.target.value || null })}
                     />
@@ -644,20 +648,16 @@ export default function BookingDetailPage() {
 
                 {/* Source & Agent */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-md bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-                        <Globe className="w-3 h-3 text-violet-600 dark:text-violet-400" />
-                      </div>
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "المصدر" : "Source"}</Label>
-                    </div>
-                    <Select 
-                      value={(booking as any).source || "email"} 
+                  <div className="p-3 rounded-lg border border-border/50">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <Globe className="w-3 h-3" />
+                      {isArabic ? "المصدر" : "Source"}
+                    </Label>
+                    <Select
+                      value={(booking as any).source || "email"}
                       onValueChange={v => updateBooking.mutate({ source: v })}
                     >
-                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {["email","phone","walk_in","website","referral","social_media","partner","other"].map(s => (
                           <SelectItem key={s} value={s} className="capitalize">{s.replace("_"," ")}</SelectItem>
@@ -665,20 +665,16 @@ export default function BookingDetailPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="p-3.5 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                        <UserCheck className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الموظف المسؤول" : "Assigned Agent"}</Label>
-                    </div>
-                    <Select 
-                      value={booking.assigned_to || ""} 
+                  <div className="p-3 rounded-lg border border-border/50">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                      <UserCheck className="w-3 h-3" />
+                      {isArabic ? "الموظف" : "Agent"}
+                    </Label>
+                    <Select
+                      value={booking.assigned_to || ""}
                       onValueChange={v => updateBooking.mutate({ assigned_to: v })}
                     >
-                      <SelectTrigger className="h-9 text-xs border-border/60 bg-transparent">
-                        <SelectValue placeholder={isArabic ? "اختر..." : "Select..."} />
-                      </SelectTrigger>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={isArabic ? "اختر..." : "Select..."} /></SelectTrigger>
                       <SelectContent>
                         {profiles.map((p: any) => (
                           <SelectItem key={p.id} value={p.id}>{p.full_name || "Unnamed"}</SelectItem>
@@ -691,34 +687,28 @@ export default function BookingDetailPage() {
             </Card>
           </div>
 
+          {/* Notes sidebar */}
           <div className="space-y-5">
             <Card className="border-border/60 shadow-sm overflow-hidden">
-              <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
-                    <StickyNote className="w-3.5 h-3.5 text-accent-foreground" />
-                  </div>
+              <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <StickyNote className="w-3.5 h-3.5" />
                   {isArabic ? "ملاحظات" : "Notes"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 space-y-4">
+              <CardContent className="p-4 space-y-3">
                 {[
-                  { key: "internal_notes", label: isArabic ? "ملاحظات داخلية" : "Internal Notes", placeholder: isArabic ? "ملاحظات داخلية..." : "Internal notes...", icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400" },
-                  { key: "operations_notes", label: isArabic ? "ملاحظات العمليات" : "Operations Notes", placeholder: isArabic ? "ملاحظات العمليات..." : "Operations notes...", icon: Activity, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
-                  { key: "client_notes", label: isArabic ? "ملاحظات العميل" : "Client Notes", placeholder: isArabic ? "ملاحظات للعميل..." : "Notes for client...", icon: User, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
+                  { key: "internal_notes", label: isArabic ? "داخلية" : "Internal", placeholder: isArabic ? "ملاحظات داخلية..." : "Internal notes...", borderColor: "border-s-amber-500" },
+                  { key: "operations_notes", label: isArabic ? "عمليات" : "Operations", placeholder: isArabic ? "ملاحظات العمليات..." : "Operations notes...", borderColor: "border-s-blue-500" },
+                  { key: "client_notes", label: isArabic ? "عميل" : "Client", placeholder: isArabic ? "ملاحظات للعميل..." : "Notes for client...", borderColor: "border-s-emerald-500" },
                 ].map(note => (
-                  <div key={note.key} className="rounded-xl border border-border/50 p-3 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", note.iconBg)}>
-                        <note.icon className={cn("w-2.5 h-2.5", note.iconText)} />
-                      </div>
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{note.label}</Label>
-                    </div>
+                  <div key={note.key} className={cn("rounded-lg border border-border/50 p-3 border-s-2", note.borderColor)}>
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 block">{note.label}</Label>
                     <Textarea
                       defaultValue={(booking as any)[note.key] || ""}
                       onBlur={e => updateBooking.mutate({ [note.key]: e.target.value })}
                       placeholder={note.placeholder}
-                      rows={3}
+                      rows={2}
                       className="text-xs border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 resize-none"
                     />
                   </div>
@@ -732,27 +722,33 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Customer ─── */}
       {activeTab === "customer" && (
         <Card className="border-border/60 shadow-sm overflow-hidden">
-          <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
-                <UserCheck className="w-3.5 h-3.5 text-accent-foreground" />
-              </div>
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <UserCheck className="w-3.5 h-3.5" />
               {isArabic ? "معلومات العميل" : "Customer Information"}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5">
             {customer ? (
               <div className="space-y-5">
-                {/* Customer header card */}
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/40 border border-border/50">
+                {/* Customer header */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
                   <div className="w-14 h-14 rounded-2xl gold-gradient flex items-center justify-center text-xl font-bold text-accent-foreground shadow-lg">
                     {customer.full_name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-foreground font-display">{customer.full_name}</h3>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      {customer.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {customer.email}</span>}
-                      {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {customer.phone}</span>}
+                      {customer.email && (
+                        <a href={`mailto:${customer.email}`} className="flex items-center gap-1 hover:text-foreground">
+                          <Mail className="w-3 h-3" /> {customer.email}
+                        </a>
+                      )}
+                      {customer.phone && (
+                        <a href={`tel:${customer.phone}`} className="flex items-center gap-1 hover:text-foreground">
+                          <Phone className="w-3 h-3" /> {customer.phone}
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -760,16 +756,14 @@ export default function BookingDetailPage() {
                 {/* Info grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
-                    { label: isArabic ? "الجنسية" : "Nationality", value: customer.nationality, icon: Globe, iconBg: "bg-blue-100 dark:bg-blue-900/40", iconText: "text-blue-600 dark:text-blue-400" },
-                    { label: isArabic ? "البلد" : "Country", value: customer.country, icon: MapPin, iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconText: "text-emerald-600 dark:text-emerald-400" },
-                    { label: isArabic ? "المدينة" : "City", value: customer.city, icon: MapPin, iconBg: "bg-violet-100 dark:bg-violet-900/40", iconText: "text-violet-600 dark:text-violet-400" },
-                    { label: isArabic ? "جواز السفر" : "Passport", value: customer.passport_number, icon: Shield, iconBg: "bg-amber-100 dark:bg-amber-900/40", iconText: "text-amber-600 dark:text-amber-400", mono: true },
-                    { label: isArabic ? "تاريخ الميلاد" : "Date of Birth", value: customer.date_of_birth ? format(new Date(customer.date_of_birth), "MMM d, yyyy") : null, icon: Calendar, iconBg: "bg-rose-100 dark:bg-rose-900/40", iconText: "text-rose-600 dark:text-rose-400" },
+                    { label: isArabic ? "الجنسية" : "Nationality", value: customer.nationality, icon: Globe },
+                    { label: isArabic ? "البلد" : "Country", value: customer.country, icon: MapPin },
+                    { label: isArabic ? "المدينة" : "City", value: customer.city, icon: MapPin },
+                    { label: isArabic ? "جواز السفر" : "Passport", value: customer.passport_number, icon: Shield, mono: true },
+                    { label: isArabic ? "تاريخ الميلاد" : "Date of Birth", value: customer.date_of_birth ? format(new Date(customer.date_of_birth), "MMM d, yyyy") : null, icon: Calendar },
                   ].filter(f => f.value).map((field, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20">
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", field.iconBg)}>
-                        <field.icon className={cn("w-3.5 h-3.5", field.iconText)} />
-                      </div>
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border border-border/50">
+                      <field.icon className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</p>
                         <p className={cn("text-sm font-medium text-foreground truncate", field.mono && "font-mono")}>{field.value}</p>
@@ -778,17 +772,14 @@ export default function BookingDetailPage() {
                   ))}
                 </div>
 
-                <Button variant="outline" size="sm" className="text-xs gap-1.5 mt-2" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate(`/dashboard/customers/${customer.id}`)}>
                   <Eye className="w-3.5 h-3.5" /> {isArabic ? "عرض ملف العميل الكامل" : "View Full Customer Profile"}
                 </Button>
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                  <UserCheck className="w-8 h-8 text-muted-foreground/30" />
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked to this booking"}</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "اربط عميل من صفحة العملاء" : "Link a customer from the customers page"}</p>
+                <UserCheck className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">{isArabic ? "لم يتم ربط عميل بهذا الحجز" : "No customer linked"}</p>
               </div>
             )}
           </CardContent>
@@ -822,18 +813,12 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Services ─── */}
       {activeTab === "services" && (
         <div className="space-y-4">
-          {/* Services header */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border border-border/50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-sm">
-                <Hotel className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</p>
-                <p className="text-xs text-muted-foreground">{isArabic ? "الفعلي" : "Active"}: <span className="font-mono font-semibold text-foreground">{servicesActiveCost.toLocaleString()} {booking.currency}</span>{serviceCostByStatus.pending > 0 && <span className="text-muted-foreground/70"> ({isArabic ? "معلق" : "pending"}: {serviceCostByStatus.pending.toLocaleString()})</span>}</p>
-              </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">{services.length} {isArabic ? "خدمة" : "Services"}</h3>
+              <p className="text-xs text-muted-foreground">{isArabic ? "الفعلي" : "Active total"}: <span className="font-mono font-semibold text-foreground">{servicesActiveCost.toLocaleString()} {booking.currency}</span></p>
             </div>
-            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md" onClick={() => {
+            <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={() => {
               setEditingService({ _isNew: true, service_type: "hotel", title: "", quantity: booking.adults || 1, child_quantity: booking.children || 0, unit_price: 0, child_unit_price: 0, status: "pending" });
               setShowServiceDialog(true);
             }}>
@@ -843,107 +828,77 @@ export default function BookingDetailPage() {
 
           {services.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <Hotel className="w-8 h-8 text-muted-foreground/30" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "أضف فنادق ونقل وجولات" : "Add hotels, transfers, tours & more"}</p>
+              <Hotel className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد خدمات" : "No services added"}</p>
             </div>
           ) : (
-            <div className="space-y-2.5">
-              {services.map((service: any) => {
-                const typeConfig = SERVICE_TYPES.find(st => st.value === service.service_type);
-                const Icon = typeConfig?.icon || FileText;
-                const statusColors: Record<string, string> = {
-                  confirmed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
-                  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
-                  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
-                };
-                return (
-                  <Card key={service.id} className="border-border/50 hover:border-accent/30 transition-colors overflow-hidden group">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-3 p-4">
-                        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/15 transition-colors">
-                          <Icon className="w-5 h-5 text-accent" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <Badge variant="outline" className="text-[9px] capitalize border-border/60">{service.service_type}</Badge>
-                            <Badge className={cn("text-[9px] border-0", statusColors[service.status] || statusColors.pending)}>
-                              {service.status}
-                            </Badge>
+            <Card className="border-border/60 shadow-sm overflow-hidden">
+              <Table className="modern-table">
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead>{isArabic ? "الخدمة" : "Service"}</TableHead>
+                    <TableHead>{isArabic ? "النوع" : "Type"}</TableHead>
+                    <TableHead>{isArabic ? "المورد" : "Supplier"}</TableHead>
+                    <TableHead>{isArabic ? "التاريخ" : "Date"}</TableHead>
+                    <TableHead className="text-center">{isArabic ? "العدد" : "Qty"}</TableHead>
+                    <TableHead className="text-end">{isArabic ? "الإجمالي" : "Total"}</TableHead>
+                    <TableHead>{isArabic ? "الحالة" : "Status"}</TableHead>
+                    <TableHead className="w-16" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {services.map((service: any) => {
+                    const typeConfig = SERVICE_TYPES.find(st => st.value === service.service_type);
+                    const Icon = typeConfig?.icon || FileText;
+                    const serviceStatusColors: Record<string, string> = {
+                      confirmed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400",
+                      pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+                      cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+                    };
+                    return (
+                      <TableRow key={service.id} className="group">
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                              <Icon className="w-4 h-4 text-accent" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground truncate max-w-[180px]">{service.title}</span>
                           </div>
-                          <h4 className="text-sm font-semibold text-foreground truncate">{service.title}</h4>
-                          <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                            {service.supplier_name && <span className="flex items-center gap-0.5"><User className="w-2.5 h-2.5" />{service.supplier_name}</span>}
-                            {service.service_date && <span className="flex items-center gap-0.5"><Calendar className="w-2.5 h-2.5" />{format(new Date(service.service_date), "MMM d")}</span>}
-                            {service.location && <span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{service.location}</span>}
-                            {service.confirmation_number && <span className="font-mono bg-muted px-1.5 py-0.5 rounded">#{service.confirmation_number}</span>}
+                        </TableCell>
+                        <TableCell><Badge variant="outline" className="text-[9px] capitalize">{service.service_type}</Badge></TableCell>
+                        <TableCell><span className="text-xs text-muted-foreground">{service.supplier_name || "—"}</span></TableCell>
+                        <TableCell><span className="text-xs">{service.service_date ? format(new Date(service.service_date), "MMM d") : "—"}</span></TableCell>
+                        <TableCell className="text-center"><span className="text-xs font-medium">{service.quantity}</span></TableCell>
+                        <TableCell className="text-end">
+                          <span className="text-sm font-mono font-semibold">{Number(service.total_cost || 0).toLocaleString()}</span>
+                          <span className="text-[10px] text-muted-foreground ms-1">{service.currency}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("text-[9px] border-0", serviceStatusColors[service.status] || serviceStatusColors.pending)}>
+                            {service.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, pricing_mode: service.metadata?.pricing_mode || "detailed", child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0, children_free: service.metadata?.children_free || false }); setShowServiceDialog(true); }}>
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteService.mutate(service.id)}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
                           </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-bold font-mono text-foreground">
-                            {Number(service.total_cost || 0).toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">{service.currency}</span>
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{service.quantity}A × {Number(service.unit_price || 0).toLocaleString()}{(service.metadata as any)?.child_quantity > 0 && ` + ${(service.metadata as any).child_quantity}C × ${Number((service.metadata as any).child_unit_price || 0).toLocaleString()}`}</p>
-                        </div>
-                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingService({ ...service, pricing_mode: service.metadata?.pricing_mode || "detailed", child_quantity: service.metadata?.child_quantity || 0, child_unit_price: service.metadata?.child_unit_price || 0, children_free: service.metadata?.children_free || false }); setShowServiceDialog(true); }}>
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => deleteService.mutate(service.id)}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-
-              {/* Services cost breakdown by status */}
-              <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-accent/10 overflow-hidden">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center">
-                      <DollarSign className="w-4 h-4 text-accent" />
-                    </div>
-                    <span className="text-sm font-semibold text-foreground">{isArabic ? "تكاليف الخدمات" : "Services Cost"}</span>
-                  </div>
-                  <div className="space-y-1.5 text-xs">
-                    {serviceCostByStatus.confirmed > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500" />{isArabic ? "مؤكد" : "Confirmed"}</span>
-                        <span className="font-mono font-semibold text-foreground">{serviceCostByStatus.confirmed.toLocaleString()} {booking.currency}</span>
-                      </div>
-                    )}
-                    {serviceCostByStatus.booked > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{isArabic ? "محجوز" : "Booked"}</span>
-                        <span className="font-mono font-semibold text-foreground">{serviceCostByStatus.booked.toLocaleString()} {booking.currency}</span>
-                      </div>
-                    )}
-                    {serviceCostByStatus.pending > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400" />{isArabic ? "معلق" : "Pending"}</span>
-                        <span className="font-mono font-semibold text-muted-foreground">{serviceCostByStatus.pending.toLocaleString()} {booking.currency}</span>
-                      </div>
-                    )}
-                    {serviceCostByStatus.cancelled > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /><span className="line-through">{isArabic ? "ملغي" : "Cancelled"}</span></span>
-                        <span className="font-mono font-semibold text-muted-foreground line-through">{serviceCostByStatus.cancelled.toLocaleString()} {booking.currency}</span>
-                      </div>
-                    )}
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-foreground">{isArabic ? "الإجمالي الفعلي" : "Active Total"}</span>
-                    <span className="text-lg font-bold font-mono text-foreground">{servicesActiveCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {/* Services total footer */}
+              <div className="px-4 py-3 border-t border-border bg-muted/20 flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{isArabic ? "الإجمالي الفعلي" : "Active Total"}</span>
+                <span className="text-base font-bold font-mono text-foreground">{servicesActiveCost.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span></span>
+              </div>
+            </Card>
           )}
         </div>
       )}
@@ -951,94 +906,75 @@ export default function BookingDetailPage() {
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
         <div className="space-y-6">
-          {/* Financial KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Total Cost — auto from services with manual override */}
-            <div className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                </div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "التكلفة" : "Total Cost"}</Label>
-              </div>
-              <Input
-                type="number"
-                className="h-10 text-sm font-mono font-bold border-border/60 bg-transparent"
-                defaultValue={booking.total_cost || 0}
-                key={`tc-${booking.total_cost}`}
-                onBlur={e => updateBooking.mutate({ total_cost: parseFloat(e.target.value) || 0 })}
-              />
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">{isArabic ? "من الخدمات" : "From services"}: <span className="font-mono font-semibold">{servicesActiveCost.toLocaleString()}</span></span>
-                {Number(booking.total_cost || 0) !== servicesActiveCost && servicesActiveCost > 0 && (
-                  <button
-                    type="button"
-                    className="text-[9px] text-accent hover:underline font-medium"
-                    onClick={() => updateBooking.mutate({ total_cost: servicesActiveCost })}
-                  >
-                    {isArabic ? "مزامنة" : "Sync"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Selling Price */}
-            <div className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "سعر البيع" : "Selling Price"}</Label>
-              </div>
-              <Input
-                type="number"
-                className="h-10 text-sm font-mono font-bold border-border/60 bg-transparent"
-                defaultValue={booking.selling_price || 0}
-                key={`sp-${booking.selling_price}`}
-                onBlur={e => updateBooking.mutate({ selling_price: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-
-            {/* Profit */}
-            {(() => {
-              const profit = (booking.selling_price || 0) - (booking.total_cost || 0);
-              const isPositive = profit >= 0;
-              return (
-                <div className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", isPositive ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40")}>
-                      <Activity className={cn("w-4 h-4", isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")} />
+          {/* Financial summary bar */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardContent className="p-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {[
+                  { label: isArabic ? "التكلفة" : "Total Cost", value: booking.total_cost || 0, editable: true, key: "total_cost", icon: DollarSign },
+                  { label: isArabic ? "سعر البيع" : "Selling Price", value: booking.selling_price || 0, editable: true, key: "selling_price", icon: CreditCard },
+                  { label: isArabic ? "الربح" : "Profit", value: (booking.selling_price || 0) - (booking.total_cost || 0), icon: Activity, isProfit: true },
+                  { label: isArabic ? "الرصيد" : "Balance", value: balance, icon: Clock, isBalance: true },
+                ].map((item, idx) => (
+                  <div key={idx} className="p-3 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <item.icon className="w-4 h-4 text-muted-foreground" />
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</Label>
                     </div>
-                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الربح" : "Profit"}</Label>
+                    {item.editable ? (
+                      <Input
+                        type="number"
+                        className="h-9 text-sm font-mono font-bold border-border/60"
+                        defaultValue={item.value}
+                        key={`fin-${item.key}-${item.value}`}
+                        onBlur={e => updateBooking.mutate({ [item.key!]: parseFloat(e.target.value) || 0 })}
+                      />
+                    ) : (
+                      <p className={cn("text-lg font-mono font-bold tabular-nums",
+                        item.isProfit ? (item.value >= 0 ? "text-emerald-600" : "text-destructive") :
+                        item.isBalance ? (balance > 0 ? "text-amber-600" : "text-emerald-600") :
+                        "text-foreground"
+                      )}>
+                        {item.isBalance && balance <= 0 ? (isArabic ? "مدفوع" : "Paid") : item.value.toLocaleString()}
+                        {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1">{booking.currency}</span>}
+                      </p>
+                    )}
                   </div>
-                  <p className={cn("text-xl font-mono font-bold", isPositive ? "text-emerald-600" : "text-destructive")}>
-                    {profit.toLocaleString()} <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span>
-                  </p>
-                </div>
-              );
-            })()}
-
-            {/* Balance */}
-            <div className="p-4 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/20 hover:border-accent/20 transition-colors">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", balance > 0 ? "bg-amber-100 dark:bg-amber-900/40" : "bg-emerald-100 dark:bg-emerald-900/40")}>
-                  <Clock className={cn("w-4 h-4", balance > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")} />
-                </div>
-                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الرصيد المتبقي" : "Balance"}</Label>
+                ))}
               </div>
-              <p className={cn("text-xl font-mono font-bold", balance > 0 ? "text-amber-600" : "text-emerald-600")}>
-                {balance > 0 ? balance.toLocaleString() : (isArabic ? "مدفوع بالكامل" : "Fully Paid")} {balance > 0 && <span className="text-xs text-muted-foreground font-normal">{booking.currency}</span>}
+
+              {/* Payment progress */}
+              {booking.selling_price > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{isArabic ? "التحصيل" : "Collection Progress"}</span>
+                    <span className="font-mono font-semibold text-foreground">{Math.round(paidPercent)}%</span>
+                  </div>
+                  <Progress value={paidPercent} className="h-2" />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>{isArabic ? "مدفوع" : "Paid"}: <span className="font-mono font-semibold text-emerald-600">{Number(booking.amount_paid || 0).toLocaleString()}</span></span>
+                    <span>{isArabic ? "متبقي" : "Remaining"}: <span className="font-mono font-semibold text-amber-600">{balance > 0 ? balance.toLocaleString() : "0"}</span></span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Outstanding balance warning */}
+          {balance > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
+              <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <p className="text-amber-700 dark:text-amber-300">
+                {isArabic ? `يوجد رصيد مستحق بقيمة ${balance.toLocaleString()} ${booking.currency}` : `Outstanding balance of ${balance.toLocaleString()} ${booking.currency} remaining`}
               </p>
             </div>
-          </div>
+          )}
 
           {/* Payment Records */}
           <Card className="border-border/60 shadow-sm overflow-hidden">
-            <CardHeader className="pb-3 bg-gradient-to-r from-muted/50 via-muted/30 to-transparent border-b border-border/50">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg gold-gradient flex items-center justify-center shadow-sm">
-                  <CreditCard className="w-3.5 h-3.5 text-accent-foreground" />
-                </div>
+            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <CreditCard className="w-3.5 h-3.5" />
                 {isArabic ? "سجل المدفوعات" : "Payment Records"}
               </CardTitle>
             </CardHeader>
@@ -1056,7 +992,13 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Attachments ─── */}
       {activeTab === "attachments" && (
-        <Card>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Paperclip className="w-3.5 h-3.5" />
+              {isArabic ? "المرفقات" : "Attachments"}
+            </CardTitle>
+          </CardHeader>
           <CardContent className="p-4">
             <FileAttachments
               entityType="booking"
@@ -1069,7 +1011,13 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Comments ─── */}
       {activeTab === "comments" && (
-        <Card>
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <MessageSquare className="w-3.5 h-3.5" />
+              {isArabic ? "التعليقات" : "Comments"}
+            </CardTitle>
+          </CardHeader>
           <CardContent className="p-4">
             <InternalComments
               entityType="booking"
@@ -1091,8 +1039,8 @@ export default function BookingDetailPage() {
         />
       )}
 
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* ─── Traveler Dialog ─── */}
@@ -1131,9 +1079,10 @@ function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCoun
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {travelers.length} {isArabic ? "مسافر مسجل" : "registered"} · {adultsCount}A {childrenCount > 0 ? `${childrenCount}C` : ""}
-        </p>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{travelers.length} {isArabic ? "مسافر مسجل" : "registered"}</h3>
+          <p className="text-xs text-muted-foreground">{adultsCount}A {childrenCount > 0 ? `${childrenCount}C` : ""}</p>
+        </div>
         <Button size="sm" className="gold-gradient text-accent-foreground text-xs gap-1.5" onClick={onAdd}>
           <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة مسافر" : "Add Traveler"}
         </Button>
@@ -1149,23 +1098,23 @@ function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCoun
           {travelers.map((t: any, i: number) => {
             const isExpanded = expanded === t.id;
             return (
-              <Card key={t.id} className="border-border">
+              <Card key={t.id} className="border-border/60 shadow-sm overflow-hidden">
                 <CardContent className="p-0">
                   <div
                     className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/30 transition-colors"
                     onClick={() => setExpanded(isExpanded ? null : t.id)}
                   >
-                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
-                      {i + 1}
+                    <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent shrink-0">
+                      {t.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-xs font-medium text-foreground truncate">{t.full_name}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{t.full_name}</p>
                         {t.is_lead_traveler && <Badge className="text-[9px] bg-accent/10 text-accent border-0">{isArabic ? "رئيسي" : "Lead"}</Badge>}
                         {!t.is_adult && <Badge variant="secondary" className="text-[9px]">{isArabic ? "طفل" : "Child"}</Badge>}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
-                        {t.nationality && <span><Globe className="w-2.5 h-2.5 inline mr-0.5" />{t.nationality}</span>}
+                        {t.nationality && <span><Globe className="w-2.5 h-2.5 inline me-0.5" />{t.nationality}</span>}
                         {t.passport_number && <span className="font-mono">{t.passport_number}</span>}
                       </div>
                     </div>
@@ -1185,7 +1134,7 @@ function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCoun
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="border-t border-border bg-muted/20 px-3 py-3 overflow-hidden"
+                        className="border-t border-border bg-muted/20 px-4 py-3 overflow-hidden"
                       >
                         <div className="grid grid-cols-3 gap-3">
                           {[
@@ -1200,7 +1149,7 @@ function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCoun
                             { label: isArabic ? "متطلبات خاصة" : "Special Requirements", val: t.special_requirements },
                           ].filter(f => f.val).map((field, idx) => (
                             <div key={idx}>
-                              <Label className="text-[10px] text-muted-foreground uppercase">{field.label}</Label>
+                              <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</Label>
                               <p className={cn("text-xs text-foreground", field.mono && "font-mono")}>{field.val}</p>
                             </div>
                           ))}
@@ -1222,87 +1171,97 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
   const [form, setForm] = useState({ ...traveler });
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
-        <ModalDarkHeader
-          icon={<Users className="w-5 h-5 text-accent-foreground" />}
-          title={form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}
-          description={isArabic ? "معلومات جواز السفر والبيانات الشخصية" : "Passport details & personal info"}
-        />
+      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+        <div className="relative px-6 pt-5 pb-4 navy-gradient">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center shadow-lg">
+              <User className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-display">{form._isNew ? (isArabic ? "إضافة مسافر" : "Add Traveler") : (isArabic ? "تعديل المسافر" : "Edit Traveler")}</h2>
+              <p className="text-[11px] text-white/60">{isArabic ? "معلومات جواز السفر والتفاصيل الشخصية" : "Passport info and personal details"}</p>
+            </div>
+          </div>
+        </div>
 
-        <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
-          {/* Identity */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5">{isArabic ? "الهوية" : "Identity"}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span></Label>
-                <Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-11" autoFocus />
+        <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span></Label>
+              <Input value={form.full_name || ""} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-11" autoFocus />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
+              <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
+                <SelectTrigger className="mt-1 h-11"><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
+              <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
+              <div className="mt-1">
+                <NationalitySelect value={form.nationality || ""} onValueChange={v => setForm({ ...form, nationality: v })} isRtl={isArabic} />
               </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
-                <Select value={form.gender || ""} onValueChange={v => setForm({ ...form, gender: v })}>
-                  <SelectTrigger className="mt-1 h-11"><SelectValue placeholder="—" /></SelectTrigger>
-                  <SelectContent>
-                    {GENDERS.map(g => <SelectItem key={g} value={g} className="capitalize">{g}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "تاريخ الميلاد" : "Date of Birth"}</Label>
-                <Input type="date" value={form.date_of_birth || ""} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} className="mt-1 h-11" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "الجنسية" : "Nationality"}</Label>
-                <NationalitySelect value={form.nationality || ""} onValueChange={v => setForm({ ...form, nationality: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
-                <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 h-11" />
-              </div>
-              <div className="col-span-2">
-                <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
-                <PhoneInput value={form.phone || ""} onValueChange={v => setForm({ ...form, phone: v })} defaultCountry="AE" className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
+              <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
+              <div className="mt-1">
+                <PhoneInput value={form.phone || ""} onValueChange={v => setForm({ ...form, phone: v })} defaultCountry="AE" />
               </div>
             </div>
           </div>
 
-          {/* Passport */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 flex items-center gap-1"><Shield className="w-3 h-3" />{isArabic ? "جواز السفر" : "Passport"}</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
-                <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1 h-11 font-mono" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Expiry"}</Label>
-                <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1 h-11" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "بلد الإصدار" : "Issuing Country"}</Label>
-                <CountrySelect value={form.passport_country || ""} onValueChange={v => setForm({ ...form, passport_country: v })} placeholder={isArabic ? "اختر" : "Select"} className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">{isArabic ? "تفضيل الغرفة" : "Room Pref."}</Label>
-                <Input value={form.room_preference || ""} onChange={e => setForm({ ...form, room_preference: e.target.value })} className="mt-1 h-11" />
+          <Separator />
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">{isArabic ? "رقم الجواز" : "Passport #"}</Label>
+              <Input value={form.passport_number || ""} onChange={e => setForm({ ...form, passport_number: e.target.value })} className="mt-1 h-11 font-mono" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "انتهاء الجواز" : "Expiry"}</Label>
+              <Input type="date" value={form.passport_expiry || ""} onChange={e => setForm({ ...form, passport_expiry: e.target.value })} className="mt-1 h-11" />
+            </div>
+            <div>
+              <Label className="text-xs">{isArabic ? "بلد الإصدار" : "Issuing Country"}</Label>
+              <div className="mt-1">
+                <CountrySelect value={form.passport_country || ""} onValueChange={v => setForm({ ...form, passport_country: v })} isRtl={isArabic} />
               </div>
             </div>
           </div>
 
-          {/* Extras */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "is_lead_traveler", label: isArabic ? "مسافر رئيسي" : "Lead Traveler" },
+              { key: "is_adult", label: isArabic ? "بالغ" : "Adult", defaultTrue: true },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setForm({ ...form, [opt.key]: !form[opt.key] })}
+                className={cn(
+                  "flex items-center gap-1.5 text-[10px] font-medium rounded-full border px-3 py-1.5 transition-all",
+                  form[opt.key] ? "bg-accent/10 border-accent text-accent" : "border-border text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <CheckCircle2 className={cn("w-3 h-3", form[opt.key] ? "text-accent" : "text-muted-foreground/40")} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <div>
             <Label className="text-xs">{isArabic ? "متطلبات خاصة" : "Special Requirements"}</Label>
             <Textarea value={form.special_requirements || ""} onChange={e => setForm({ ...form, special_requirements: e.target.value })} rows={2} className="mt-1 text-sm resize-none" />
-          </div>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_lead_traveler || false} onChange={e => setForm({ ...form, is_lead_traveler: e.target.checked })} className="rounded" />
-              {isArabic ? "المسافر الرئيسي" : "Lead Traveler"}
-            </label>
-            <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <input type="checkbox" checked={form.is_adult !== false} onChange={e => setForm({ ...form, is_adult: e.target.checked })} className="rounded" />
-              {isArabic ? "بالغ" : "Adult"}
-            </label>
           </div>
         </div>
 
@@ -1324,128 +1283,73 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
 }
 
 function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, bookingAdults, bookingChildren }: any) {
-  const [form, setForm] = useState({ ...service });
+  const [form, setForm] = useState({
+    ...service,
+    quantity: service.quantity ?? bookingAdults,
+    child_quantity: service.child_quantity ?? bookingChildren,
+    pricing_mode: service.pricing_mode || "detailed",
+  });
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   const enhanceTitle = async () => {
     if (!form.title?.trim()) return;
     setIsEnhancing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("enhance-service-title", {
-        body: { title: form.title, serviceType: form.service_type, language: isArabic ? "ar" : "en" },
+      const res = await supabase.functions.invoke("enhance-service-title", {
+        body: { title: form.title, service_type: form.service_type },
       });
-      if (error) throw error;
-      if (data?.enhanced) setForm((prev: any) => ({ ...prev, title: data.enhanced }));
-    } catch (e) {
-      console.error("Enhance failed:", e);
-    } finally {
-      setIsEnhancing(false);
-    }
+      if (res.data?.enhanced_title) setForm({ ...form, title: res.data.enhanced_title });
+    } catch { /* ignore */ }
+    setIsEnhancing(false);
   };
 
-  const typeConfig: Record<string, {
-    icon: any; headerLabel: string; headerLabelAr: string; subtitle: string; subtitleAr: string;
-    titlePlaceholder: string; titlePlaceholderAr: string; locationLabel: string; locationLabelAr: string;
-    locationPlaceholder: string; locationPlaceholderAr: string; notesPlaceholder: string; notesPlaceholderAr: string;
-    showPickupDropoff?: boolean; showStartEndTime?: boolean; showDuration?: boolean; supplierLabel?: string; supplierLabelAr?: string;
-  }> = {
+  const typeConfig: Record<string, any> = {
     hotel: {
-      icon: Hotel, headerLabel: "Hotel / Accommodation", headerLabelAr: "فندق / إقامة",
-      subtitle: "Add hotel, resort, or accommodation details", subtitleAr: "أضف تفاصيل الفندق أو الإقامة",
-      titlePlaceholder: "e.g., Marriott Mena House 5★", titlePlaceholderAr: "مثال: ماريوت مينا هاوس 5★",
+      icon: Hotel, headerLabel: "Hotel Accommodation", headerLabelAr: "إقامة فندقية",
+      subtitle: "Room bookings, hotels, resorts", subtitleAr: "حجوزات الغرف والفنادق والمنتجعات",
+      titlePlaceholder: "e.g., Hilton Cairo Zamalek – Deluxe Room", titlePlaceholderAr: "مثال: هيلتون القاهرة الزمالك – غرفة ديلوكس",
       locationLabel: "Hotel Address", locationLabelAr: "عنوان الفندق",
-      locationPlaceholder: "e.g., Pyramids Road, Giza", locationPlaceholderAr: "مثال: طريق الأهرامات، الجيزة",
-      notesPlaceholder: "Room type, meal plan, check-in/out times...", notesPlaceholderAr: "نوع الغرفة، خطة الوجبات، مواعيد الوصول/المغادرة...",
-      supplierLabel: "Hotel / Chain", supplierLabelAr: "الفندق / السلسلة",
+      locationPlaceholder: "e.g., 21 Zamalek Street, Cairo", locationPlaceholderAr: "مثال: 21 شارع الزمالك، القاهرة",
+      notesPlaceholder: "Room type, view, meal plan, check-in/out times...", notesPlaceholderAr: "نوع الغرفة، الإطلالة، خطة الوجبات، أوقات الدخول/الخروج...",
+      showCheckInOut: true,
+      supplierLabel: "Hotel / Booking Platform", supplierLabelAr: "الفندق / منصة الحجز",
     },
     transfer: {
-      icon: Car, headerLabel: "Transfer / Transport", headerLabelAr: "نقل / مواصلات",
-      subtitle: "Airport pickup, city transfers, private cars", subtitleAr: "استقبال المطار، التنقلات، سيارات خاصة",
-      titlePlaceholder: "e.g., Airport → Hotel Transfer", titlePlaceholderAr: "مثال: نقل من المطار إلى الفندق",
+      icon: Car, headerLabel: "Transfer / Transportation", headerLabelAr: "نقل / مواصلات",
+      subtitle: "Airport transfers, city transport, coaches", subtitleAr: "نقل المطار، النقل في المدينة",
+      titlePlaceholder: "e.g., Airport Transfer – Cairo Intl → Hotel", titlePlaceholderAr: "مثال: نقل المطار – القاهرة الدولي → الفندق",
       locationLabel: "Route", locationLabelAr: "المسار",
-      locationPlaceholder: "e.g., Cairo Airport → Downtown Hotel", locationPlaceholderAr: "مثال: مطار القاهرة → فندق وسط البلد",
-      notesPlaceholder: "Vehicle type, flight number, meet & greet details...", notesPlaceholderAr: "نوع المركبة، رقم الرحلة، تفاصيل الاستقبال...",
+      locationPlaceholder: "e.g., Cairo Airport T2 → Downtown Hotel", locationPlaceholderAr: "مثال: مطار القاهرة T2 → فندق وسط البلد",
+      notesPlaceholder: "Vehicle type, driver contact, meeting point...", notesPlaceholderAr: "نوع المركبة، رقم السائق، نقطة الالتقاء...",
       showPickupDropoff: true, showStartEndTime: true,
-      supplierLabel: "Transport Company", supplierLabelAr: "شركة النقل",
+      supplierLabel: "Transport Provider", supplierLabelAr: "مزود النقل",
     },
     tour: {
-      icon: MapPin, headerLabel: "Tour / Excursion", headerLabelAr: "جولة / رحلة",
-      subtitle: "Guided tours, day trips, experiences", subtitleAr: "جولات سياحية، رحلات يومية، تجارب",
-      titlePlaceholder: "e.g., Pyramids & Sphinx Guided Tour", titlePlaceholderAr: "مثال: جولة الأهرامات وأبو الهول",
-      locationLabel: "Meeting Point", locationLabelAr: "نقطة التجمع",
+      icon: MapPin, headerLabel: "Tour / Excursion", headerLabelAr: "جولة سياحية",
+      subtitle: "Guided tours, day trips, sightseeing", subtitleAr: "جولات مصحوبة بمرشدين، رحلات يومية",
+      titlePlaceholder: "e.g., Pyramids of Giza Full Day Tour", titlePlaceholderAr: "مثال: جولة أهرامات الجيزة ليوم كامل",
+      locationLabel: "Meeting Point", locationLabelAr: "نقطة الالتقاء",
       locationPlaceholder: "e.g., Hotel lobby at 8:00 AM", locationPlaceholderAr: "مثال: لوبي الفندق الساعة 8:00 صباحاً",
-      notesPlaceholder: "Itinerary highlights, what's included, entrance fees...", notesPlaceholderAr: "أبرز المحطات، ما يشمله، رسوم الدخول...",
+      notesPlaceholder: "Inclusions, exclusions, guide language, lunch included...", notesPlaceholderAr: "المشمول، غير المشمول، لغة المرشد...",
       showStartEndTime: true, showDuration: true,
-      supplierLabel: "Tour Operator", supplierLabelAr: "منظم الرحلة",
+      supplierLabel: "Tour Operator", supplierLabelAr: "منظم الجولات",
     },
     guide: {
       icon: User, headerLabel: "Tour Guide", headerLabelAr: "مرشد سياحي",
-      subtitle: "Professional licensed tour guides", subtitleAr: "مرشدون سياحيون مرخصون",
-      titlePlaceholder: "e.g., 🇬🇧 English-speaking Guide", titlePlaceholderAr: "مثال: 🇬🇧 مرشد يتحدث الإنجليزية",
-      locationLabel: "Meeting Point", locationLabelAr: "نقطة التجمع",
+      subtitle: "Private guide, translator", subtitleAr: "مرشد خاص، مترجم",
+      titlePlaceholder: "e.g., Licensed Egyptologist Guide", titlePlaceholderAr: "مثال: مرشد مصري مرخص",
+      locationLabel: "Meeting Point", locationLabelAr: "نقطة الالتقاء",
       locationPlaceholder: "e.g., Hotel lobby", locationPlaceholderAr: "مثال: لوبي الفندق",
-      notesPlaceholder: "Languages spoken, specialization, license #...", notesPlaceholderAr: "اللغات، التخصص، رقم الترخيص...",
+      notesPlaceholder: "Languages spoken, expertise, contact details...", notesPlaceholderAr: "اللغات، التخصص، بيانات التواصل...",
       showStartEndTime: true, showDuration: true,
-      supplierLabel: "Guide Name / Agency", supplierLabelAr: "اسم المرشد / الوكالة",
+      supplierLabel: "Guide / Agency", supplierLabelAr: "المرشد / الوكالة",
     },
-    meal: {
-      icon: FileText, headerLabel: "Meal / Dining", headerLabelAr: "وجبة / مطعم",
-      subtitle: "Restaurant reservations, meal plans", subtitleAr: "حجوزات المطاعم، خطط الوجبات",
-      titlePlaceholder: "e.g., Dinner at Nile View Restaurant", titlePlaceholderAr: "مثال: عشاء في مطعم بإطلالة على النيل",
-      locationLabel: "Restaurant / Venue", locationLabelAr: "المطعم / المكان",
-      locationPlaceholder: "e.g., Four Seasons Nile Plaza", locationPlaceholderAr: "مثال: فور سيزونز نايل بلازا",
-      notesPlaceholder: "Cuisine type, dietary needs, reservation time...", notesPlaceholderAr: "نوع المطبخ، احتياجات غذائية، موعد الحجز...",
-      showStartEndTime: true,
-      supplierLabel: "Restaurant", supplierLabelAr: "المطعم",
-    },
-    activity: {
-      icon: Activity, headerLabel: "Activity / Experience", headerLabelAr: "نشاط / تجربة",
-      subtitle: "Special activities, shows, cruises", subtitleAr: "أنشطة خاصة، عروض، رحلات بحرية",
-      titlePlaceholder: "e.g., Felucca Ride on the Nile", titlePlaceholderAr: "مثال: ركوب الفلوكة على النيل",
-      locationLabel: "Venue / Location", locationLabelAr: "المكان / الموقع",
-      locationPlaceholder: "e.g., Corniche El Nile, Aswan", locationPlaceholderAr: "مثال: كورنيش النيل، أسوان",
-      notesPlaceholder: "Duration, what to bring, age restrictions...", notesPlaceholderAr: "المدة، ماذا تحضر، قيود العمر...",
-      showStartEndTime: true, showDuration: true,
-      supplierLabel: "Provider", supplierLabelAr: "مزود الخدمة",
-    },
-    flight: {
-      icon: Plane, headerLabel: "Flight Ticket", headerLabelAr: "تذكرة طيران",
-      subtitle: "Domestic & international flight bookings", subtitleAr: "حجوزات الطيران الداخلية والدولية",
-      titlePlaceholder: "e.g., Cairo → Istanbul (Turkish Airlines)", titlePlaceholderAr: "مثال: القاهرة → اسطنبول (الخطوط التركية)",
-      locationLabel: "Route", locationLabelAr: "المسار",
-      locationPlaceholder: "e.g., CAI → IST", locationPlaceholderAr: "مثال: القاهرة → اسطنبول",
-      notesPlaceholder: "Airline, flight number, class, baggage allowance, PNR...", notesPlaceholderAr: "شركة الطيران، رقم الرحلة، الدرجة، الأمتعة، رقم الحجز...",
-      showStartEndTime: true,
-      supplierLabel: "Airline / Agency", supplierLabelAr: "شركة الطيران / الوكالة",
-    },
-    visa: {
-      icon: Stamp, headerLabel: "Visa Fees", headerLabelAr: "رسوم التأشيرة",
-      subtitle: "Visa processing, application fees", subtitleAr: "معالجة التأشيرات، رسوم التقديم",
-      titlePlaceholder: "e.g., Turkey Tourist Visa", titlePlaceholderAr: "مثال: تأشيرة سياحية لتركيا",
-      locationLabel: "Embassy / Consulate", locationLabelAr: "السفارة / القنصلية",
-      locationPlaceholder: "e.g., Turkish Embassy, Cairo", locationPlaceholderAr: "مثال: السفارة التركية، القاهرة",
-      notesPlaceholder: "Visa type, processing time, documents required, passport details...", notesPlaceholderAr: "نوع التأشيرة، مدة المعالجة، المستندات المطلوبة، تفاصيل الجواز...",
-      supplierLabel: "Visa Agent", supplierLabelAr: "وكيل التأشيرات",
-    },
-    entrance: {
-      icon: Ticket, headerLabel: "Entrance Ticket", headerLabelAr: "تذكرة دخول",
-      subtitle: "Museum, monument & attraction tickets", subtitleAr: "تذاكر المتاحف والمعالم والأماكن السياحية",
-      titlePlaceholder: "e.g., Egyptian Museum Entrance", titlePlaceholderAr: "مثال: تذكرة دخول المتحف المصري",
-      locationLabel: "Venue / Site", locationLabelAr: "المكان / الموقع",
-      locationPlaceholder: "e.g., Egyptian Museum, Tahrir Square", locationPlaceholderAr: "مثال: المتحف المصري، ميدان التحرير",
-      notesPlaceholder: "Ticket type (adult/child/student), opening hours, group discounts...", notesPlaceholderAr: "نوع التذكرة (بالغ/طفل/طالب)، ساعات العمل، خصومات المجموعات...",
-      showStartEndTime: true,
-      supplierLabel: "Ticket Provider", supplierLabelAr: "مزود التذاكر",
-    },
-    other: {
-      icon: FileText, headerLabel: "Other Service", headerLabelAr: "خدمة أخرى",
-      subtitle: "Insurance, misc services", subtitleAr: "التأمين، خدمات متنوعة",
-      titlePlaceholder: "e.g., Travel Insurance", titlePlaceholderAr: "مثال: تأمين السفر",
-      locationLabel: "Location", locationLabelAr: "الموقع",
-      locationPlaceholder: "Service location or address", locationPlaceholderAr: "موقع الخدمة أو العنوان",
-      notesPlaceholder: "Any relevant details or special instructions...", notesPlaceholderAr: "أي تفاصيل أو تعليمات خاصة...",
-      supplierLabel: "Supplier", supplierLabelAr: "المورد",
-    },
+    activity: { icon: Activity, headerLabel: "Activity / Experience", headerLabelAr: "نشاط / تجربة", subtitle: "Special activities", subtitleAr: "أنشطة خاصة", titlePlaceholder: "e.g., Felucca Ride", titlePlaceholderAr: "مثال: ركوب الفلوكة", locationLabel: "Venue", locationLabelAr: "المكان", locationPlaceholder: "Location", locationPlaceholderAr: "الموقع", notesPlaceholder: "Details...", notesPlaceholderAr: "تفاصيل...", showStartEndTime: true, showDuration: true, supplierLabel: "Provider", supplierLabelAr: "مزود الخدمة" },
+    flight: { icon: Plane, headerLabel: "Flight Ticket", headerLabelAr: "تذكرة طيران", subtitle: "Flight bookings", subtitleAr: "حجوزات الطيران", titlePlaceholder: "e.g., Cairo → Istanbul", titlePlaceholderAr: "مثال: القاهرة → اسطنبول", locationLabel: "Route", locationLabelAr: "المسار", locationPlaceholder: "e.g., CAI → IST", locationPlaceholderAr: "مثال: القاهرة → اسطنبول", notesPlaceholder: "Airline, flight number...", notesPlaceholderAr: "شركة الطيران...", showStartEndTime: true, supplierLabel: "Airline", supplierLabelAr: "شركة الطيران" },
+    visa: { icon: Stamp, headerLabel: "Visa Fees", headerLabelAr: "رسوم التأشيرة", subtitle: "Visa processing", subtitleAr: "معالجة التأشيرات", titlePlaceholder: "e.g., Turkey Tourist Visa", titlePlaceholderAr: "مثال: تأشيرة تركيا", locationLabel: "Embassy", locationLabelAr: "السفارة", locationPlaceholder: "Embassy location", locationPlaceholderAr: "موقع السفارة", notesPlaceholder: "Visa type, documents...", notesPlaceholderAr: "نوع التأشيرة...", supplierLabel: "Visa Agent", supplierLabelAr: "وكيل التأشيرات" },
+    entrance: { icon: Ticket, headerLabel: "Entrance Ticket", headerLabelAr: "تذكرة دخول", subtitle: "Museum & attraction tickets", subtitleAr: "تذاكر المتاحف", titlePlaceholder: "e.g., Egyptian Museum", titlePlaceholderAr: "مثال: المتحف المصري", locationLabel: "Venue", locationLabelAr: "المكان", locationPlaceholder: "Venue location", locationPlaceholderAr: "موقع المكان", notesPlaceholder: "Ticket details...", notesPlaceholderAr: "تفاصيل التذكرة...", showStartEndTime: true, supplierLabel: "Provider", supplierLabelAr: "مزود التذاكر" },
+    meal: { icon: FileText, headerLabel: "Meal", headerLabelAr: "وجبة", subtitle: "Restaurant reservations", subtitleAr: "حجوزات المطاعم", titlePlaceholder: "e.g., Dinner Cruise", titlePlaceholderAr: "مثال: عشاء نيلي", locationLabel: "Restaurant", locationLabelAr: "المطعم", locationPlaceholder: "Restaurant name & address", locationPlaceholderAr: "اسم وعنوان المطعم", notesPlaceholder: "Menu, dietary needs...", notesPlaceholderAr: "القائمة، احتياجات غذائية...", supplierLabel: "Restaurant", supplierLabelAr: "المطعم" },
+    other: { icon: FileText, headerLabel: "Other Service", headerLabelAr: "خدمة أخرى", subtitle: "Insurance, misc", subtitleAr: "تأمين، خدمات متنوعة", titlePlaceholder: "e.g., Travel Insurance", titlePlaceholderAr: "مثال: تأمين السفر", locationLabel: "Location", locationLabelAr: "الموقع", locationPlaceholder: "Location", locationPlaceholderAr: "الموقع", notesPlaceholder: "Details...", notesPlaceholderAr: "تفاصيل...", supplierLabel: "Supplier", supplierLabelAr: "المورد" },
   };
 
   const cfg = typeConfig[form.service_type] || typeConfig.other;
@@ -1462,9 +1366,7 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
             </div>
             <div>
               <h2 className="text-base font-bold text-white font-display">
-                {form._isNew
-                  ? (isArabic ? cfg.headerLabelAr : cfg.headerLabel)
-                  : (isArabic ? "تعديل الخدمة" : "Edit Service")}
+                {form._isNew ? (isArabic ? cfg.headerLabelAr : cfg.headerLabel) : (isArabic ? "تعديل الخدمة" : "Edit Service")}
               </h2>
               <p className="text-[11px] text-white/60">{isArabic ? cfg.subtitleAr : cfg.subtitle}</p>
             </div>
@@ -1486,9 +1388,7 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
                     onClick={() => setForm({ ...form, service_type: st.value })}
                     className={cn(
                       "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
-                      isActive
-                        ? "border-accent bg-accent/10 text-accent shadow-sm"
-                        : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                      isActive ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-muted"
                     )}
                   >
                     <StIcon className="w-3.5 h-3.5" />
@@ -1501,22 +1401,14 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
 
           <Separator />
 
-          {/* Main fields - 2 column layout */}
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <Label className="text-xs">{isArabic ? "العنوان" : "Title"} <span className="text-destructive">*</span></Label>
               <div className="flex gap-2 mt-1">
                 <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="h-11 flex-1" placeholder={isArabic ? cfg.titlePlaceholderAr : cfg.titlePlaceholder} />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={!form.title?.trim() || isEnhancing}
-                  onClick={enhanceTitle}
-                  className="h-11 px-3 gap-1.5 text-xs shrink-0 border-accent/30 text-accent hover:bg-accent/10"
-                >
+                <Button type="button" size="sm" variant="outline" disabled={!form.title?.trim() || isEnhancing} onClick={enhanceTitle} className="h-11 px-3 gap-1.5 text-xs shrink-0 border-accent/30 text-accent hover:bg-accent/10">
                   {isEnhancing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span className="text-sm">✨</span>}
-                  {isArabic ? "تحسين بالذكاء" : "AI Enhance"}
+                  {isArabic ? "تحسين" : "AI"}
                 </Button>
               </div>
             </div>
@@ -1524,22 +1416,20 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
               <Label className="text-xs">{isArabic ? "الحالة" : "Status"}</Label>
               <Select value={form.status || "pending"} onValueChange={v => setForm({ ...form, status: v })}>
                 <SelectTrigger className="mt-1 h-11"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {["pending", "confirmed", "cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{["pending","confirmed","cancelled"].map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs">{isArabic ? "التاريخ" : "Service Date"}</Label>
+              <Label className="text-xs">{isArabic ? "التاريخ" : "Date"}</Label>
               <Input type="date" value={form.service_date || ""} onChange={e => setForm({ ...form, service_date: e.target.value })} className="mt-1 h-11" />
             </div>
             <div>
               <Label className="text-xs">{isArabic ? (cfg.supplierLabelAr || "المورد") : (cfg.supplierLabel || "Supplier")}</Label>
-              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? (cfg.supplierLabelAr || "المورد") : (cfg.supplierLabel || "Supplier")} />
+              <Input value={form.supplier_name || ""} onChange={e => setForm({ ...form, supplier_name: e.target.value })} className="mt-1 h-11" />
             </div>
             <div>
               <Label className="text-xs">{isArabic ? "رقم التأكيد" : "Confirmation #"}</Label>
-              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" placeholder="e.g., CNF-2024-001" />
+              <Input value={form.confirmation_number || ""} onChange={e => setForm({ ...form, confirmation_number: e.target.value })} className="mt-1 h-11 font-mono" />
             </div>
             <div className="col-span-2">
               <Label className="text-xs">{isArabic ? cfg.locationLabelAr : cfg.locationLabel}</Label>
@@ -1547,43 +1437,33 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
             </div>
           </div>
 
-          {/* Conditional: Pickup/Dropoff for transfers */}
           {cfg.showPickupDropoff && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">{isArabic ? "نقطة الالتقاط" : "Pickup Location"}</Label>
-                <Input value={form.pickup_location || ""} onChange={e => setForm({ ...form, pickup_location: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: مطار القاهرة T2" : "e.g., Cairo Airport T2"} />
+                <Label className="text-xs">{isArabic ? "الالتقاط" : "Pickup"}</Label>
+                <Input value={form.pickup_location || ""} onChange={e => setForm({ ...form, pickup_location: e.target.value })} className="mt-1 h-11" />
               </div>
               <div>
-                <Label className="text-xs">{isArabic ? "نقطة الإنزال" : "Dropoff Location"}</Label>
-                <Input value={form.dropoff_location || ""} onChange={e => setForm({ ...form, dropoff_location: e.target.value })} className="mt-1 h-11" placeholder={isArabic ? "مثال: فندق وسط البلد" : "e.g., Downtown Hotel"} />
+                <Label className="text-xs">{isArabic ? "الإنزال" : "Dropoff"}</Label>
+                <Input value={form.dropoff_location || ""} onChange={e => setForm({ ...form, dropoff_location: e.target.value })} className="mt-1 h-11" />
               </div>
             </div>
           )}
 
-          {/* Conditional: Start/End time */}
           {cfg.showStartEndTime && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">{isArabic ? "وقت البداية" : "Start Time"}</Label>
+                <Label className="text-xs">{isArabic ? "البداية" : "Start"}</Label>
                 <Input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} className="mt-1 h-11" />
               </div>
               <div>
-                <Label className="text-xs">{isArabic ? "وقت النهاية" : "End Time"}</Label>
+                <Label className="text-xs">{isArabic ? "النهاية" : "End"}</Label>
                 <Input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} className="mt-1 h-11" />
               </div>
             </div>
           )}
 
-          {/* Conditional: Duration */}
-          {cfg.showDuration && (
-            <div className="w-1/2">
-              <Label className="text-xs">{isArabic ? "المدة (دقائق)" : "Duration (minutes)"}</Label>
-              <Input type="number" min={0} value={form.duration_minutes || ""} onChange={e => setForm({ ...form, duration_minutes: parseInt(e.target.value) || null })} className="mt-1 h-11" placeholder="e.g., 120" />
-            </div>
-          )}
-
-          {/* Pricing row */}
+          {/* Pricing */}
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
@@ -1591,7 +1471,7 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
               </p>
               <div className="flex rounded-lg border border-border overflow-hidden">
                 <button type="button" onClick={() => setForm({ ...form, pricing_mode: "flat" })} className={cn("px-3 py-1 text-[10px] font-semibold transition-all", (form.pricing_mode || "detailed") === "flat" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
-                  {isArabic ? "مبلغ إجمالي" : "Flat Rate"}
+                  {isArabic ? "إجمالي" : "Flat"}
                 </button>
                 <button type="button" onClick={() => setForm({ ...form, pricing_mode: "detailed" })} className={cn("px-3 py-1 text-[10px] font-semibold transition-all", (form.pricing_mode || "detailed") === "detailed" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
                   {isArabic ? "تفصيلي" : "Detailed"}
@@ -1600,11 +1480,10 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
             </div>
 
             {(form.pricing_mode || "detailed") === "flat" ? (
-              /* ── Flat rate: single total ── */
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "المبلغ الإجمالي" : "Total Amount"}</Label>
-                  <Input type="number" min={0} value={form.unit_price || 0} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0, quantity: 1, child_quantity: 0, child_unit_price: 0 })} className="mt-0.5 h-11 font-mono text-sm font-bold" placeholder="e.g., 500" />
+                  <Label className="text-[10px] text-muted-foreground">{isArabic ? "المبلغ" : "Amount"}</Label>
+                  <Input type="number" min={0} value={form.unit_price || 0} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0, quantity: 1 })} className="mt-0.5 h-11 font-mono font-bold" />
                 </div>
                 <div className="flex items-end">
                   <div className="h-11 w-full rounded-md border border-border bg-background flex items-center justify-center text-sm font-bold font-mono text-foreground">
@@ -1613,65 +1492,48 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
                 </div>
               </div>
             ) : (
-              /* ── Detailed: adults + children ── */
               <>
-                {/* Adults row */}
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "بالغين" : "Adults"}</Badge>
                   <div className="flex-1 grid grid-cols-3 gap-2">
                     <div>
                       <Label className="text-[10px] text-muted-foreground">{isArabic ? "عدد" : "Qty"}</Label>
-                      <Input type="number" min={0} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="mt-0.5 h-9 text-center font-bold text-sm" />
+                      <Input type="number" min={0} value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className="mt-0.5 h-9 text-center font-bold" />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "سعر الفرد" : "Price/each"}</Label>
-                      <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-0.5 h-9 font-mono text-sm" />
+                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "سعر" : "Price"}</Label>
+                      <Input type="number" min={0} value={form.unit_price} onChange={e => setForm({ ...form, unit_price: parseFloat(e.target.value) || 0 })} className="mt-0.5 h-9 font-mono" />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "الإجمالي" : "Subtotal"}</Label>
+                      <Label className="text-[10px] text-muted-foreground">{isArabic ? "الإجمالي" : "Sub"}</Label>
                       <div className="mt-0.5 h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
                         {((form.quantity || 0) * (form.unit_price || 0)).toLocaleString()}
                       </div>
                     </div>
                   </div>
                 </div>
-                {/* Children row */}
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-2">
                   <Badge variant="outline" className="text-[10px] w-16 justify-center shrink-0">{isArabic ? "أطفال" : "Children"}</Badge>
                   <div className="flex-1 grid grid-cols-3 gap-2">
-                    <div>
-                      <Input type="number" min={0} value={form.child_quantity || 0} onChange={e => setForm({ ...form, child_quantity: parseInt(e.target.value) || 0 })} className="h-9 text-center font-bold text-sm" disabled={form.children_free} />
-                    </div>
-                    <div>
-                      <Input type="number" min={0} value={form.children_free ? 0 : (form.child_unit_price || 0)} onChange={e => setForm({ ...form, child_unit_price: parseFloat(e.target.value) || 0 })} className="h-9 font-mono text-sm" disabled={form.children_free} />
-                    </div>
-                    <div>
-                      <div className="h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
-                        {form.children_free ? "0" : ((form.child_quantity || 0) * (form.child_unit_price || 0)).toLocaleString()}
-                      </div>
+                    <Input type="number" min={0} value={form.child_quantity || 0} onChange={e => setForm({ ...form, child_quantity: parseInt(e.target.value) || 0 })} className="h-9 text-center font-bold" disabled={form.children_free} />
+                    <Input type="number" min={0} value={form.children_free ? 0 : (form.child_unit_price || 0)} onChange={e => setForm({ ...form, child_unit_price: parseFloat(e.target.value) || 0 })} className="h-9 font-mono" disabled={form.children_free} />
+                    <div className="h-9 rounded-md border border-border bg-background flex items-center justify-center text-xs font-bold font-mono">
+                      {form.children_free ? "0" : ((form.child_quantity || 0) * (form.child_unit_price || 0)).toLocaleString()}
                     </div>
                   </div>
                 </div>
-                {/* Children free toggle */}
-                <div className="flex items-center gap-2 mb-3 ml-[4.5rem]">
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, children_free: !form.children_free, child_unit_price: !form.children_free ? 0 : form.child_unit_price })}
-                    className={cn("flex items-center gap-1.5 text-[10px] font-medium rounded-full border px-2.5 py-1 transition-all",
-                      form.children_free ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "border-border text-muted-foreground hover:bg-muted"
-                    )}
-                  >
+                <div className="flex items-center gap-2 ms-[4.5rem]">
+                  <button type="button" onClick={() => setForm({ ...form, children_free: !form.children_free, child_unit_price: !form.children_free ? 0 : form.child_unit_price })} className={cn("flex items-center gap-1.5 text-[10px] font-medium rounded-full border px-2.5 py-1 transition-all", form.children_free ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300" : "border-border text-muted-foreground hover:bg-muted")}>
                     <CheckCircle2 className={cn("w-3 h-3", form.children_free ? "text-emerald-600" : "text-muted-foreground/40")} />
-                    {isArabic ? "الأطفال مجاناً" : "Children are FREE"}
+                    {isArabic ? "أطفال مجاناً" : "Children FREE"}
                   </button>
                 </div>
               </>
             )}
 
-            {/* Grand total */}
-            <Separator className="mb-3" />
+            <Separator className="my-3" />
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">{isArabic ? "الإجمالي الكلي" : "Grand Total"}</span>
+              <span className="text-xs font-semibold text-muted-foreground">{isArabic ? "الإجمالي" : "Grand Total"}</span>
               <span className="text-base font-bold font-mono text-foreground">
                 {(form.pricing_mode || "detailed") === "flat"
                   ? (form.unit_price || 0).toLocaleString()
@@ -1706,16 +1568,32 @@ function ServiceDialog({ service, isArabic, open, onClose, onSave, isSaving, boo
 
 function TimelineTab({ activities, isArabic, getProfileName, onAddComment, isAddingComment }: any) {
   const [commentText, setCommentText] = useState("");
-  const typeIcons: Record<string, { icon: any; color: string }> = {
-    status_change: { icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
-    comment: { icon: MessageSquare, color: "bg-blue-100 text-blue-600" },
-    created: { icon: Plus, color: "bg-accent/20 text-accent" },
-    note: { icon: StickyNote, color: "bg-muted text-muted-foreground" },
+  const [filterType, setFilterType] = useState("all");
+
+  const typeIcons: Record<string, { icon: any; color: string; label: string }> = {
+    status_change: { icon: CheckCircle2, color: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400", label: "Status" },
+    comment: { icon: MessageSquare, color: "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400", label: "Comment" },
+    created: { icon: Plus, color: "bg-accent/20 text-accent", label: "Created" },
+    note: { icon: StickyNote, color: "bg-muted text-muted-foreground", label: "Note" },
   };
+
+  const filtered = filterType === "all" ? activities : activities.filter((a: any) => a.activity_type === filterType);
+
+  // Group by date
+  const grouped = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filtered.forEach((act: any) => {
+      const date = format(new Date(act.created_at), "yyyy-MM-dd");
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(act);
+    });
+    return groups;
+  }, [filtered]);
 
   return (
     <div className="space-y-4">
-      <Card>
+      {/* Add comment */}
+      <Card className="border-border/60 shadow-sm">
         <CardContent className="p-4">
           <div className="flex gap-2">
             <Textarea
@@ -1727,7 +1605,7 @@ function TimelineTab({ activities, isArabic, getProfileName, onAddComment, isAdd
             />
             <Button
               size="sm"
-              className="h-auto self-end"
+              className="h-auto self-end gold-gradient text-accent-foreground"
               disabled={!commentText.trim() || isAddingComment}
               onClick={() => { onAddComment(commentText); setCommentText(""); }}
             >
@@ -1737,40 +1615,66 @@ function TimelineTab({ activities, isArabic, getProfileName, onAddComment, isAdd
         </CardContent>
       </Card>
 
-      {activities.length === 0 ? (
+      {/* Filter pills */}
+      <div className="flex gap-1.5">
+        {[{ key: "all", label: isArabic ? "الكل" : "All" }, ...Object.entries(typeIcons).map(([k, v]) => ({ key: k, label: v.label }))].map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilterType(f.key)}
+            className={cn(
+              "px-3 py-1 text-[10px] font-medium rounded-full border transition-all",
+              filterType === f.key ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-muted"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Timeline */}
+      {filtered.length === 0 ? (
         <div className="text-center py-12">
           <Clock className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">{isArabic ? "لا يوجد نشاط بعد" : "No activity yet"}</p>
         </div>
       ) : (
-        <div className="relative ml-3">
-          <div className="absolute left-3 top-2 bottom-2 w-px bg-border" />
-          <div className="space-y-4">
-            {activities.map((act: any, idx: number) => {
-              const cfg = typeIcons[act.activity_type] || typeIcons.note;
-              const Icon = cfg.icon;
-              return (
-                <motion.div
-                  key={act.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.03 }}
-                  className="relative pl-8"
-                >
-                  <div className={cn("absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-card", cfg.color)}>
-                    <Icon className="w-3 h-3" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-foreground">{act.title}</p>
-                    {act.description && <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">{act.description}</p>}
-                    <p className="text-[10px] text-muted-foreground">
-                      {getProfileName(act.user_id)} · {format(new Date(act.created_at), "MMM d, HH:mm")}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([date, acts]) => (
+            <div key={date}>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                {format(new Date(date), "EEEE, MMM d, yyyy")}
+              </p>
+              <div className="relative ms-3">
+                <div className="absolute start-3 top-2 bottom-2 w-px bg-border" />
+                <div className="space-y-3">
+                  {(acts as any[]).map((act: any, idx: number) => {
+                    const cfgItem = typeIcons[act.activity_type] || typeIcons.note;
+                    const Icon = cfgItem.icon;
+                    return (
+                      <motion.div
+                        key={act.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.03 }}
+                        className="relative ps-8"
+                      >
+                        <div className={cn("absolute start-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-card", cfgItem.color)}>
+                          <Icon className="w-3 h-3" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-foreground">{act.title}</p>
+                          {act.description && <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg">{act.description}</p>}
+                          <p className="text-[10px] text-muted-foreground">
+                            {getProfileName(act.user_id)} · {format(new Date(act.created_at), "HH:mm")}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
