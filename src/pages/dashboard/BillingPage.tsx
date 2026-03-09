@@ -323,6 +323,7 @@ export default function BillingPage() {
         });
 
         toast({ title: "Subscribed! 🎉", description: `Welcome to ${targetPlan.name}` });
+        setShowConfetti(true);
       }
     }
 
