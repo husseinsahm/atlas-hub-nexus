@@ -374,6 +374,12 @@ export default function BookingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Usage warnings */}
+      <UsageWarningBanner />
+
+      {/* Limit reached dialog */}
+      <LimitReachedDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} type="trips" />
+
       {/* ─── Premium Header ─── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -388,7 +394,7 @@ export default function BookingsPage() {
             {bookings.length} {isArabic ? "حجز إجمالي" : "total bookings"}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={handleNewBookingClick} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
           <Plus className="w-4 h-4" />
           {isArabic ? "حجز جديد" : "New Booking"}
         </Button>
