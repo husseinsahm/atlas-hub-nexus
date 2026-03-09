@@ -637,6 +637,7 @@ export default function SharedBooking() {
             const isExpanded = expandedDays.has(day.id);
 
             return (
+              <motion.div
                 key={day.id}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
