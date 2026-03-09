@@ -1,4 +1,7 @@
-import {
+import { NavLink } from "@/components/NavLink";
+import { useAuth, type AppRole } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { 
   LayoutDashboard,
   Building2,
   Users,
@@ -9,62 +12,84 @@ import {
   FileText,
   Receipt,
   Compass,
-  ChevronLeft,
-  ChevronRight,
   DollarSign,
   Heart,
   BookOpen,
   Briefcase,
   FolderOpen,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
-import { useAuth, type AppRole } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { useLocation } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
-interface NavItem {
-  title: string;
-  translationKey: string;
-  url: string;
-  icon: React.ElementType;
-  roles: AppRole[];
-}
-
-const navItems: NavItem[] = [
-  // Dashboard - All roles
-  { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"] },
-  
-  // Super Admin only
-  { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] },
-  { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] },
-  { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] },
-  
-  // Sales & CRM
-  { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] },
-  { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] },
-  
-  // Main entity: Booking Files
-  { title: "Booking Files", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations", "finance"] },
-  
-  // Operations
-  { title: "Operations", translationKey: "nav.operations", url: "/dashboard/operations", icon: Compass, roles: ["company_admin", "operations"] },
-  
-  // Product Management
-  { title: "Templates", translationKey: "nav.templates", url: "/dashboard/templates", icon: FolderOpen, roles: ["company_admin", "agent", "operations"] },
-  { title: "Library", translationKey: "nav.library", url: "/dashboard/library", icon: BookOpen, roles: ["company_admin", "agent", "operations"] },
-  
-  // Finance
-  { title: "Quotations", translationKey: "nav.quotations", url: "/dashboard/quotations", icon: FileText, roles: ["company_admin", "agent", "finance"] },
-  { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] },
-  
-  // Analytics & Reports
-  { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] },
-  
-  // Team & Settings
-  { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] },
-  { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] },
+const navigationGroups = [
+  {
+    label: "Main",
+    items: [
+      { title: "Dashboard", translationKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "company_admin", "agent", "operations", "finance"] as AppRole[], end: true },
+    ]
+  },
+  {
+    label: "Admin",
+    items: [
+      { title: "Companies", translationKey: "nav.companies", url: "/dashboard/companies", icon: Building2, roles: ["super_admin"] as AppRole[] },
+      { title: "Plans", translationKey: "nav.plans", url: "/dashboard/plans", icon: DollarSign, roles: ["super_admin"] as AppRole[] },
+      { title: "Subscriptions", translationKey: "nav.subscriptions", url: "/dashboard/subscriptions", icon: CreditCard, roles: ["super_admin"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Sales & CRM",
+    items: [
+      { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] as AppRole[] },
+      { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Operations",
+    items: [
+      { title: "Bookings", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations", "finance"] as AppRole[] },
+      { title: "Operations", translationKey: "nav.operations", url: "/dashboard/operations", icon: Compass, roles: ["company_admin", "operations"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Product",
+    items: [
+      { title: "Templates", translationKey: "nav.templates", url: "/dashboard/templates", icon: FolderOpen, roles: ["company_admin", "agent", "operations"] as AppRole[] },
+      { title: "Library", translationKey: "nav.library", url: "/dashboard/library", icon: BookOpen, roles: ["company_admin", "agent", "operations"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Finance",
+    items: [
+      { title: "Quotations", translationKey: "nav.quotations", url: "/dashboard/quotations", icon: FileText, roles: ["company_admin", "agent", "finance"] as AppRole[] },
+      { title: "Invoices", translationKey: "nav.invoices", url: "/dashboard/invoices", icon: Receipt, roles: ["company_admin", "finance"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Analytics",
+    items: [
+      { title: "Analytics", translationKey: "nav.analytics", url: "/dashboard/analytics", icon: BarChart3, roles: ["super_admin", "company_admin"] as AppRole[] },
+    ]
+  },
+  {
+    label: "Team & Settings",
+    items: [
+      { title: "Team", translationKey: "nav.staff", url: "/dashboard/staff", icon: UserCog, roles: ["company_admin"] as AppRole[] },
+      { title: "Settings", translationKey: "nav.settings", url: "/dashboard/settings", icon: Settings, roles: ["super_admin", "company_admin"] as AppRole[] },
+    ]
+  }
 ];
 
 function getUserRole(user: ReturnType<typeof useAuth>["user"]): AppRole | null {
@@ -74,125 +99,133 @@ function getUserRole(user: ReturnType<typeof useAuth>["user"]): AppRole | null {
 }
 
 export function DashboardSidebar() {
+  const { state } = useSidebar();
   const { user } = useAuth();
-  const { t, direction } = useLanguage();
-  const [collapsed, setCollapsed] = useState(false);
-
+  const { t } = useLanguage();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
+  const collapsed = state === "collapsed";
   const currentRole = getUserRole(user);
-  const filteredItems = navItems.filter((item) => currentRole && item.roles.includes(currentRole));
-  const isRtl = direction === "rtl";
+  
+  const isActive = (path: string, end = false) => {
+    if (end) {
+      return currentPath === path;
+    }
+    return currentPath.startsWith(path);
+  };
 
-  const displayName = user?.profile.fullName || user?.email || "User";
+  // Filter groups and items based on role
+  const filteredGroups = navigationGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item => currentRole && item.roles.includes(currentRole))
+  })).filter(group => group.items.length > 0);
+
+  const displayName = user?.profile?.fullName || user?.email || "User";
   const roleLabel = currentRole?.replace("_", " ") || "";
   const companyName = user?.activeMembership?.companyName;
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: collapsed ? 72 : 260 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="relative flex flex-col h-screen bg-sidebar border-sidebar-border shrink-0 overflow-hidden"
-      style={{ borderInlineEnd: "1px solid hsl(var(--sidebar-border))" }}
-    >
-      {/* Logo area */}
-      <div className="flex items-center h-16 px-4 gap-3">
-        <div className="w-9 h-9 rounded-lg gold-gradient flex items-center justify-center shrink-0">
-          <Compass className="w-5 h-5 text-accent-foreground" />
-        </div>
-        <AnimatePresence>
+    <Sidebar collapsible="icon" className="border-r border-border bg-sidebar-background">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg gold-gradient flex items-center justify-center shrink-0">
+            <Compass className="w-5 h-5 text-accent-foreground" />
+          </div>
           {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <h1 className="text-lg font-bold text-sidebar-accent-foreground font-display whitespace-nowrap">
-                {t("app.name")}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-sidebar-foreground font-display">
+                {t("app.name") || "Safar"}
               </h1>
-              <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest whitespace-nowrap">
-                {t("app.tagline")}
+              <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">
+                {t("app.tagline") || "Travel CRM"}
               </p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-      </div>
-
-      {/* Company badge */}
-      {companyName && !collapsed && (
-        <div className="px-4 pb-3">
-          <div className="px-3 py-1.5 rounded-md bg-sidebar-accent text-sidebar-accent-foreground text-xs font-medium truncate">
-            {companyName}
-          </div>
         </div>
-      )}
-
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-        {filteredItems.map((item) => (
-          <NavLink
-            key={item.url}
-            to={item.url}
-            end={item.url === "/dashboard"}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-              "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent",
-              collapsed && "justify-center px-0"
-            )}
-            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-          >
-            <item.icon className="w-[18px] h-[18px] shrink-0" />
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="whitespace-nowrap"
-                >
-                  {t(item.translationKey)}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* User info */}
-      <div className="p-3 border-t border-sidebar-border">
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-semibold text-sidebar-primary shrink-0">
-            {displayName.charAt(0).toUpperCase()}
+        
+        {companyName && !collapsed && (
+          <div className="mt-3">
+            <Badge variant="outline" className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+              {companyName}
+            </Badge>
           </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-w-0"
-              >
-                <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{displayName}</p>
-                <p className="text-[10px] text-sidebar-foreground/60 capitalize truncate">{roleLabel}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute top-20 bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground w-6 h-6 rounded-full flex items-center justify-center shadow-md transition-colors z-10"
-        style={{ [isRtl ? "left" : "right"]: -12 }}
-      >
-        {(collapsed ? !isRtl : isRtl) ? (
-          <ChevronRight className="w-3.5 h-3.5" />
-        ) : (
-          <ChevronLeft className="w-3.5 h-3.5" />
         )}
-      </button>
-    </motion.aside>
+      </SidebarHeader>
+
+      <SidebarContent className="px-2">
+        {filteredGroups.map((group) => {
+          const hasActiveItem = group.items.some(item => 
+            isActive(item.url, (item as any).end)
+          );
+
+          return (
+            <SidebarGroup key={group.label}>
+              {!collapsed && (
+                <SidebarGroupLabel className="text-xs text-sidebar-foreground/70 font-medium px-2 py-2">
+                  {group.label}
+                </SidebarGroupLabel>
+              )}
+              
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.url, (item as any).end);
+                    const itemEnd = (item as any).end;
+                    
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <NavLink 
+                            to={item.url} 
+                            end={itemEnd}
+                            className={`
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
+                              ${active 
+                                ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm' 
+                                : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
+                              }
+                              ${collapsed ? 'justify-center' : ''}
+                            `}
+                          >
+                            <Icon className="w-[18px] h-[18px] shrink-0" />
+                            {!collapsed && (
+                              <span className="truncate">{t(item.translationKey) || item.title}</span>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
+      </SidebarContent>
+      
+      {/* User info footer */}
+      <div className="border-t border-sidebar-border p-3">
+        <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
+          <Avatar className="w-8 h-8 shrink-0">
+            <AvatarImage src={user?.profile?.avatarUrl} />
+            <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+              {displayName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-sidebar-foreground truncate">
+                {displayName}
+              </p>
+              <p className="text-xs text-sidebar-foreground/60 capitalize truncate">
+                {roleLabel}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </Sidebar>
   );
 }
