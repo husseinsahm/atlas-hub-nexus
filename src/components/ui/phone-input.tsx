@@ -159,7 +159,7 @@ export function PhoneInput({
         </Popover>
         
         <div className="relative flex-1">
-          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Phone className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="tel"
             value={formatPhoneNumber(localNumber)}
@@ -167,7 +167,7 @@ export function PhoneInput({
             placeholder={placeholder}
             disabled={disabled}
             className={cn(
-              "rounded-s-none pl-9",
+              "rounded-s-none ps-9",
               (error || validationError) && "border-destructive focus-visible:ring-destructive"
             )}
           />
