@@ -209,7 +209,7 @@ export function DashboardSidebar() {
       <div className="border-t border-sidebar-border p-3">
         <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
           <Avatar className="w-8 h-8 shrink-0">
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
+            <AvatarImage src={user?.profile?.avatarUrl} />
             <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
               {displayName.charAt(0).toUpperCase()}
             </AvatarFallback>
