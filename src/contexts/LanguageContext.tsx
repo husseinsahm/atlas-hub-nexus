@@ -25,8 +25,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   useEffect(() => {
+    // Set both dir and lang attributes on the HTML element
     document.documentElement.dir = direction;
     document.documentElement.lang = language;
+    
+    // Add RTL class to body for additional CSS targeting if needed
+    if (direction === 'rtl') {
+      document.body.classList.add('rtl');
+      document.body.classList.remove('ltr');
+    } else {
+      document.body.classList.add('ltr');
+      document.body.classList.remove('rtl');
+    }
   }, [language, direction]);
 
   const t = useCallback((key: string) => translate(language, key), [language]);
