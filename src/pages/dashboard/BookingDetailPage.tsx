@@ -581,6 +581,9 @@ export default function BookingDetailPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
                 <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowQuotationModal(true)}>
+                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive focus:text-destructive"><Trash2 className="w-4 h-4 me-2" />{isArabic ? "حذف" : "Delete"}</DropdownMenuItem>
