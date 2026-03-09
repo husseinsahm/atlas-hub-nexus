@@ -208,6 +208,8 @@ export default function BillingPage() {
   const [processing, setProcessing] = useState(false);
   const [paymentDialog, setPaymentDialog] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvv: "", name: "" });
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [priceKey, setPriceKey] = useState(0);
 
   // Fetch billing history
   const { data: billingHistory = [] } = useQuery({
