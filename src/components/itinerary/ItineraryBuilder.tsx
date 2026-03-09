@@ -1,14 +1,14 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Trash2, Loader2, MapPin, Clock, ChevronDown, ChevronUp,
   Pencil, Check, X, StickyNote, Route, Car, Hotel, Eye,
   Sparkles, Navigation, FileText, Activity, User, Calendar,
-  Wand2, ListChecks,
+  Wand2, ListChecks, BookOpen, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface ItineraryDay {
   id: string;
@@ -95,6 +96,43 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [generatingDayId, setGeneratingDayId] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<any[] | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [showLibraryPicker, setShowLibraryPicker] = useState<string | null>(null); // dayId or null
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [showTemplateImport, setShowTemplateImport] = useState(false);
+
+  // Fetch library items for the company
+  const { data: libraryItems = [] } = useQuery({
+    queryKey: ["library-items-picker", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("library_items")
+        .select("*")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .order("title");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+
+  // Fetch templates for import
+  const { data: templates = [] } = useQuery({
+    queryKey: ["templates-picker", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itinerary_templates")
+        .select("*, template_days:template_days(*, template_day_items:template_day_items(*))")
+        .eq("company_id", companyId)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("title");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
 
   // Initialize transport toggle state from existing data
   const hasTransport = useCallback((day: ItineraryDay) => {
@@ -146,13 +184,18 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   });
 
   const addDayItem = useMutation({
-    mutationFn: async ({ dayId, category, title }: { dayId: string; category: string; title?: string }) => {
+    mutationFn: async ({ dayId, category, title, libraryItemId, description, durationMinutes }: { 
+      dayId: string; category: string; title?: string; libraryItemId?: string; description?: string; durationMinutes?: number;
+    }) => {
       const items = itineraryDays.find(d => d.id === dayId)?.booking_day_items || [];
       const defaultTitle = title || (isArabic ? DEFAULT_TITLES_AR[category] : DEFAULT_TITLES[category]) || "";
       const { data, error } = await supabase.from("booking_day_items").insert({
         booking_day_id: dayId,
         category,
         custom_title: defaultTitle,
+        custom_description: description || null,
+        library_item_id: libraryItemId || null,
+        duration_minutes: durationMinutes || null,
         sort_order: items.length,
         currency: booking?.currency || "USD",
       }).select().single();
@@ -315,6 +358,62 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
     }
   }, [bookingId, booking, toast, isArabic]);
 
+  // Import template into booking
+  const importTemplate = useCallback(async (template: any) => {
+    try {
+      const templateDays = template.template_days || [];
+      if (templateDays.length === 0) {
+        toast({ title: isArabic ? "القالب فارغ" : "Template is empty", variant: "destructive" });
+        return;
+      }
+      for (const tDay of templateDays) {
+        let dayDate: string | null = null;
+        if (booking?.arrival_date || booking?.start_date) {
+          const startDate = new Date(booking.arrival_date || booking.start_date);
+          startDate.setDate(startDate.getDate() + (tDay.day_number - 1));
+          dayDate = startDate.toISOString().split("T")[0];
+        }
+        const nextDayNum = itineraryDays.length + tDay.day_number;
+        const { data: newDay } = await supabase.from("booking_days").insert({
+          booking_id: bookingId,
+          day_number: nextDayNum,
+          title: tDay.title || `Day ${nextDayNum}`,
+          description: tDay.description || null,
+          city: tDay.city || null,
+          date: dayDate,
+        }).select("id").single();
+        if (newDay && tDay.template_day_items?.length) {
+          const itemsToInsert = tDay.template_day_items.map((item: any, idx: number) => ({
+            booking_day_id: newDay.id,
+            category: item.category || "activity",
+            custom_title: item.custom_title || "",
+            custom_description: item.custom_description || null,
+            library_item_id: item.library_item_id || null,
+            duration_minutes: item.duration_minutes || null,
+            unit_price: item.unit_price || 0,
+            total_price: item.total_price || 0,
+            quantity: item.quantity || 1,
+            currency: item.currency || booking?.currency || "USD",
+            sort_order: idx,
+          }));
+          await supabase.from("booking_day_items").insert(itemsToInsert);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["booking-days", bookingId] });
+      setShowTemplateImport(false);
+      toast({ title: isArabic ? "تم استيراد القالب بنجاح" : "Template imported successfully" });
+    } catch (err: any) {
+      console.error("Import template error:", err);
+      toast({ title: "Error", description: err?.message, variant: "destructive" });
+    }
+  }, [bookingId, booking, itineraryDays, queryClient, toast, isArabic]);
+
+  const filteredLibrary = libraryItems.filter((item: any) => {
+    if (!librarySearch.trim()) return true;
+    const q = librarySearch.toLowerCase();
+    return item.title?.toLowerCase().includes(q) || item.city?.toLowerCase().includes(q) || item.category?.toLowerCase().includes(q);
+  });
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -378,6 +477,17 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
           >
             <Plus className="w-3.5 h-3.5" /> {isArabic ? "إضافة يوم" : "Add Day"}
           </Button>
+          {templates.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-[11px] gap-1.5 h-8"
+              onClick={() => setShowTemplateImport(true)}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              {isArabic ? "استيراد قالب" : "From Template"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -538,13 +648,15 @@ interface DayCardProps {
   isUpdating: boolean;
   editingItemId: string | null;
   onSetEditingItemId: (id: string | null) => void;
+  libraryItemCount: number;
+  onOpenLibrary: () => void;
 }
 
 function DayCard({
   day, index, isExpanded, isEditing, showTransportFields, isArabic, currency,
   onToggleExpand, onToggleEdit, onToggleTransport, onUpdateDay, onDeleteDay,
   onAddItem, onUpdateItem, onDeleteItem, onAiEnhanceDay, isAiGenerating, isUpdating,
-  editingItemId, onSetEditingItemId,
+  editingItemId, onSetEditingItemId, libraryItemCount, onOpenLibrary,
 }: DayCardProps) {
   const [localTitle, setLocalTitle] = useState(day.title || "");
   const [localDesc, setLocalDesc] = useState(day.short_description || day.description || "");
@@ -1026,6 +1138,22 @@ function DayCard({
                       </button>
                     );
                   })}
+                  {/* From Library button */}
+                  {libraryItemCount > 0 && (
+                    <button
+                      className="flex items-start gap-2.5 rounded-xl border-2 border-dashed px-3 py-3 text-start transition-all hover:scale-[1.01] hover:border-solid hover:shadow-sm cursor-pointer text-primary bg-primary/5 border-primary/30 hover:bg-primary/10 col-span-2"
+                      onClick={onOpenLibrary}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold block">{isArabic ? "من المكتبة" : "From Library"}</span>
+                        <span className="text-[10px] opacity-70 font-normal block mt-0.5">{isArabic ? "اختر خدمة من مكتبة المنتجات" : "Pick from your product library"}</span>
+                      </div>
+                      <BookOpen className="w-3.5 h-3.5 shrink-0 opacity-40 mt-1 ms-auto" />
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>

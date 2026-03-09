@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.translate-booking]
 verify_jwt = false
+
+[functions.generate-template]
+verify_jwt = false

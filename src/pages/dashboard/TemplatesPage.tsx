@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   Search, Plus, Calendar, MapPin, Loader2, FileText, 
   ChevronRight, Copy, Trash2, Edit, MoreVertical, Eye,
+  Sparkles, Wand2, Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -36,10 +39,14 @@ export default function TemplatesPage() {
 
   const [search, setSearch] = useState("");
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const [enableAI, setEnableAI] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
     title: "",
     description: "",
-    total_days: 1,
+    total_days: 7,
+    cities: [] as string[],
+    trip_type: "",
   });
 
   const { data: templates = [], isLoading } = useQuery({
@@ -58,38 +65,114 @@ export default function TemplatesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase
+    mutationFn: async (aiItinerary?: any) => {
+      // Create template
+      const { data: templateData, error: templateError } = await supabase
         .from("itinerary_templates")
         .insert({
           company_id: companyId!,
           title: newTemplate.title.trim(),
           description: newTemplate.description.trim() || null,
           total_days: newTemplate.total_days,
+          destinations: newTemplate.cities.length > 0 ? newTemplate.cities : null,
           created_by: user?.id,
         })
         .select("id")
         .single();
-      if (error) throw error;
+      if (templateError) throw templateError;
 
-      // Create empty days
-      const days = Array.from({ length: newTemplate.total_days }, (_, i) => ({
-        template_id: data.id,
-        day_number: i + 1,
-        title: `Day ${i + 1}`,
-      }));
-      await supabase.from("template_days").insert(days);
+      // Create days from AI itinerary or empty
+      if (aiItinerary?.days && Array.isArray(aiItinerary.days)) {
+        for (const day of aiItinerary.days) {
+          const { data: dayData, error: dayError } = await supabase
+            .from("template_days")
+            .insert({
+              template_id: templateData.id,
+              day_number: day.day_number,
+              title: day.title || `Day ${day.day_number}`,
+              description: day.description || null,
+              city: day.city || null,
+            })
+            .select("id")
+            .single();
+          
+          if (dayError) {
+            console.error("Day insert error:", dayError);
+            continue;
+          }
 
-      return data;
+          // Create day items if available
+          if (day.items && Array.isArray(day.items) && dayData) {
+            const itemsToInsert = day.items.map((item: any, idx: number) => ({
+              template_day_id: dayData.id,
+              category: item.category || "activity",
+              custom_title: item.title || "",
+              custom_description: item.description || null,
+              duration_minutes: item.duration_minutes || null,
+              sort_order: idx,
+            }));
+            
+            await supabase.from("template_day_items").insert(itemsToInsert);
+          }
+        }
+      } else {
+        // Create empty days
+        const days = Array.from({ length: newTemplate.total_days }, (_, i) => ({
+          template_id: templateData.id,
+          day_number: i + 1,
+          title: `Day ${i + 1}`,
+        }));
+        await supabase.from("template_days").insert(days);
+      }
+
+      return templateData;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["itinerary-templates"] });
       setShowNewDialog(false);
-      setNewTemplate({ title: "", description: "", total_days: 1 });
+      setNewTemplate({ title: "", description: "", total_days: 7, cities: [], trip_type: "" });
+      setEnableAI(true);
       toast({ title: isArabic ? "تم إنشاء القالب" : "Template created" });
       navigate(`/dashboard/templates/${data.id}`);
     },
   });
+
+  const handleCreate = async () => {
+    if (enableAI && newTemplate.title.trim()) {
+      setIsGenerating(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-template", {
+          body: {
+            title: newTemplate.title.trim(),
+            totalDays: newTemplate.total_days,
+            cities: newTemplate.cities,
+            description: newTemplate.description.trim(),
+            tripType: newTemplate.trip_type,
+            language: isArabic ? "ar" : "en",
+          },
+        });
+
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        await createMutation.mutateAsync(data?.itinerary);
+      } catch (e: any) {
+        console.error("AI generation error:", e);
+        toast({
+          title: isArabic ? "تحذير" : "Warning",
+          description: isArabic 
+            ? "فشل الإنشاء بالذكاء الاصطناعي، سيتم إنشاء قالب فارغ"
+            : "AI generation failed, creating empty template",
+          variant: "destructive",
+        });
+        await createMutation.mutateAsync(undefined);
+      } finally {
+        setIsGenerating(false);
+      }
+    } else {
+      createMutation.mutate(undefined);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -136,7 +219,7 @@ export default function TemplatesPage() {
           </p>
         </div>
         <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2" disabled={isLocked}>
-          <Plus className="w-4 h-4" />
+          <Sparkles className="w-4 h-4" />
           {isArabic ? "قالب جديد" : "New Template"}
         </Button>
       </div>
@@ -166,94 +249,119 @@ export default function TemplatesPage() {
             }
           </p>
           <Button onClick={() => setShowNewDialog(true)} variant="outline" className="mt-4 gap-2">
-            <Plus className="w-4 h-4" />
-            {isArabic ? "إنشاء قالب" : "Create Template"}
+            <Sparkles className="w-4 h-4" />
+            {isArabic ? "إنشاء قالب بالذكاء الاصطناعي" : "Create with AI"}
           </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((template: any, idx: number) => (
-            <motion.div
-              key={template.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <Card className="border-border hover:shadow-md hover:border-foreground/10 transition-all group">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-foreground truncate">{template.title}</h3>
-                      {template.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-3">
-                        <Badge variant="secondary" className="text-[10px] gap-1">
-                          <Calendar className="w-2.5 h-2.5" />
-                          {template.total_days} {isArabic ? "يوم" : "days"}
-                        </Badge>
-                        {template.is_active ? (
-                          <Badge className="text-[10px] bg-emerald-50 text-emerald-700 border-0">
-                            {isArabic ? "نشط" : "Active"}
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px]">
-                            {isArabic ? "غير نشط" : "Inactive"}
-                          </Badge>
+          {filtered.map((template: any, idx: number) => {
+            const destinations = Array.isArray(template.destinations) ? template.destinations : [];
+            return (
+              <motion.div
+                key={template.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <Card className="border-border hover:shadow-md hover:border-foreground/10 transition-all group cursor-pointer" onClick={() => navigate(`/dashboard/templates/${template.id}`)}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{template.title}</h3>
+                        {template.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
                         )}
+                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px] gap-1">
+                            <Calendar className="w-2.5 h-2.5" />
+                            {template.total_days} {isArabic ? "يوم" : "days"}
+                          </Badge>
+                          {destinations.length > 0 && (
+                            <Badge variant="outline" className="text-[10px] gap-1">
+                              <Globe className="w-2.5 h-2.5" />
+                              {destinations.slice(0, 2).join(", ")}
+                              {destinations.length > 2 && ` +${destinations.length - 2}`}
+                            </Badge>
+                          )}
+                          {template.is_active ? (
+                            <Badge className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">
+                              {isArabic ? "نشط" : "Active"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px]">
+                              {isArabic ? "غير نشط" : "Inactive"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          {isArabic ? "تم الإنشاء" : "Created"} {format(new Date(template.created_at), "MMM d, yyyy")}
+                        </p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-2">
-                        {isArabic ? "تم الإنشاء" : "Created"} {format(new Date(template.created_at), "MMM d, yyyy")}
-                      </p>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/templates/${template.id}`); }}>
+                            <Edit className="w-3.5 h-3.5 mr-2" />
+                            {isArabic ? "تعديل" : "Edit"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/templates/${template.id}`); }}>
+                            <Eye className="w-3.5 h-3.5 mr-2" />
+                            {isArabic ? "عرض" : "View"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(template.id); }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                            {isArabic ? "حذف" : "Delete"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => navigate(`/dashboard/templates/${template.id}`)}>
-                          <Edit className="w-3.5 h-3.5 mr-2" />
-                          {isArabic ? "تعديل" : "Edit"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/dashboard/templates/${template.id}`)}>
-                          <Eye className="w-3.5 h-3.5 mr-2" />
-                          {isArabic ? "عرض" : "View"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => deleteMutation.mutate(template.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5 mr-2" />
-                          {isArabic ? "حذف" : "Delete"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
       {/* New Template Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden dark-header-dialog">
+        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden dark-header-dialog">
           <ModalDarkHeader
-            icon={<FileText className="w-5 h-5 text-accent-foreground" />}
+            icon={<Sparkles className="w-5 h-5 text-accent-foreground" />}
             title={isArabic ? "قالب جديد" : "New Itinerary Template"}
-            description={isArabic ? "أنشئ قالبًا جديدًا للبرنامج" : "Create a reusable itinerary template"}
+            description={isArabic ? "أنشئ قالبًا جديدًا بالذكاء الاصطناعي" : "Create a template with AI assistance"}
           />
 
-          <div className="px-6 py-5 space-y-4">
+          <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            {/* AI Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4 text-primary" />
+                <Label htmlFor="ai-toggle" className="text-sm font-medium cursor-pointer">
+                  {isArabic ? "إنشاء بالذكاء الاصطناعي" : "Generate with AI"}
+                </Label>
+              </div>
+              <Switch
+                id="ai-toggle"
+                checked={enableAI}
+                onCheckedChange={setEnableAI}
+              />
+            </div>
+
             <div>
               <Label className="text-xs">{isArabic ? "اسم القالب" : "Template Name"} *</Label>
               <Input
                 value={newTemplate.title}
                 onChange={e => setNewTemplate({ ...newTemplate, title: e.target.value })}
-                placeholder={isArabic ? "مثال: برنامج دبي 5 أيام" : "e.g., Dubai 5-Day Classic"}
+                placeholder={isArabic ? "مثال: برنامج اليابان الكلاسيكي" : "e.g., Classic Japan Adventure"}
                 className="mt-1"
               />
             </div>
@@ -263,36 +371,84 @@ export default function TemplatesPage() {
               <Textarea
                 value={newTemplate.description}
                 onChange={e => setNewTemplate({ ...newTemplate, description: e.target.value })}
-                placeholder={isArabic ? "وصف مختصر للقالب..." : "Brief description..."}
+                placeholder={isArabic ? "وصف مختصر للقالب..." : "Brief description of the template..."}
                 rows={2}
                 className="mt-1 text-xs"
               />
             </div>
 
-            <div>
-              <Label className="text-xs">{isArabic ? "عدد الأيام" : "Number of Days"}</Label>
-              <Input
-                type="number"
-                min={1}
-                max={30}
-                value={newTemplate.total_days}
-                onChange={e => setNewTemplate({ ...newTemplate, total_days: parseInt(e.target.value) || 1 })}
-                className="mt-1 w-24"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">{isArabic ? "عدد الأيام" : "Number of Days"}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={newTemplate.total_days}
+                  onChange={e => setNewTemplate({ ...newTemplate, total_days: parseInt(e.target.value) || 1 })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">{isArabic ? "نوع الرحلة" : "Trip Type"}</Label>
+                <Input
+                  value={newTemplate.trip_type}
+                  onChange={e => setNewTemplate({ ...newTemplate, trip_type: e.target.value })}
+                  placeholder={isArabic ? "عائلي، رومانسي..." : "Family, Romantic..."}
+                  className="mt-1"
+                />
+              </div>
             </div>
+
+            <div>
+              <Label className="text-xs">{isArabic ? "المدن والوجهات" : "Cities & Destinations"}</Label>
+              <MultiCityAutocomplete
+                value={newTemplate.cities}
+                onValueChange={(cities) => setNewTemplate({ ...newTemplate, cities })}
+                placeholder={isArabic ? "أضف المدن..." : "Add cities..."}
+                className="mt-1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {isArabic 
+                  ? "الذكاء الاصطناعي سيوزع الأيام على هذه المدن تلقائياً"
+                  : "AI will distribute days across these cities automatically"
+                }
+              </p>
+            </div>
+
+            {enableAI && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-primary mt-0.5" />
+                  <div className="text-xs text-muted-foreground">
+                    {isArabic 
+                      ? "سيقوم الذكاء الاصطناعي بإنشاء برنامج كامل يتضمن عناوين الأيام والأنشطة والفنادق والنقل بناءً على المعلومات المدخلة."
+                      : "AI will generate a complete itinerary with day titles, activities, hotels, and transfers based on your input."
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
+            <Button variant="outline" onClick={() => setShowNewDialog(false)} disabled={isGenerating || createMutation.isPending}>
               {isArabic ? "إلغاء" : "Cancel"}
             </Button>
             <Button 
-              onClick={() => createMutation.mutate()} 
-              disabled={!newTemplate.title.trim() || createMutation.isPending}
+              onClick={handleCreate} 
+              disabled={!newTemplate.title.trim() || isGenerating || createMutation.isPending}
               className="gold-gradient text-accent-foreground gap-2"
             >
-              {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isArabic ? "إنشاء القالب" : "Create Template"}
+              {(isGenerating || createMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isGenerating ? (
+                isArabic ? "جاري الإنشاء بالذكاء الاصطناعي..." : "Generating with AI..."
+              ) : (
+                <>
+                  {enableAI && <Sparkles className="w-4 h-4" />}
+                  {isArabic ? "إنشاء القالب" : "Create Template"}
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
