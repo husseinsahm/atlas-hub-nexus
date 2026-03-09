@@ -191,6 +191,10 @@ export default function SettingsPage() {
   // Branches
   const handleAddBranch = async () => {
     if (!companyId || !branchForm.name.trim()) return;
+    if (!limits.canAddBranch) {
+      setBranchLimitOpen(true);
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("company_branches").insert({
       company_id: companyId, name: branchForm.name,
