@@ -107,6 +107,8 @@ export default function BookingDetailPage() {
   const [editingTraveler, setEditingTraveler] = useState<any>(null);
   const [showServiceDialog, setShowServiceDialog] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
