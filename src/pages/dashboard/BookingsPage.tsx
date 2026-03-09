@@ -7,7 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Filter, Plus, Calendar, Users, DollarSign,
   Loader2, Briefcase, ChevronRight, Clock, Plane, X,
-  User, Phone, Mail, Globe, MapPin,
+  User, Phone, Mail, Globe, MapPin, ArrowUpDown, ArrowDown, ArrowUp,
+  MoreHorizontal, Trash2, UserCheck, Download, CheckSquare,
+  ChevronLeft, ChevronsLeft, ChevronsRight,
 } from "lucide-react";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -21,12 +23,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
+type SortField = "created_at" | "arrival_date" | "selling_price" | "status";
+type SortDir = "asc" | "desc";
 
 const STEPS = [
   { id: 0, label: "Client", labelAr: "العميل", icon: User },
@@ -34,13 +54,15 @@ const STEPS = [
   { id: 2, label: "Details", labelAr: "التفاصيل", icon: Briefcase },
 ];
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; dot: string }> = {
-  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-slate-700", bg: "bg-slate-100", dot: "bg-slate-400" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700", bg: "bg-blue-50", dot: "bg-blue-500" },
-  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-amber-700", bg: "bg-amber-50", dot: "bg-amber-500" },
-  completed: { label: "Completed", labelAr: "مكتمل", color: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700", bg: "bg-red-50", dot: "bg-red-500" },
+const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; dot: string; pillBg: string; pillText: string }> = {
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", dot: "bg-amber-500", pillBg: "bg-amber-100 dark:bg-amber-900/50", pillText: "text-amber-700 dark:text-amber-300" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", dot: "bg-blue-500", pillBg: "bg-blue-100 dark:bg-blue-900/50", pillText: "text-blue-700 dark:text-blue-300" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", dot: "bg-emerald-500", pillBg: "bg-emerald-100 dark:bg-emerald-900/50", pillText: "text-emerald-700 dark:text-emerald-300" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-800/40", dot: "bg-slate-400", pillBg: "bg-slate-100 dark:bg-slate-800/50", pillText: "text-slate-600 dark:text-slate-400" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40", dot: "bg-red-500", pillBg: "bg-red-100 dark:bg-red-900/50", pillText: "text-red-700 dark:text-red-300" },
 };
+
+const PIPELINE_ORDER: BookingStatus[] = ["tentative", "confirmed", "in_operation", "completed"];
 
 const SOURCES = [
   { value: "email", label: "Email" },
@@ -53,6 +75,8 @@ const SOURCES = [
   { value: "other", label: "Other" },
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function BookingsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -64,8 +88,14 @@ export default function BookingsPage() {
   const [step, setStep] = useState(0);
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [newBooking, setNewBooking] = useState({
     title: "",
     customer_name: "",
@@ -95,7 +125,6 @@ export default function BookingsPage() {
     enabled: !!companyId,
   });
 
-  // Fetch company settings for booking number prefix
   const { data: companySettings } = useQuery({
     queryKey: ["company-settings", companyId],
     queryFn: async () => {
@@ -113,12 +142,10 @@ export default function BookingsPage() {
     mutationFn: async () => {
       if (!companyId) throw new Error("No company");
 
-      // Generate booking number
       const prefix = companySettings?.booking_prefix || "BKG";
       const nextNum = companySettings?.booking_next_number || 1;
       const bookingNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
 
-      // Calculate total days
       let totalDays = 1;
       if (newBooking.arrival_date && newBooking.departure_date) {
         const start = new Date(newBooking.arrival_date);
@@ -126,7 +153,6 @@ export default function BookingsPage() {
         totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
       }
 
-      // Create customer first if name provided
       let customerId = null;
       if (newBooking.customer_name.trim()) {
         const { data: customer, error: custErr } = await supabase
@@ -145,7 +171,6 @@ export default function BookingsPage() {
         customerId = customer.id;
       }
 
-      // Create booking
       const { data: booking, error } = await supabase
         .from("bookings")
         .insert({
@@ -171,13 +196,11 @@ export default function BookingsPage() {
 
       if (error) throw error;
 
-      // Increment booking number
       await supabase
         .from("company_settings")
         .update({ booking_next_number: nextNum + 1 })
         .eq("company_id", companyId);
 
-      // Create booking activity
       await supabase.from("booking_activities").insert({
         booking_id: booking.id,
         activity_type: "created",
@@ -211,9 +234,32 @@ export default function BookingsPage() {
     },
   });
 
-  const filtered = useMemo(() => {
-    let list = bookings;
-    if (statusFilter !== "all") list = list.filter((b: any) => b.status === statusFilter);
+  // Stats for pipeline
+  const stats = useMemo(() => {
+    const s: Record<string, number> = { tentative: 0, confirmed: 0, in_operation: 0, completed: 0, cancelled: 0 };
+    let totalRevenue = 0;
+    bookings.forEach((b: any) => {
+      if (s[b.status] !== undefined) s[b.status]++;
+      if (b.status !== "cancelled") totalRevenue += Number(b.selling_price || 0);
+    });
+    return { ...s, totalRevenue };
+  }, [bookings]);
+
+  // Filtered, sorted, and paginated data
+  const filteredAndSorted = useMemo(() => {
+    let list = [...bookings];
+
+    // Filter by status
+    if (statusFilter !== "all") {
+      list = list.filter((b: any) => b.status === statusFilter);
+    }
+
+    // Filter by source
+    if (sourceFilter !== "all") {
+      list = list.filter((b: any) => b.source === sourceFilter);
+    }
+
+    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((b: any) =>
@@ -223,189 +269,514 @@ export default function BookingsPage() {
         (b as any).customers?.email?.toLowerCase().includes(q)
       );
     }
-    return list;
-  }, [bookings, statusFilter, search]);
 
-  const stats = useMemo(() => {
-    const s: Record<string, number> = { tentative: 0, confirmed: 0, in_operation: 0, completed: 0, cancelled: 0 };
-    bookings.forEach((b: any) => { if (s[b.status] !== undefined) s[b.status]++; });
-    return s;
-  }, [bookings]);
+    // Sort
+    list.sort((a: any, b: any) => {
+      let aVal: any, bVal: any;
+      switch (sortField) {
+        case "arrival_date":
+          aVal = a.arrival_date || a.start_date || "";
+          bVal = b.arrival_date || b.start_date || "";
+          break;
+        case "selling_price":
+          aVal = Number(a.selling_price || 0);
+          bVal = Number(b.selling_price || 0);
+          break;
+        case "status":
+          const statusOrder = { tentative: 0, confirmed: 1, in_operation: 2, completed: 3, cancelled: 4 };
+          aVal = statusOrder[a.status as BookingStatus] ?? 5;
+          bVal = statusOrder[b.status as BookingStatus] ?? 5;
+          break;
+        default:
+          aVal = a.created_at || "";
+          bVal = b.created_at || "";
+      }
+
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [bookings, statusFilter, sourceFilter, search, sortField, sortDir]);
+
+  const totalPages = Math.ceil(filteredAndSorted.length / ITEMS_PER_PAGE);
+  const paginatedList = filteredAndSorted.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Selection handlers
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginatedList.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginatedList.map((b: any) => b.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setSourceFilter("all");
+    setSearch("");
+    setCurrentPage(1);
+  };
+
+  const activeFilters = [
+    ...(statusFilter !== "all" ? [{ key: "status", label: STATUS_CONFIG[statusFilter as BookingStatus]?.label || statusFilter, clear: () => setStatusFilter("all") }] : []),
+    ...(sourceFilter !== "all" ? [{ key: "source", label: SOURCES.find(s => s.value === sourceFilter)?.label || sourceFilter, clear: () => setSourceFilter("all") }] : []),
+  ];
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <StatsGridLoadingState count={5} className="grid-cols-5" />
-        <TableLoadingState rows={6} columns={5} />
+        <StatsGridLoadingState count={4} className="grid-cols-4" />
+        <TableLoadingState rows={6} columns={7} />
       </div>
     );
   }
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ms-1 opacity-50" />;
+    return sortDir === "asc" ? <ArrowUp className="w-3 h-3 ms-1" /> : <ArrowDown className="w-3 h-3 ms-1" />;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* ─── Premium Header ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
           <h1 className="text-2xl font-bold font-display text-foreground">
-            {isArabic ? "ملفات الحجز" : "Booking Files"}
+            {isArabic ? "الحجوزات" : "Bookings"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isArabic ? "إدارة حجوزات العملاء والعمليات" : "Manage customer bookings and operations"}
+            {bookings.length} {isArabic ? "حجز إجمالي" : "total bookings"}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2">
+        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
           <Plus className="w-4 h-4" />
           {isArabic ? "حجز جديد" : "New Booking"}
         </Button>
-      </div>
+      </motion.div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
-        {(Object.entries(STATUS_CONFIG) as [BookingStatus, typeof STATUS_CONFIG[BookingStatus]][]).map(([key, cfg]) => (
-          <button
-            key={key}
-            onClick={() => setStatusFilter(statusFilter === key ? "all" : key)}
-            className={cn(
-              "rounded-xl border p-3 text-left transition-all",
-              statusFilter === key ? "border-accent bg-accent/5 shadow-sm" : "border-border bg-card hover:bg-muted/50"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <div className={cn("w-2 h-2 rounded-full", cfg.dot)} />
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {isArabic ? cfg.labelAr : cfg.label}
-              </span>
+      {/* ─── Pipeline Summary Bar ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-xl border border-border bg-card p-4 shadow-sm"
+      >
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-1">
+            {PIPELINE_ORDER.map((status, idx) => {
+              const cfg = STATUS_CONFIG[status];
+              const count = stats[status] || 0;
+              const isActive = statusFilter === status;
+              return (
+                <div key={status} className="flex items-center">
+                  <button
+                    onClick={() => setStatusFilter(statusFilter === status ? "all" : status)}
+                    className={cn(
+                      "relative flex flex-col items-center px-4 py-2 rounded-lg transition-all min-w-[80px]",
+                      isActive
+                        ? cn(cfg.bg, "ring-2 ring-offset-1 ring-offset-background", cfg.color.replace("text-", "ring-"))
+                        : "hover:bg-muted/50"
+                    )}
+                  >
+                    <span className={cn("text-2xl font-bold tabular-nums", isActive ? cfg.color : "text-foreground")}>
+                      {count}
+                    </span>
+                    <span className={cn("text-[10px] font-medium uppercase tracking-wide", isActive ? cfg.color : "text-muted-foreground")}>
+                      {isArabic ? cfg.labelAr : cfg.label}
+                    </span>
+                    <div className={cn("absolute bottom-0 inset-x-4 h-0.5 rounded-full", cfg.dot, isActive ? "opacity-100" : "opacity-30")} />
+                  </button>
+                  {idx < PIPELINE_ORDER.length - 1 && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 mx-1 shrink-0" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-3 ps-4 border-s border-border">
+            <div className="text-end">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{isArabic ? "إجمالي الإيرادات" : "Total Revenue"}</p>
+              <p className="text-xl font-bold font-mono text-foreground">
+                {stats.totalRevenue.toLocaleString()}
+                <span className="text-xs font-normal text-muted-foreground ms-1">USD</span>
+              </p>
             </div>
-            <div className="text-xl font-bold font-display text-foreground mt-1">{stats[key] || 0}</div>
-          </button>
-        ))}
-      </div>
+          </div>
+        </div>
+      </motion.div>
 
-      {/* Filters */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder={isArabic ? "بحث في الحجوزات..." : "Search bookings..."} 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            className="pl-10" 
+      {/* ─── Filters Row ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="flex flex-wrap items-center gap-3"
+      >
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder={isArabic ? "بحث بالاسم، رقم الحجز..." : "Search by name, booking ID..."}
+            value={search}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+            className="ps-10 h-9"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44">
-            <Filter className="w-3.5 h-3.5 mr-2" />
-            <SelectValue placeholder={isArabic ? "جميع الحالات" : "All statuses"} />
+
+        {/* Status filter */}
+        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-36 h-9">
+            <Filter className="w-3.5 h-3.5 me-2 text-muted-foreground" />
+            <SelectValue placeholder={isArabic ? "الحالة" : "Status"} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{isArabic ? "جميع الحالات" : "All Statuses"}</SelectItem>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
+              <SelectItem key={k} value={k}>
+                <div className="flex items-center gap-2">
+                  <div className={cn("w-2 h-2 rounded-full", v.dot)} />
+                  {isArabic ? v.labelAr : v.label}
+                </div>
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      </div>
 
-      {/* List */}
-      {filtered.length === 0 ? (
-        search.trim() ? (
-          <NoSearchResultsEmptyState query={search} onClear={() => setSearch("")} />
-        ) : (
-          <NoBookingsEmptyState onAction={() => setShowNewDialog(true)} />
-        )
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((booking: any, idx: number) => {
-            const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
-            const customer = (booking as any).customers;
-            return (
-              <motion.div
-                key={booking.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.03 }}
+        {/* Source filter */}
+        <Select value={sourceFilter} onValueChange={v => { setSourceFilter(v); setCurrentPage(1); }}>
+          <SelectTrigger className="w-32 h-9">
+            <Globe className="w-3.5 h-3.5 me-2 text-muted-foreground" />
+            <SelectValue placeholder={isArabic ? "المصدر" : "Source"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{isArabic ? "جميع المصادر" : "All Sources"}</SelectItem>
+            {SOURCES.map(s => (
+              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Active filter pills */}
+        {activeFilters.length > 0 && (
+          <div className="flex items-center gap-2">
+            {activeFilters.map(f => (
+              <Badge
+                key={f.key}
+                variant="secondary"
+                className="gap-1.5 pe-1.5 text-xs cursor-pointer hover:bg-secondary/80"
+                onClick={f.clear}
               >
-                <Card
-                  className="border-border hover:shadow-md hover:border-foreground/10 transition-all cursor-pointer group"
-                  onClick={() => navigate(`/dashboard/bookings/${booking.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Status dot & booking icon */}
-                      <div className="relative">
-                        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center">
-                          <Briefcase className="w-5 h-5 text-accent" />
-                        </div>
-                        <div className={cn("absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card", sc.dot)} />
-                      </div>
+                {f.label}
+                <X className="w-3 h-3" />
+              </Badge>
+            ))}
+            {activeFilters.length > 1 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs text-muted-foreground">
+                {isArabic ? "مسح الكل" : "Clear all"}
+              </Button>
+            )}
+          </div>
+        )}
+      </motion.div>
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-mono text-muted-foreground">{booking.booking_number}</span>
-                          <Badge className={cn("border-0 text-[10px]", sc.bg, sc.color)}>
-                            {isArabic ? sc.labelAr : sc.label}
+      {/* ─── Bookings Table ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {filteredAndSorted.length === 0 ? (
+          search.trim() || statusFilter !== "all" || sourceFilter !== "all" ? (
+            <NoSearchResultsEmptyState query={search} onClear={clearFilters} />
+          ) : (
+            <NoBookingsEmptyState onAction={() => setShowNewDialog(true)} />
+          )
+        ) : (
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table className="modern-table">
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={selectedIds.size === paginatedList.length && paginatedList.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-28">{isArabic ? "رقم الحجز" : "Booking ID"}</TableHead>
+                    <TableHead>{isArabic ? "العميل" : "Client"}</TableHead>
+                    <TableHead>{isArabic ? "الرحلة" : "Trip"}</TableHead>
+                    <TableHead>
+                      <button onClick={() => handleSort("arrival_date")} className="flex items-center font-medium hover:text-foreground">
+                        {isArabic ? "التواريخ" : "Dates"}
+                        <SortIcon field="arrival_date" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">{isArabic ? "المسافرون" : "Travelers"}</TableHead>
+                    <TableHead className="text-end">
+                      <button onClick={() => handleSort("selling_price")} className="flex items-center justify-end font-medium hover:text-foreground ms-auto">
+                        {isArabic ? "المبلغ" : "Amount"}
+                        <SortIcon field="selling_price" />
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button onClick={() => handleSort("status")} className="flex items-center font-medium hover:text-foreground">
+                        {isArabic ? "الحالة" : "Status"}
+                        <SortIcon field="status" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedList.map((booking: any, idx: number) => {
+                    const sc = STATUS_CONFIG[booking.status as BookingStatus] || STATUS_CONFIG.tentative;
+                    const customer = (booking as any).customers;
+                    const initials = customer?.full_name
+                      ? customer.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+                      : "?";
+
+                    return (
+                      <TableRow
+                        key={booking.id}
+                        className={cn(
+                          "cursor-pointer transition-colors",
+                          selectedIds.has(booking.id) && "bg-accent/5"
+                        )}
+                        onClick={() => navigate(`/dashboard/bookings/${booking.id}`)}
+                      >
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(booking.id)}
+                            onCheckedChange={() => toggleSelect(booking.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono text-[10px] bg-muted/50">
+                            {booking.booking_number}
                           </Badge>
-                          {booking.source && (
-                            <Badge variant="outline" className="text-[9px] capitalize">{booking.source}</Badge>
-                          )}
-                          {booking.payment_status !== "unpaid" && (
-                            <Badge variant="outline" className="text-[9px]">
-                              <DollarSign className="w-2.5 h-2.5 mr-0.5" />
-                              {booking.payment_status}
-                            </Badge>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-semibold text-foreground truncate mt-0.5">{booking.title}</h3>
-                        <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground flex-wrap">
-                          {customer?.full_name && (
-                            <span className="flex items-center gap-0.5">
-                              <User className="w-2.5 h-2.5" /> {customer.full_name}
-                            </span>
-                          )}
-                          {(booking.arrival_date || booking.start_date) && (
-                            <span className="flex items-center gap-0.5">
-                              <Plane className="w-2.5 h-2.5" /> 
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {customer?.full_name || <span className="text-muted-foreground italic">{isArabic ? "بدون اسم" : "No name"}</span>}
+                              </p>
+                              {customer?.email && (
+                                <p className="text-[10px] text-muted-foreground truncate">{customer.email}</p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm font-medium text-foreground truncate max-w-[180px]">
+                            {booking.title}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          {booking.arrival_date || booking.start_date ? (
+                            <span className="text-xs text-foreground whitespace-nowrap">
                               {format(new Date(booking.arrival_date || booking.start_date), "MMM d")}
                               {(booking.departure_date || booking.end_date) && (
-                                <> → {format(new Date(booking.departure_date || booking.end_date), "MMM d")}</>
+                                <span className="text-muted-foreground"> → {format(new Date(booking.departure_date || booking.end_date), "MMM d")}</span>
                               )}
                             </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
                           )}
-                          <span className="flex items-center gap-0.5">
-                            <Users className="w-2.5 h-2.5" /> {booking.adults}A{booking.children > 0 ? ` ${booking.children}C` : ""}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-xs font-medium">
+                            {booking.adults}A{booking.children > 0 ? ` ${booking.children}C` : ""}
                           </span>
-                          <span className="flex items-center gap-0.5">
-                            <Calendar className="w-2.5 h-2.5" /> {booking.total_days} {isArabic ? "يوم" : "days"}
-                          </span>
-                        </div>
-                      </div>
+                        </TableCell>
+                        <TableCell className="text-end">
+                          {booking.selling_price > 0 ? (
+                            <span className="text-sm font-mono font-semibold text-foreground">
+                              {Number(booking.selling_price).toLocaleString()}
+                              <span className="text-[10px] font-normal text-muted-foreground ms-1">{booking.currency}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={cn("border-0 text-[10px] font-semibold", sc.pillBg, sc.pillText)}>
+                            {isArabic ? sc.labelAr : sc.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell onClick={e => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/dashboard/bookings/${booking.id}`)}>
+                                <Briefcase className="w-4 h-4 me-2" />
+                                {isArabic ? "عرض التفاصيل" : "View Details"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                <Trash2 className="w-4 h-4 me-2" />
+                                {isArabic ? "حذف" : "Delete"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
 
-                      {/* Price & arrow */}
-                      <div className="text-right shrink-0">
-                        {booking.selling_price > 0 && (
-                          <div className="text-sm font-bold font-mono text-foreground">
-                            {Number(booking.selling_price).toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">{booking.currency}</span>
-                          </div>
-                        )}
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {format(new Date(booking.created_at), "MMM d, yyyy")}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
-      )}
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
+              <p className="text-xs text-muted-foreground">
+                {isArabic ? `عرض ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSorted.length)} من ${filteredAndSorted.length}` : `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSorted.length)} of ${filteredAndSorted.length}`}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(1)}
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <div className="flex items-center gap-1 mx-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let page: number;
+                    if (totalPages <= 5) {
+                      page = i + 1;
+                    } else if (currentPage <= 3) {
+                      page = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      page = totalPages - 4 + i;
+                    } else {
+                      page = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="icon"
+                        className="h-7 w-7 text-xs"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                >
+                  <ChevronsRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+      </motion.div>
 
-      {/* New Booking Dialog — Multi-step wizard */}
+      {/* ─── Bulk Actions Bar ─── */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 inset-x-0 flex justify-center z-50 pointer-events-none"
+          >
+            <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-xl bg-foreground text-background shadow-2xl border border-background/10">
+              <CheckSquare className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {selectedIds.size} {isArabic ? "محدد" : "selected"}
+              </span>
+              <div className="h-5 w-px bg-background/20" />
+              <Button variant="ghost" size="sm" className="text-background hover:bg-background/20 h-7 text-xs">
+                <UserCheck className="w-3.5 h-3.5 me-1.5" />
+                {isArabic ? "تعيين موظف" : "Assign Agent"}
+              </Button>
+              <Button variant="ghost" size="sm" className="text-background hover:bg-background/20 h-7 text-xs">
+                <Download className="w-3.5 h-3.5 me-1.5" />
+                {isArabic ? "تصدير" : "Export"}
+              </Button>
+              <Button variant="ghost" size="sm" className="text-red-400 hover:bg-red-500/20 h-7 text-xs">
+                <Trash2 className="w-3.5 h-3.5 me-1.5" />
+                {isArabic ? "حذف" : "Delete"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-background/60 hover:text-background hover:bg-background/20"
+                onClick={() => setSelectedIds(new Set())}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── New Booking Dialog ─── */}
       <Dialog open={showNewDialog} onOpenChange={(open) => { setShowNewDialog(open); if (!open) setStep(0); }}>
         <DialogContent className="max-w-md p-0 gap-0 overflow-hidden">
-          {/* Header with gradient */}
           <div className="relative px-6 pt-6 pb-4 navy-gradient">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
             <div className="relative">
@@ -422,7 +793,6 @@ export default function BookingsPage() {
                   </p>
                 </div>
               </div>
-              {/* Step indicator */}
               <div className="flex gap-1.5">
                 {STEPS.map((s) => (
                   <button
@@ -448,7 +818,6 @@ export default function BookingsPage() {
                 transition={{ duration: 0.2 }}
                 className="space-y-4"
               >
-                {/* ──── Step 0: Client ──── */}
                 {step === 0 && (
                   <>
                     <div className="space-y-1.5">
@@ -465,13 +834,13 @@ export default function BookingsPage() {
                       <div className="space-y-1.5">
                         <Label className="text-xs font-medium">{isArabic ? "البريد الإلكتروني" : "Email"}</Label>
                         <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Mail className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             type="email"
                             value={newBooking.customer_email}
                             onChange={e => setNewBooking({ ...newBooking, customer_email: e.target.value })}
                             placeholder="email@example.com"
-                            className="h-11 pl-10"
+                            className="h-11 ps-10"
                           />
                         </div>
                       </div>
@@ -496,7 +865,6 @@ export default function BookingsPage() {
                   </>
                 )}
 
-                {/* ──── Step 1: Trip ──── */}
                 {step === 1 && (
                   <>
                     <div className="space-y-1.5">
@@ -538,7 +906,6 @@ export default function BookingsPage() {
                         />
                       </div>
                     </div>
-                    {/* Pax — styled counters */}
                     <div className="rounded-xl border border-border bg-muted/30 p-4">
                       <p className="text-xs font-semibold text-foreground mb-3 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-accent" />
@@ -588,7 +955,6 @@ export default function BookingsPage() {
                   </>
                 )}
 
-                {/* ──── Step 2: Details ──── */}
                 {step === 2 && (
                   <>
                     <div className="space-y-1.5">
@@ -621,7 +987,6 @@ export default function BookingsPage() {
                         className="text-sm resize-none"
                       />
                     </div>
-                    {/* Summary preview */}
                     <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                         {isArabic ? "ملخص" : "Summary"}
@@ -651,7 +1016,6 @@ export default function BookingsPage() {
             </AnimatePresence>
           </div>
 
-          {/* Footer */}
           <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
             <Button
               variant="ghost"
