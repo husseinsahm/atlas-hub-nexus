@@ -77,25 +77,58 @@
   }
 
   .dark {
-    --background: 220 35% 7%;
-    --foreground: 40 20% 92%;
-    --card: 220 30% 10%;
-    --card-foreground: 40 20% 92%;
-    --popover: 220 30% 10%;
-    --popover-foreground: 40 20% 92%;
+    /* Background: #0f172a */
+    --background: 222 84% 5%;
+    /* Foreground: #e5e7eb */
+    --foreground: 220 13% 91%;
+
+    /* Cards: #1e293b */
+    --card: 215 41% 17%;
+    --card-foreground: 220 13% 91%;
+
+    /* Popover same as card */
+    --popover: 215 41% 17%;
+    --popover-foreground: 220 13% 91%;
+
+    /* Primary becomes gold in dark */
     --primary: 38 65% 50%;
-    --primary-foreground: 220 40% 8%;
-    --secondary: 220 25% 15%;
-    --secondary-foreground: 40 20% 90%;
-    --muted: 220 20% 14%;
-    --muted-foreground: 220 10% 55%;
+    --primary-foreground: 222 84% 5%;
+
+    /* Secondary: slightly lighter than bg */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 220 13% 91%;
+
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    /* Accent keeps gold */
     --accent: 38 65% 50%;
-    --accent-foreground: 220 40% 8%;
-    --destructive: 0 62% 45%;
+    --accent-foreground: 222 84% 5%;
+
+    --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 16%;
-    --input: 220 20% 18%;
+
+    /* Borders: #334155 */
+    --border: 217 33% 27%;
+    /* Input slightly brighter border */
+    --input: 217 33% 22%;
     --ring: 38 65% 50%;
+
+    /* Sidebar: #020617 */
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 215 20% 70%;
+    --sidebar-primary: 38 65% 50%;
+    --sidebar-primary-foreground: 222 84% 5%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 220 13% 88%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 38 65% 50%;
+
+    /* Shadows stronger in dark */
+    --shadow-xs: 0 1px 2px hsl(222 84% 5% / 0.4);
+    --shadow-sm: 0 1px 3px hsl(222 84% 5% / 0.5), 0 1px 2px hsl(222 84% 5% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(222 84% 5% / 0.5), 0 2px 4px -2px hsl(222 84% 5% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(222 84% 5% / 0.5), 0 4px 6px -4px hsl(222 84% 5% / 0.3);
   }
 
   * {
