@@ -323,20 +323,34 @@ export default function BillingPage() {
   };
 
   const handleCancel = async () => {
-    if (!limits.subscriptionId) return;
+    if (!limits.subscriptionId || !companyId || !user) return;
     setProcessing(true);
-    const { error } = await supabase.from("subscriptions").update({
-      status: "canceled",
-      canceled_at: new Date().toISOString(),
-    }).eq("id", limits.subscriptionId);
+
+    // Find the free plan to request downgrade to
+    const freePlan = dbPlans.find((p: any) => p.slug === "free");
+    if (!freePlan) {
+      toast({ title: "Error", description: "Could not find free plan", variant: "destructive" });
+      setProcessing(false);
+      setCancelDialog(false);
+      return;
+    }
+
+    const { error } = await supabase.from("upgrade_requests").insert({
+      company_id: companyId,
+      subscription_id: limits.subscriptionId,
+      requested_by: user.id,
+      requested_plan_id: freePlan.id,
+      requested_billing_cycle: "monthly",
+      current_plan_id: limits.planId,
+      status: "pending",
+    });
 
     if (!error) {
-      toast({ title: "Subscription cancelled", description: "Your plan will remain active until the end of the current period." });
-      // Send cancellation email
+      toast({ title: "Cancellation request submitted 📨", description: "Your request has been sent to the admin for review." });
       supabase.functions.invoke("subscription-emails", {
-        body: { type: "cancellation", companyId },
+        body: { type: "cancellation", companyId, metadata: { isRequest: true } },
       }).catch(console.error);
-      await refetchLimits();
+      await refetchRequests();
     }
     setProcessing(false);
     setCancelDialog(false);
