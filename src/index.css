@@ -232,6 +232,42 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
+  /* Enhanced responsive utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Card hover animations */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  /* Premium button styles */
+  .btn-premium {
+    @apply bg-gradient-to-r from-gold to-gold-dark text-accent-foreground hover:from-gold-dark hover:to-gold;
+    box-shadow: 0 4px 12px hsl(var(--gold) / 0.3);
+  }
+  
+  /* Glass morphism effect */
+  .glass-card {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50;
+  }
+  
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block mr-2;
+  }
+  
+  .status-success { @apply bg-green-500; }
+  .status-warning { @apply bg-yellow-500; }
+  .status-error { @apply bg-red-500; }
+  .status-info { @apply bg-blue-500; }
+  
+  /* Typography scale for mobile */
+  @media (max-width: 640px) {
+    h1 { @apply text-xl; }
+    h2 { @apply text-lg; }
+    h3 { @apply text-base; }
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
