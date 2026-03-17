@@ -22,7 +22,7 @@ import { format, formatDistanceToNow, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
-import { FollowUpTimeline } from "@/components/leads/FollowUpManager";
+import { TaskTimeline } from "@/components/tasks/TaskTimeline";
 import { createNotification } from "@/hooks/useNotifications";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
@@ -633,7 +633,7 @@ export default function LeadDetailPage() {
                     Internal Comments
                   </TabsTrigger>
                   <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Follow-ups
+                    Tasks
                   </TabsTrigger>
                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
                     Attachments
@@ -673,10 +673,11 @@ export default function LeadDetailPage() {
                   />
                 </TabsContent>
 
-                {/* Follow-ups Tab - Now using FollowUpTimeline */}
+                {/* Tasks Tab */}
                 <TabsContent value="followups" className="mt-0">
-                  <FollowUpTimeline
-                    leadId={lead.id}
+                  <TaskTimeline
+                    relatedType="lead"
+                    relatedId={lead.id}
                     companyId={companyId || ""}
                     userId={user?.id || ""}
                     agents={agents}

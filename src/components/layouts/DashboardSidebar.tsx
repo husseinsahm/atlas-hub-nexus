@@ -22,6 +22,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Shield,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sidebar,
@@ -67,6 +68,7 @@ const navigationGroups = [
     items: [
       { title: "Leads", translationKey: "nav.clients", url: "/dashboard/clients", icon: Users, roles: ["company_admin", "agent"] as AppRole[] },
       { title: "Customers", translationKey: "nav.customers", url: "/dashboard/customers", icon: Heart, roles: ["company_admin", "agent"] as AppRole[] },
+      { title: "Tasks", translationKey: "nav.tasks", url: "/dashboard/tasks", icon: ClipboardList, roles: ["company_admin", "agent"] as AppRole[] },
     ]
   },
   {

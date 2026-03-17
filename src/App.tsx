@@ -36,6 +36,7 @@ import SharedTrip from "./pages/shared/SharedTrip";
 import SharedBooking from "./pages/shared/SharedBooking";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
+import TasksPage from "./pages/dashboard/TasksPage";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -126,6 +127,7 @@ function AppRoutes() {
         <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
+        <Route path="tasks" element={<TasksPage />} />
         
         {/* Main entity: Booking Files */}
         <Route path="bookings" element={<BookingsPage />} />
