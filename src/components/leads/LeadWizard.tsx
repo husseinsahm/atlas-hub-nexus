@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Progress } from "@/components/ui/progress";
+import { DestinationTagInput } from "@/components/ui/destination-tag-input";
 import {
   User, Phone, Mail, MessageCircle, Plane, DollarSign, Flame,
   FileText, ChevronRight, ChevronLeft, Check, Sparkles, UserPlus,
@@ -401,17 +402,12 @@ function StepTravel({ form, setForm }: { form: LeadFormData; setForm: (f: LeadFo
         </div>
         <div className="space-y-2 sm:col-span-2">
           <FieldLabel>Destination Interests</FieldLabel>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={form.destinations}
-              onChange={(e) => setForm({ ...form, destinations: e.target.value })}
-              placeholder="Paris, Rome, Barcelona"
-              maxLength={500}
-              className="pl-10 h-11"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Separate multiple destinations with commas</p>
+          <DestinationTagInput
+            value={form.destinations ? form.destinations.split(",").map(d => d.trim()).filter(Boolean) : []}
+            onChange={(tags) => setForm({ ...form, destinations: tags.join(", ") })}
+            placeholder="Type a destination and press Enter"
+          />
+          <p className="text-xs text-muted-foreground">Select from suggestions or type a custom destination</p>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:col-span-2">
           <div className="space-y-2">
