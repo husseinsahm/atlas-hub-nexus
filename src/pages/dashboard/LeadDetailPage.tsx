@@ -185,19 +185,23 @@ export default function LeadDetailPage() {
 
   async function updateStatus(newStatus: LeadStatus) {
     if (!lead || !user) return;
+    if (newStatus === lead.status) return;
     const oldStatus = lead.status;
+    // Optimistically update UI
+    setLead({ ...lead, status: newStatus });
     try {
       const { error } = await supabase.from("leads").update({ status: newStatus }).eq("id", lead.id);
       if (error) throw error;
-      await supabase.from("lead_activities").insert({
+      // Log activity (non-blocking)
+      supabase.from("lead_activities").insert({
         lead_id: lead.id, user_id: user.id, activity_type: "status_changed",
         description: `Status changed from ${STATUS_CONFIG[oldStatus].label} to ${STATUS_CONFIG[newStatus].label}`,
-      });
-      setLead({ ...lead, status: newStatus });
-      fetchActivities();
+      }).then(() => fetchActivities());
       toast({ title: "Status updated" });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      // Revert on failure
+      setLead({ ...lead, status: oldStatus });
+      toast({ title: "Error updating status", description: err.message || "Network error. Please try again.", variant: "destructive" });
     }
   }
 
