@@ -112,8 +112,8 @@ export function DestinationTagInput({
     <div ref={containerRef} className={cn("relative", className)}>
       <div
         className={cn(
-          "flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[44px] cursor-text transition-colors",
-          "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ring-offset-background",
+          "flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[44px] cursor-text transition-all shadow-sm",
+          "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:border-foreground/30 ring-offset-background",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && inputRef.current?.focus()}
