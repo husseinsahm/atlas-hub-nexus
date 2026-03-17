@@ -22,6 +22,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Shield,
+  ClipboardList,
 } from "lucide-react";
 import {
   Sidebar,
