@@ -57,6 +57,7 @@ import { ItineraryBuilder } from "@/components/itinerary/ItineraryBuilder";
 import { createNotification } from "@/hooks/useNotifications";
 import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
 import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotationModal";
+import { TravelersTab as PremiumTravelersTab } from "@/components/booking/TravelersTab";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
