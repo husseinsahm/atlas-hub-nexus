@@ -346,14 +346,44 @@ export default function LeadDetailPage() {
     const assignedTo = agentId === "none" ? null : agentId;
     const agentName = agents.find((a) => a.userId === agentId)?.fullName || "Unassigned";
     try {
-      const { error } = await supabase.from("leads").update({ assigned_to: assignedTo }).eq("id", lead.id);
-      if (error) throw error;
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "assigned",
-        description: assignedTo ? `Assigned to ${agentName}` : "Unassigned",
-      });
+      await runMutationWithRetry(
+        {
+          table: "leads",
+          operation: "update",
+          payload: { assigned_to: assignedTo },
+          userId: user.id,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("leads")
+            .update({ assigned_to: assignedTo })
+            .eq("id", lead.id)
+            .select("id")
+            .single()) as any,
+      );
 
-      // Send notification to the assigned agent
+      await runMutationWithRetry(
+        {
+          table: "lead_activities",
+          operation: "insert",
+          payload: { lead_id: lead.id, activity_type: "assigned", assigned_to: assignedTo },
+          userId: user.id,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("lead_activities")
+            .insert({
+              lead_id: lead.id,
+              user_id: user.id,
+              activity_type: "assigned",
+              description: assignedTo ? `Assigned to ${agentName}` : "Unassigned",
+            })
+            .select("id")
+            .single()) as any,
+      );
+
       if (assignedTo && assignedTo !== user.id) {
         await createNotification({
           userId: assignedTo,
@@ -372,8 +402,8 @@ export default function LeadDetailPage() {
       setLead({ ...lead, assigned_to: assignedTo });
       fetchActivities();
       toast({ title: assignedTo ? `Assigned to ${agentName}` : "Unassigned" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 
@@ -381,15 +411,31 @@ export default function LeadDetailPage() {
     if (!lead || !user || !noteText.trim()) return;
     setAddingNote(true);
     try {
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "note_added",
-        description: noteText.trim(),
-      });
+      await runMutationWithRetry(
+        {
+          table: "lead_activities",
+          operation: "insert",
+          payload: { lead_id: lead.id, activity_type: "note_added" },
+          userId: user.id,
+          companyId: lead.company_id,
+        },
+        async () =>
+          (await supabase
+            .from("lead_activities")
+            .insert({
+              lead_id: lead.id,
+              user_id: user.id,
+              activity_type: "note_added",
+              description: noteText.trim(),
+            })
+            .select("id")
+            .single()) as any,
+      );
       setNoteText("");
       fetchActivities();
       toast({ title: "Note added" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     } finally {
       setAddingNote(false);
     }
