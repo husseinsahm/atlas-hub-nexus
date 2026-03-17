@@ -996,6 +996,99 @@ export type Database = {
           },
         ]
       }
+      crm_tasks: {
+        Row: {
+          assigned_to: string | null
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string
+          due_time: string | null
+          expected_outcome: string | null
+          id: string
+          metadata: Json | null
+          next_task_id: string | null
+          priority: string
+          related_id: string
+          related_type: string
+          reminder_before: number | null
+          repeat_rule: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date: string
+          due_time?: string | null
+          expected_outcome?: string | null
+          id?: string
+          metadata?: Json | null
+          next_task_id?: string | null
+          priority?: string
+          related_id: string
+          related_type?: string
+          reminder_before?: number | null
+          repeat_rule?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string
+          due_time?: string | null
+          expected_outcome?: string | null
+          id?: string
+          metadata?: Json | null
+          next_task_id?: string | null
+          priority?: string
+          related_id?: string
+          related_type?: string
+          reminder_before?: number | null
+          repeat_rule?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_next_task_id_fkey"
+            columns: ["next_task_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_attachments: {
         Row: {
           created_at: string
@@ -2695,6 +2788,13 @@ export type Database = {
         | "flight"
         | "visa"
         | "entrance"
+      task_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+        | "overdue"
+        | "missed"
       trip_status:
         | "draft"
         | "under_review"
@@ -2892,6 +2992,14 @@ export const Constants = {
         "flight",
         "visa",
         "entrance",
+      ],
+      task_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "overdue",
+        "missed",
       ],
       trip_status: [
         "draft",
