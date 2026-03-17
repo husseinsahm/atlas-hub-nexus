@@ -362,6 +362,11 @@ export default function LeadDetailPage() {
           payload: { assigned_to: assignedTo },
           userId: user.id,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: lead.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
