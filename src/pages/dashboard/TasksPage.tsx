@@ -72,21 +72,38 @@ export default function TasksPage() {
 
   async function fetchAgents() {
     try {
-      const { data } = await supabase
+      const { data: memberships, error: membershipError } = await supabase
         .from("company_memberships")
-        .select("user_id, role, profiles:user_id(full_name)" as any)
+        .select("user_id, role")
         .eq("company_id", companyId)
         .eq("is_active", true);
-      if (data) {
-        setAgents(
-          (data as any[]).map((m: any) => ({
-            userId: m.user_id,
-            fullName: (m.profiles as any)?.full_name || "Unknown",
-            role: m.role,
-          }))
-        );
+
+      if (membershipError) throw membershipError;
+      const userIds = (memberships || []).map((m) => m.user_id);
+
+      if (userIds.length === 0) {
+        setAgents([]);
+        return;
       }
-    } catch {}
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      if (profileError) throw profileError;
+
+      const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile.full_name || "Unknown"]));
+      setAgents(
+        (memberships || []).map((member) => ({
+          userId: member.user_id,
+          fullName: profileMap.get(member.user_id) || "Unknown",
+          role: member.role,
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to fetch agents", error);
+    }
   }
 
   async function handleCancel(t: CrmTask) {
