@@ -278,6 +278,11 @@ export default function LeadDetailPage() {
             payload: { status: newStatus },
             userId: user.id,
             companyId: lead.company_id,
+            fallback: {
+              filters: [{ column: "id", value: leadId }],
+              select: "id, status, company_id, updated_at",
+              single: true,
+            },
           },
           async () =>
             (await supabase
