@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Progress } from "@/components/ui/progress";
 import { DestinationTagInput } from "@/components/ui/destination-tag-input";
 import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
   User, Phone, Mail, MessageCircle, Plane, DollarSign, Flame,
   FileText, ChevronRight, ChevronLeft, Check, Sparkles, UserPlus,
-  Globe, Users, Calendar, MapPin,
+  Globe, Users, Calendar, MapPin, ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,15 +55,33 @@ const URGENCY_OPTIONS = [
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "ar", label: "Arabic" },
-  { value: "fr", label: "French" },
-  { value: "es", label: "Spanish" },
-  { value: "de", label: "German" },
-  { value: "tr", label: "Turkish" },
-  { value: "ru", label: "Russian" },
-  { value: "zh", label: "Chinese" },
+  { value: "ar", label: "Arabic", flag: "🇸🇦" },
+  { value: "en", label: "English", flag: "🇺🇸" },
+  { value: "ja", label: "Japanese", flag: "🇯🇵" },
+  { value: "de", label: "German", flag: "🇩🇪" },
+  { value: "fr", label: "French", flag: "🇫🇷" },
+  { value: "it", label: "Italian", flag: "🇮🇹" },
+  { value: "es", label: "Spanish", flag: "🇪🇸" },
+  { value: "zh", label: "Chinese", flag: "🇨🇳" },
+  { value: "ru", label: "Russian", flag: "🇷🇺" },
+  { value: "tr", label: "Turkish", flag: "🇹🇷" },
 ];
+
+// Map nationality codes to suggested language
+const NATIONALITY_LANGUAGE_MAP: Record<string, string> = {
+  SA: "ar", AE: "ar", EG: "ar", JO: "ar", LB: "ar", KW: "ar", QA: "ar",
+  BH: "ar", OM: "ar", MA: "ar", TN: "ar", DZ: "ar", IQ: "ar", SY: "ar",
+  PS: "ar", YE: "ar", LY: "ar", SD: "ar",
+  US: "en", GB: "en", AU: "en", CA: "en", NZ: "en", IE: "en",
+  JP: "ja",
+  DE: "de", AT: "de", CH: "de",
+  FR: "fr", BE: "fr",
+  IT: "it",
+  ES: "es", MX: "es", AR: "es", CO: "es",
+  CN: "zh", TW: "zh", HK: "zh",
+  RU: "ru",
+  TR: "tr",
+};
 
 interface TeamMember {
   userId: string;
