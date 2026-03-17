@@ -22,7 +22,7 @@ import { format, formatDistanceToNow, isPast } from "date-fns";
 import { InternalComments } from "@/components/InternalComments";
 import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
-import { FollowUpTimeline } from "@/components/leads/FollowUpManager";
+import { TaskTimeline } from "@/components/tasks/TaskTimeline";
 import { createNotification } from "@/hooks/useNotifications";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
