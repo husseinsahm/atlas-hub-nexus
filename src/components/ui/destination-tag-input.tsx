@@ -121,7 +121,7 @@ export function DestinationTagInput({
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-accent/15 text-accent-foreground border border-accent/30 px-2.5 py-0.5 text-xs font-medium animate-fade-in"
+            className="inline-flex items-center gap-1 rounded-full bg-secondary text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold animate-fade-in"
           >
             <MapPin className="w-3 h-3 text-accent shrink-0" />
             {tag}

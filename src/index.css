@@ -77,54 +77,43 @@
   }
 
   .dark {
-    /* Background: #0f172a */
     --background: 222 84% 5%;
-    /* Foreground: #e5e7eb */
-    --foreground: 220 13% 91%;
+    --foreground: 220 14% 93%;
 
-    /* Cards: #1e293b */
     --card: 215 41% 17%;
-    --card-foreground: 220 13% 91%;
+    --card-foreground: 220 14% 93%;
 
-    /* Popover same as card */
     --popover: 215 41% 17%;
-    --popover-foreground: 220 13% 91%;
+    --popover-foreground: 220 14% 93%;
 
-    /* Primary becomes gold in dark */
     --primary: 38 65% 50%;
     --primary-foreground: 222 84% 5%;
 
-    /* Secondary: slightly lighter than bg */
     --secondary: 217 33% 17%;
-    --secondary-foreground: 220 13% 91%;
+    --secondary-foreground: 220 14% 93%;
 
     --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted-foreground: 215 20% 60%;
 
-    /* Accent keeps gold */
     --accent: 38 65% 50%;
     --accent-foreground: 222 84% 5%;
 
     --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders: #334155 */
-    --border: 217 33% 27%;
-    /* Input slightly brighter border */
-    --input: 217 33% 22%;
+    --border: 217 33% 30%;
+    --input: 217 33% 26%;
     --ring: 38 65% 50%;
 
-    /* Sidebar: #020617 */
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 215 20% 70%;
     --sidebar-primary: 38 65% 50%;
     --sidebar-primary-foreground: 222 84% 5%;
     --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 220 13% 88%;
+    --sidebar-accent-foreground: 220 14% 88%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 38 65% 50%;
 
-    /* Shadows stronger in dark */
     --shadow-xs: 0 1px 2px hsl(222 84% 5% / 0.4);
     --shadow-sm: 0 1px 3px hsl(222 84% 5% / 0.5), 0 1px 2px hsl(222 84% 5% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(222 84% 5% / 0.5), 0 2px 4px -2px hsl(222 84% 5% / 0.3);
