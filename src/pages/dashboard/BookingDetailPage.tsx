@@ -881,14 +881,33 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Travelers ─── */}
       {activeTab === "travelers" && (
-        <TravelersTab
+        <PremiumTravelersTab
           travelers={travelers}
           isArabic={isArabic}
-          onAdd={() => { setEditingTraveler({ _isNew: true, full_name: "", is_adult: true }); setShowTravelerDialog(true); }}
+          onAdd={(prefill?: any) => {
+            setEditingTraveler(prefill || { _isNew: true, full_name: "", is_adult: true });
+            setShowTravelerDialog(true);
+          }}
           onEdit={(t: any) => { setEditingTraveler(t); setShowTravelerDialog(true); }}
           onDelete={(tId: string) => deleteTraveler.mutate(tId)}
           adultsCount={booking.adults}
           childrenCount={booking.children}
+          customer={customer}
+          onAddCustomerAsTraveler={() => {
+            if (customer) {
+              saveTraveler.mutate({
+                _isNew: true,
+                full_name: customer.full_name,
+                email: customer.email || "",
+                phone: customer.phone || "",
+                nationality: customer.nationality || "",
+                passport_number: customer.passport_number || "",
+                date_of_birth: customer.date_of_birth || "",
+                is_lead_traveler: true,
+                is_adult: true,
+              });
+            }
+          }}
         />
       )}
 
