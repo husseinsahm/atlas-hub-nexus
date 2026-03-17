@@ -311,6 +311,10 @@ export default function LeadDetailPage() {
           },
           userId: user.id,
           companyId: lead.company_id,
+          fallback: {
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
