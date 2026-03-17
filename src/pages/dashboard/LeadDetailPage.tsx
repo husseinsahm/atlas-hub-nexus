@@ -673,10 +673,11 @@ export default function LeadDetailPage() {
                   />
                 </TabsContent>
 
-                {/* Follow-ups Tab - Now using FollowUpTimeline */}
+                {/* Tasks Tab */}
                 <TabsContent value="followups" className="mt-0">
-                  <FollowUpTimeline
-                    leadId={lead.id}
+                  <TaskTimeline
+                    relatedType="lead"
+                    relatedId={lead.id}
                     companyId={companyId || ""}
                     userId={user?.id || ""}
                     agents={agents}

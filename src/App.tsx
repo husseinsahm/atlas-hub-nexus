@@ -127,6 +127,7 @@ function AppRoutes() {
         <Route path="leads/:id" element={<LeadDetailPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="customers/:id" element={<CustomerDetailPage />} />
+        <Route path="tasks" element={<TasksPage />} />
         
         {/* Main entity: Booking Files */}
         <Route path="bookings" element={<BookingsPage />} />
