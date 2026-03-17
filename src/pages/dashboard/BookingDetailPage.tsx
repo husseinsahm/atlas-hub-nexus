@@ -1365,9 +1365,32 @@ function TravelersTab({ travelers, isArabic, onAdd, onEdit, onDelete, adultsCoun
 
 function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }: any) {
   const [form, setForm] = useState({ ...traveler });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.full_name?.trim()) errs.full_name = isArabic ? "الاسم مطلوب" : "Full name is required";
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = isArabic ? "بريد غير صحيح" : "Invalid email";
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      console.log("Traveler Validation Errors:", errs);
+      // Scroll to first error
+      const firstKey = Object.keys(errs)[0];
+      const el = document.getElementById(`traveler-field-${firstKey}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSave = () => {
+    if (!validate()) return;
+    onSave(form);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden" aria-describedby={undefined}>
+        <DialogTitle className="sr-only">{form._isNew ? "Add Traveler" : "Edit Traveler"}</DialogTitle>
         <div className="relative px-6 pt-5 pb-4 navy-gradient">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,hsl(var(--gold)/0.3),transparent_60%)]" />
           <div className="relative flex items-center gap-3">
@@ -1383,9 +1406,15 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
 
         <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
+            <div className="col-span-2" id="traveler-field-full_name">
               <Label className="text-xs">{isArabic ? "الاسم الكامل" : "Full Name"} <span className="text-destructive">*</span></Label>
-              <Input value={form.full_name || ""} onChange={e => setForm({ ...form, full_name: e.target.value })} className="mt-1 h-11" autoFocus />
+              <Input
+                value={form.full_name || ""}
+                onChange={e => { setForm({ ...form, full_name: e.target.value }); if (errors.full_name) setErrors(prev => ({ ...prev, full_name: "" })); }}
+                className={cn("mt-1 h-11", errors.full_name && "border-destructive ring-1 ring-destructive")}
+                autoFocus
+              />
+              {errors.full_name && <p className="text-[10px] text-destructive mt-0.5">{errors.full_name}</p>}
             </div>
             <div>
               <Label className="text-xs">{isArabic ? "الجنس" : "Gender"}</Label>
@@ -1404,9 +1433,15 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
                 <NationalitySelect value={form.nationality || ""} onValueChange={v => setForm({ ...form, nationality: v })} isRtl={isArabic} />
               </div>
             </div>
-            <div>
+            <div id="traveler-field-email">
               <Label className="text-xs">{isArabic ? "البريد" : "Email"}</Label>
-              <Input type="email" value={form.email || ""} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 h-11" />
+              <Input
+                type="email"
+                value={form.email || ""}
+                onChange={e => { setForm({ ...form, email: e.target.value }); if (errors.email) setErrors(prev => ({ ...prev, email: "" })); }}
+                className={cn("mt-1 h-11", errors.email && "border-destructive ring-1 ring-destructive")}
+              />
+              {errors.email && <p className="text-[10px] text-destructive mt-0.5">{errors.email}</p>}
             </div>
             <div className="col-span-2">
               <Label className="text-xs">{isArabic ? "الهاتف" : "Phone"}</Label>
@@ -1462,11 +1497,11 @@ function TravelerDialog({ traveler, isArabic, open, onClose, onSave, isSaving }:
         </div>
 
         <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onClose} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={isSaving} className="text-xs">{isArabic ? "إلغاء" : "Cancel"}</Button>
           <Button
             size="sm"
             disabled={!form.full_name?.trim() || isSaving}
-            onClick={() => onSave(form)}
+            onClick={handleSave}
             className="gold-gradient text-accent-foreground text-xs gap-1.5 px-6"
           >
             {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
