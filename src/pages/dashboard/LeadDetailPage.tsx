@@ -51,6 +51,7 @@ const ACTIVITY_ICONS: Record<string, React.ElementType> = {
 
 interface LeadDetail {
   id: string;
+  company_id: string;
   full_name: string;
   email: string | null;
   phone: string | null;
@@ -186,63 +187,126 @@ export default function LeadDetailPage() {
   async function updateStatus(newStatus: LeadStatus) {
     if (!lead || !user) return;
     if (newStatus === lead.status) return;
-    const oldStatus = lead.status;
 
-    // Verify session is still valid before making the request
+    const leadId = lead.id;
+    if (!leadId || !/^[0-9a-fA-F-]{36}$/.test(leadId)) {
+      console.error("[updateStatus] Invalid leadId", { leadId, newStatus });
+      toast({ title: "Invalid lead reference", variant: "destructive" });
+      return;
+    }
+
+    const oldStatus = lead.status;
+    const requestPayload = {
+      leadId,
+      companyId: lead.company_id,
+      oldStatus,
+      newStatus,
+      userId: user.id,
+    };
+    console.log("[updateStatus] Request payload", requestPayload);
+
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError || !sessionData.session) {
-      console.error("[updateStatus] Session invalid:", sessionError);
+      console.error("[updateStatus] Session invalid", { sessionError, hasSession: !!sessionData.session });
       toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
       return;
     }
 
-    // Optimistically update UI
-    setLead({ ...lead, status: newStatus });
-
-    const attemptUpdate = async (attempt: number): Promise<boolean> => {
-      try {
-        console.log(`[updateStatus] Attempt ${attempt}: updating lead ${lead.id} to ${newStatus}`);
-        const { data, error } = await supabase
-          .from("leads")
-          .update({ status: newStatus })
-          .eq("id", lead.id)
-          .select();
-        
-        if (error) {
-          console.error(`[updateStatus] Supabase error on attempt ${attempt}:`, error);
-          throw error;
-        }
-        console.log(`[updateStatus] Success on attempt ${attempt}:`, data);
-        return true;
-      } catch (err: any) {
-        console.error(`[updateStatus] Attempt ${attempt} failed:`, err);
-        if (attempt < 3 && (err.message === "Failed to fetch" || err.message?.includes("TypeError"))) {
-          // Wait before retry with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          return attemptUpdate(attempt + 1);
-        }
-        throw err;
-      }
+    const isNetworkError = (err: unknown) => {
+      if (err instanceof TypeError) return true;
+      const message = err instanceof Error ? err.message : String(err);
+      return message.includes("Failed to fetch") || message.includes("NetworkError");
     };
 
+    const updateViaDirectQuery = async (attempt: number) => {
+      console.log(`[updateStatus][direct] Attempt ${attempt}`, requestPayload);
+      const response = await supabase
+        .from("leads")
+        .update({ status: newStatus })
+        .eq("id", leadId)
+        .select("id, status, company_id, updated_at")
+        .single();
+
+      console.log(`[updateStatus][direct] Response ${attempt}`, {
+        statusCode: response.status,
+        statusText: response.statusText,
+        data: response.data,
+        error: response.error,
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    };
+
+    const updateViaFunctionFallback = async () => {
+      console.warn("[updateStatus] Falling back to backend function", requestPayload);
+      const { data, error } = await supabase.functions.invoke("update-lead-status", {
+        body: { leadId, status: newStatus },
+      });
+
+      console.log("[updateStatus][fallback] Response", { data, error });
+
+      if (error) throw new Error(error.message || "Fallback update failed");
+      if (data?.error) throw new Error(data.error);
+      return data?.data;
+    };
+
+    setLead({ ...lead, status: newStatus });
+
     try {
-      await attemptUpdate(1);
-      // Log activity (non-blocking)
-      supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "status_changed",
-        description: `Status changed from ${STATUS_CONFIG[oldStatus].label} to ${STATUS_CONFIG[newStatus].label}`,
-      }).then(() => fetchActivities());
+      let updatedLead: any = null;
+      let lastDirectError: unknown = null;
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          updatedLead = await updateViaDirectQuery(attempt);
+          break;
+        } catch (err) {
+          lastDirectError = err;
+          console.error(`[updateStatus][direct] Attempt ${attempt} failed`, err);
+          if (!isNetworkError(err) || attempt === 2) break;
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+        }
+      }
+
+      if (!updatedLead) {
+        if (!isNetworkError(lastDirectError)) {
+          throw lastDirectError;
+        }
+
+        updatedLead = await updateViaFunctionFallback();
+      }
+
+      console.log("[updateStatus] Final success", { requestPayload, updatedLead });
+
+      supabase
+        .from("lead_activities")
+        .insert({
+          lead_id: leadId,
+          user_id: user.id,
+          activity_type: "status_changed",
+          description: `Status changed from ${STATUS_CONFIG[oldStatus].label} to ${STATUS_CONFIG[newStatus].label}`,
+        })
+        .then(() => fetchActivities());
+
       toast({ title: "Status updated" });
-    } catch (err: any) {
-      // Revert on failure
+    } catch (err) {
       setLead({ ...lead, status: oldStatus });
-      const isNetworkError = err.message === "Failed to fetch" || err instanceof TypeError;
-      console.error("[updateStatus] Final failure:", { error: err, isNetworkError, leadId: lead.id, newStatus });
+
+      const networkFailure = isNetworkError(err);
+      console.error("[updateStatus] Final failure", {
+        requestPayload,
+        error: err,
+        networkFailure,
+      });
+
       toast({
-        title: isNetworkError ? "Network error" : "Error updating status",
-        description: isNetworkError
-          ? "Could not reach the server. Please check your connection and try again."
-          : err.message || "An unexpected error occurred.",
+        title: networkFailure ? "Network error" : "Error updating status",
+        description: networkFailure
+          ? "Could not reach the server. Please try again in a moment."
+          : err instanceof Error
+            ? err.message
+            : "An unexpected error occurred.",
         variant: "destructive",
       });
     }
