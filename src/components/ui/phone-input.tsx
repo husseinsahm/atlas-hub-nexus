@@ -30,18 +30,15 @@ interface PhoneInputProps {
 
 // Validate phone number format
 function validatePhoneNumber(phone: string, dialCode: string): { valid: boolean; message?: string } {
-  // Remove all non-digit characters except +
   const cleanPhone = phone.replace(/[^\d+]/g, "");
+  const withoutCode = cleanPhone.replace(dialCode.replace("+", ""), "").replace("+", "");
+  const digits = withoutCode.replace(/\D/g, "");
   
-  // Check if number starts with dial code
-  const withoutCode = cleanPhone.replace(dialCode, "");
-  
-  // Most phone numbers are between 7-15 digits (excluding country code)
-  if (withoutCode.length < 7) {
-    return { valid: false, message: "Phone number is too short" };
+  if (digits.length > 0 && digits.length < 8) {
+    return { valid: false, message: "Phone number is too short (min 8 digits)" };
   }
-  if (withoutCode.length > 15) {
-    return { valid: false, message: "Phone number is too long" };
+  if (digits.length > 15) {
+    return { valid: false, message: "Phone number is too long (max 15 digits)" };
   }
   
   return { valid: true };

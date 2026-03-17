@@ -398,6 +398,15 @@ function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: Lead
 }
 
 function StepContact({ form, setForm }: { form: LeadFormData; setForm: (f: LeadFormData) => void }) {
+  const [sameAsPhone, setSameAsPhone] = useState(false);
+
+  // Sync WhatsApp when "same as phone" is checked
+  useEffect(() => {
+    if (sameAsPhone && form.phone) {
+      setForm({ ...form, whatsapp: form.phone });
+    }
+  }, [sameAsPhone, form.phone]);
+
   return (
     <FieldGroup>
       <div className="text-center mb-2">
@@ -426,21 +435,41 @@ function StepContact({ form, setForm }: { form: LeadFormData; setForm: (f: LeadF
           <FieldLabel>Phone Number</FieldLabel>
           <PhoneInput
             value={form.phone}
-            onValueChange={(v) => setForm({ ...form, phone: v })}
+            onValueChange={(v) => {
+              const updates: Partial<LeadFormData> = { phone: v };
+              if (sameAsPhone) updates.whatsapp = v;
+              setForm({ ...form, ...updates });
+            }}
             defaultCountry="AE"
           />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <FieldLabel>
-            <span className="flex items-center gap-1.5">
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-              WhatsApp Number
-            </span>
-          </FieldLabel>
+          <div className="flex items-center justify-between">
+            <FieldLabel>
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                WhatsApp Number
+              </span>
+            </FieldLabel>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={sameAsPhone}
+                onCheckedChange={(checked) => {
+                  const isChecked = checked === true;
+                  setSameAsPhone(isChecked);
+                  if (isChecked && form.phone) {
+                    setForm({ ...form, whatsapp: form.phone });
+                  }
+                }}
+              />
+              <span className="text-xs font-medium text-muted-foreground">Same as phone</span>
+            </label>
+          </div>
           <PhoneInput
             value={form.whatsapp}
             onValueChange={(v) => setForm({ ...form, whatsapp: v })}
             defaultCountry="AE"
+            disabled={sameAsPhone}
           />
         </div>
       </div>
