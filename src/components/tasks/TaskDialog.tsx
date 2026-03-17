@@ -119,35 +119,75 @@ export function TaskDialog({
       };
 
       if (editingTask) {
-        const { error } = await supabase
-          .from("crm_tasks" as any)
-          .update(payload as any)
-          .eq("id", editingTask.id);
-        if (error) throw error;
+        await runMutationWithRetry(
+          {
+            table: "crm_tasks",
+            operation: "update",
+            payload,
+            userId,
+            companyId,
+          },
+          async () =>
+            (await supabase
+              .from("crm_tasks" as any)
+              .update(payload as any)
+              .eq("id", editingTask.id)
+              .select("id")
+              .single()) as any,
+        );
         toast({ title: "Task updated" });
       } else {
-        const { error } = await supabase
-          .from("crm_tasks" as any)
-          .insert(payload as any);
-        if (error) throw error;
+        await runMutationWithRetry(
+          {
+            table: "crm_tasks",
+            operation: "insert",
+            payload,
+            userId,
+            companyId,
+          },
+          async () =>
+            (await supabase
+              .from("crm_tasks" as any)
+              .insert(payload as any)
+              .select("id")
+              .single()) as any,
+        );
 
-        // Log activity if lead
         if (relatedType === "lead") {
-          await supabase.from("lead_activities").insert({
-            lead_id: relatedId,
-            user_id: userId,
-            activity_type: "follow_up",
-            description: `${TASK_TYPES.find(t => t.value === taskType)?.label || "Task"}: ${title.trim()} — scheduled for ${format(new Date(dueDate), "MMM d, yyyy")}`,
-            metadata: { task_type: taskType, due_date: dueDate, priority },
-          });
+          await runMutationWithRetry(
+            {
+              table: "lead_activities",
+              operation: "insert",
+              payload: {
+                lead_id: relatedId,
+                activity_type: "follow_up",
+                due_date: dueDate,
+                task_type: taskType,
+              },
+              userId,
+              companyId,
+            },
+            async () =>
+              (await supabase
+                .from("lead_activities")
+                .insert({
+                  lead_id: relatedId,
+                  user_id: userId,
+                  activity_type: "follow_up",
+                  description: `${TASK_TYPES.find((t) => t.value === taskType)?.label || "Task"}: ${title.trim()} — scheduled for ${format(new Date(dueDate), "MMM d, yyyy")}`,
+                  metadata: { task_type: taskType, due_date: dueDate, priority },
+                })
+                .select("id")
+                .single()) as any,
+          );
         }
         toast({ title: "Task scheduled" });
       }
 
       onOpenChange(false);
       onSaved();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }
