@@ -24,6 +24,7 @@ import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
 import { TaskTimeline } from "@/components/tasks/TaskTimeline";
 import { createNotification } from "@/hooks/useNotifications";
+import { getMutationErrorMessage, isNetworkMutationError, runMutationWithRetry } from "@/lib/supabaseMutation";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
@@ -203,136 +204,138 @@ export default function LeadDetailPage() {
       newStatus,
       userId: user.id,
     };
-    console.log("[updateStatus] Request payload", requestPayload);
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !sessionData.session) {
-      console.error("[updateStatus] Session invalid", { sessionError, hasSession: !!sessionData.session });
-      toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
-      return;
-    }
+    const updateViaFunctionFallback = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log("SESSION", {
+        hasSession: !!sessionData.session,
+        hasAccessToken: !!sessionData.session?.access_token,
+        expiresAt: sessionData.session?.expires_at,
+        refreshError: sessionError?.message || null,
+      });
 
-    const isNetworkError = (err: unknown) => {
-      if (err instanceof TypeError) return true;
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error("Session expired. Please log in again.");
+      }
 
-      if (err && typeof err === "object") {
-        const maybeErr = err as {
-          status?: number;
-          message?: unknown;
-          details?: unknown;
-          error_description?: unknown;
-          name?: unknown;
-        };
+      let lastError: unknown = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log("REQUEST START", {
+          table: "update-lead-status",
+          operation: "update",
+          payload: { leadId, status: newStatus },
+          userId: user.id,
+          companyId: lead.company_id,
+          attempt,
+          maxRetries: 3,
+        });
 
-        if (maybeErr.status === 0) return true;
+        try {
+          const { data, error } = await supabase.functions.invoke("update-lead-status", {
+            body: { leadId, status: newStatus },
+          });
 
-        const text = [
-          maybeErr.message,
-          maybeErr.details,
-          maybeErr.error_description,
-          maybeErr.name,
-        ]
-          .filter((v): v is string => typeof v === "string")
-          .join(" | ");
+          console.log("RESPONSE", {
+            table: "update-lead-status",
+            operation: "update",
+            attempt,
+            status: error ? "error" : "ok",
+            statusText: error?.message || "ok",
+            data,
+            error,
+          });
 
-        if (text.includes("Failed to fetch") || text.includes("NetworkError") || text.includes("fetch failed")) {
-          return true;
+          if (error) throw new Error(error.message || "Fallback update failed");
+          if (data?.error) throw new Error(data.error);
+          return data?.data;
+        } catch (err) {
+          lastError = err;
+          console.error("NETWORK ERROR", {
+            table: "update-lead-status",
+            operation: "update",
+            attempt,
+            rootCause: isNetworkMutationError(err) ? "possible_cors_or_preview_network" : "unknown",
+            error: err,
+          });
+          if (!isNetworkMutationError(err) || attempt === 3) break;
+          await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)));
         }
       }
 
-      const fallbackText = err instanceof Error ? err.message : String(err);
-      return fallbackText.includes("Failed to fetch") || fallbackText.includes("NetworkError") || fallbackText.includes("fetch failed");
-    };
-
-    const updateViaDirectQuery = async (attempt: number) => {
-      console.log(`[updateStatus][direct] Attempt ${attempt}`, requestPayload);
-      const response = await supabase
-        .from("leads")
-        .update({ status: newStatus })
-        .eq("id", leadId)
-        .select("id, status, company_id, updated_at")
-        .single();
-
-      console.log(`[updateStatus][direct] Response ${attempt}`, {
-        statusCode: response.status,
-        statusText: response.statusText,
-        data: response.data,
-        error: response.error,
-      });
-
-      if (response.error) throw response.error;
-      return response.data;
-    };
-
-    const updateViaFunctionFallback = async () => {
-      console.warn("[updateStatus] Falling back to backend function", requestPayload);
-      const { data, error } = await supabase.functions.invoke("update-lead-status", {
-        body: { leadId, status: newStatus },
-      });
-
-      console.log("[updateStatus][fallback] Response", { data, error });
-
-      if (error) throw new Error(error.message || "Fallback update failed");
-      if (data?.error) throw new Error(data.error);
-      return data?.data;
+      throw lastError instanceof Error ? lastError : new Error("Fallback update failed");
     };
 
     setLead({ ...lead, status: newStatus });
 
     try {
       let updatedLead: any = null;
-      let lastDirectError: unknown = null;
 
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          updatedLead = await updateViaDirectQuery(attempt);
-          break;
-        } catch (err) {
-          lastDirectError = err;
-          console.error(`[updateStatus][direct] Attempt ${attempt} failed`, err);
-          if (!isNetworkError(err) || attempt === 2) break;
-          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+      try {
+        updatedLead = await runMutationWithRetry(
+          {
+            table: "leads",
+            operation: "update",
+            payload: { status: newStatus },
+            userId: user.id,
+            companyId: lead.company_id,
+          },
+          async () =>
+            (await supabase
+              .from("leads")
+              .update({ status: newStatus })
+              .eq("id", leadId)
+              .select("id, status, company_id, updated_at")
+              .single()) as any,
+        );
+      } catch (directError) {
+        if (!isNetworkMutationError(directError)) {
+          throw directError;
         }
-      }
-
-      if (!updatedLead) {
-        if (!isNetworkError(lastDirectError)) {
-          throw lastDirectError;
-        }
-
         updatedLead = await updateViaFunctionFallback();
       }
 
+      await runMutationWithRetry(
+        {
+          table: "lead_activities",
+          operation: "insert",
+          payload: {
+            lead_id: leadId,
+            activity_type: "status_changed",
+            oldStatus,
+            newStatus,
+          },
+          userId: user.id,
+          companyId: lead.company_id,
+        },
+        async () =>
+          (await supabase
+            .from("lead_activities")
+            .insert({
+              lead_id: leadId,
+              user_id: user.id,
+              activity_type: "status_changed",
+              description: `Status changed from ${STATUS_CONFIG[oldStatus].label} to ${STATUS_CONFIG[newStatus].label}`,
+            })
+            .select("id")
+            .single()) as any,
+      );
+
       console.log("[updateStatus] Final success", { requestPayload, updatedLead });
-
-      supabase
-        .from("lead_activities")
-        .insert({
-          lead_id: leadId,
-          user_id: user.id,
-          activity_type: "status_changed",
-          description: `Status changed from ${STATUS_CONFIG[oldStatus].label} to ${STATUS_CONFIG[newStatus].label}`,
-        })
-        .then(() => fetchActivities());
-
+      fetchActivities();
       toast({ title: "Status updated" });
     } catch (err) {
       setLead({ ...lead, status: oldStatus });
 
-      const networkFailure = isNetworkError(err);
-      console.error("[updateStatus] Final failure", {
-        requestPayload,
+      console.error("NETWORK ERROR", {
+        table: "leads",
+        operation: "update",
+        rootCause: isNetworkMutationError(err) ? "possible_cors_or_preview_network" : "unknown",
         error: err,
-        networkFailure,
       });
 
       toast({
-        title: networkFailure ? "Network error" : "Error updating status",
-        description: networkFailure
-          ? "Could not reach the server. Please try again in a moment."
-          : err instanceof Error
-            ? err.message
-            : "An unexpected error occurred.",
+        title: isNetworkMutationError(err) ? "Network error" : "Error updating status",
+        description: getMutationErrorMessage(err),
         variant: "destructive",
       });
     }
@@ -343,14 +346,44 @@ export default function LeadDetailPage() {
     const assignedTo = agentId === "none" ? null : agentId;
     const agentName = agents.find((a) => a.userId === agentId)?.fullName || "Unassigned";
     try {
-      const { error } = await supabase.from("leads").update({ assigned_to: assignedTo }).eq("id", lead.id);
-      if (error) throw error;
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "assigned",
-        description: assignedTo ? `Assigned to ${agentName}` : "Unassigned",
-      });
+      await runMutationWithRetry(
+        {
+          table: "leads",
+          operation: "update",
+          payload: { assigned_to: assignedTo },
+          userId: user.id,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("leads")
+            .update({ assigned_to: assignedTo })
+            .eq("id", lead.id)
+            .select("id")
+            .single()) as any,
+      );
 
-      // Send notification to the assigned agent
+      await runMutationWithRetry(
+        {
+          table: "lead_activities",
+          operation: "insert",
+          payload: { lead_id: lead.id, activity_type: "assigned", assigned_to: assignedTo },
+          userId: user.id,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("lead_activities")
+            .insert({
+              lead_id: lead.id,
+              user_id: user.id,
+              activity_type: "assigned",
+              description: assignedTo ? `Assigned to ${agentName}` : "Unassigned",
+            })
+            .select("id")
+            .single()) as any,
+      );
+
       if (assignedTo && assignedTo !== user.id) {
         await createNotification({
           userId: assignedTo,
@@ -369,8 +402,8 @@ export default function LeadDetailPage() {
       setLead({ ...lead, assigned_to: assignedTo });
       fetchActivities();
       toast({ title: assignedTo ? `Assigned to ${agentName}` : "Unassigned" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 
@@ -378,15 +411,31 @@ export default function LeadDetailPage() {
     if (!lead || !user || !noteText.trim()) return;
     setAddingNote(true);
     try {
-      await supabase.from("lead_activities").insert({
-        lead_id: lead.id, user_id: user.id, activity_type: "note_added",
-        description: noteText.trim(),
-      });
+      await runMutationWithRetry(
+        {
+          table: "lead_activities",
+          operation: "insert",
+          payload: { lead_id: lead.id, activity_type: "note_added" },
+          userId: user.id,
+          companyId: lead.company_id,
+        },
+        async () =>
+          (await supabase
+            .from("lead_activities")
+            .insert({
+              lead_id: lead.id,
+              user_id: user.id,
+              activity_type: "note_added",
+              description: noteText.trim(),
+            })
+            .select("id")
+            .single()) as any,
+      );
       setNoteText("");
       fetchActivities();
       toast({ title: "Note added" });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     } finally {
       setAddingNote(false);
     }

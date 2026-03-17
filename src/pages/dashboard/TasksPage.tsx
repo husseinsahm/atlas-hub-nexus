@@ -3,17 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ClipboardList, Loader2, Search, Filter, AlertTriangle,
-  Clock, CheckCircle2, Calendar, Plus, BarChart3,
-} from "lucide-react";
-import { format, isPast, isToday, startOfDay, endOfDay, addDays } from "date-fns";
+import { ClipboardList, Loader2, Search, AlertTriangle, Clock, CheckCircle2, Calendar, Plus } from "lucide-react";
+import { isPast, isToday } from "date-fns";
+import { getMutationErrorMessage, runMutationWithRetry } from "@/lib/supabaseMutation";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { TaskCompletionDialog } from "@/components/tasks/TaskCompletionDialog";
@@ -74,45 +72,87 @@ export default function TasksPage() {
 
   async function fetchAgents() {
     try {
-      const { data } = await supabase
+      const { data: memberships, error: membershipError } = await supabase
         .from("company_memberships")
-        .select("user_id, role, profiles:user_id(full_name)" as any)
+        .select("user_id, role")
         .eq("company_id", companyId)
         .eq("is_active", true);
-      if (data) {
-        setAgents(
-          (data as any[]).map((m: any) => ({
-            userId: m.user_id,
-            fullName: (m.profiles as any)?.full_name || "Unknown",
-            role: m.role,
-          }))
-        );
+
+      if (membershipError) throw membershipError;
+      const userIds = (memberships || []).map((m) => m.user_id);
+
+      if (userIds.length === 0) {
+        setAgents([]);
+        return;
       }
-    } catch {}
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      if (profileError) throw profileError;
+
+      const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile.full_name || "Unknown"]));
+      setAgents(
+        (memberships || []).map((member) => ({
+          userId: member.user_id,
+          fullName: profileMap.get(member.user_id) || "Unknown",
+          role: member.role,
+        })),
+      );
+    } catch (error) {
+      console.error("Failed to fetch agents", error);
+    }
   }
 
   async function handleCancel(t: CrmTask) {
     try {
-      const { error } = await supabase
-        .from("crm_tasks" as any)
-        .update({ status: "cancelled" } as any)
-        .eq("id", t.id);
-      if (error) throw error;
+      await runMutationWithRetry(
+        {
+          table: "crm_tasks",
+          operation: "update",
+          payload: { status: "cancelled" },
+          userId,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("crm_tasks" as any)
+            .update({ status: "cancelled" } as any)
+            .eq("id", t.id)
+            .select("id")
+            .single()) as any,
+      );
       toast({ title: "Task cancelled" });
       fetchTasks();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      const { error } = await supabase.from("crm_tasks" as any).delete().eq("id", id);
-      if (error) throw error;
+      await runMutationWithRetry(
+        {
+          table: "crm_tasks",
+          operation: "delete",
+          payload: { id },
+          userId,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("crm_tasks" as any)
+            .delete()
+            .eq("id", id)
+            .select("id")
+            .single()) as any,
+      );
       toast({ title: "Task deleted" });
       fetchTasks();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 

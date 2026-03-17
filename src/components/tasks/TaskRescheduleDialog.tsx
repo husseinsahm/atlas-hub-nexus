@@ -9,6 +9,7 @@ import { Calendar, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from "date-fns";
+import { getMutationErrorMessage, runMutationWithRetry } from "@/lib/supabaseMutation";
 import type { CrmTask } from "./taskConstants";
 
 interface TaskRescheduleDialogProps {
@@ -30,38 +31,65 @@ export function TaskRescheduleDialog({ open, onOpenChange, task, userId, onResch
     if (!newDate) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("crm_tasks" as any)
-        .update({
-          due_date: newDate,
-          due_time: newTime || null,
-          status: "pending",
-          metadata: {
-            ...(task.metadata || {}),
-            reschedule_history: [
-              ...((task.metadata as any)?.reschedule_history || []),
-              { from_date: task.due_date, from_time: task.due_time, to_date: newDate, to_time: newTime || null, reason: reason.trim(), by: userId, at: new Date().toISOString() },
-            ],
-          },
-        } as any)
-        .eq("id", task.id);
-      if (error) throw error;
+      const payload = {
+        due_date: newDate,
+        due_time: newTime || null,
+        status: "pending",
+        metadata: {
+          ...(task.metadata || {}),
+          reschedule_history: [
+            ...((task.metadata as any)?.reschedule_history || []),
+            { from_date: task.due_date, from_time: task.due_time, to_date: newDate, to_time: newTime || null, reason: reason.trim(), by: userId, at: new Date().toISOString() },
+          ],
+        },
+      };
+
+      await runMutationWithRetry(
+        {
+          table: "crm_tasks",
+          operation: "update",
+          payload,
+          userId,
+          companyId: task.company_id,
+        },
+        async () =>
+          (await supabase
+            .from("crm_tasks" as any)
+            .update(payload as any)
+            .eq("id", task.id)
+            .select("id")
+            .single()) as any,
+      );
 
       if (task.related_type === "lead") {
-        await supabase.from("lead_activities").insert({
-          lead_id: task.related_id,
-          user_id: userId,
-          activity_type: "follow_up",
-          description: `Rescheduled "${task.title}" to ${format(new Date(newDate), "MMM d, yyyy")}${reason.trim() ? ` — ${reason.trim()}` : ""}`,
-          metadata: { task_id: task.id, action: "rescheduled" },
-        });
+        await runMutationWithRetry(
+          {
+            table: "lead_activities",
+            operation: "insert",
+            payload: { task_id: task.id, action: "rescheduled" },
+            userId,
+            companyId: task.company_id,
+          },
+          async () =>
+            (await supabase
+              .from("lead_activities")
+              .insert({
+                lead_id: task.related_id,
+                user_id: userId,
+                activity_type: "follow_up",
+                description: `Rescheduled "${task.title}" to ${format(new Date(newDate), "MMM d, yyyy")}${reason.trim() ? ` — ${reason.trim()}` : ""}`,
+                metadata: { task_id: task.id, action: "rescheduled" },
+              })
+              .select("id")
+              .single()) as any,
+        );
       }
 
       toast({ title: "Task rescheduled" });
       onOpenChange(false);
       onRescheduled();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     } finally {
       setSaving(false);
     }
