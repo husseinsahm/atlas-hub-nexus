@@ -214,8 +214,34 @@ export default function LeadDetailPage() {
 
     const isNetworkError = (err: unknown) => {
       if (err instanceof TypeError) return true;
-      const message = err instanceof Error ? err.message : String(err);
-      return message.includes("Failed to fetch") || message.includes("NetworkError");
+
+      if (err && typeof err === "object") {
+        const maybeErr = err as {
+          status?: number;
+          message?: unknown;
+          details?: unknown;
+          error_description?: unknown;
+          name?: unknown;
+        };
+
+        if (maybeErr.status === 0) return true;
+
+        const text = [
+          maybeErr.message,
+          maybeErr.details,
+          maybeErr.error_description,
+          maybeErr.name,
+        ]
+          .filter((v): v is string => typeof v === "string")
+          .join(" | ");
+
+        if (text.includes("Failed to fetch") || text.includes("NetworkError") || text.includes("fetch failed")) {
+          return true;
+        }
+      }
+
+      const fallbackText = err instanceof Error ? err.message : String(err);
+      return fallbackText.includes("Failed to fetch") || fallbackText.includes("NetworkError") || fallbackText.includes("fetch failed");
     };
 
     const updateViaDirectQuery = async (attempt: number) => {
