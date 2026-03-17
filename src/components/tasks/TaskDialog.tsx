@@ -10,7 +10,8 @@ import { CheckCircle2, Loader2, Wand2, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { format, addDays } from "date-fns";
+import { format } from "date-fns";
+import { getMutationErrorMessage, runMutationWithRetry } from "@/lib/supabaseMutation";
 import {
   TASK_TYPES, PRIORITY_OPTIONS, REMINDER_OPTIONS, REPEAT_OPTIONS,
   QUICK_TEMPLATES, type CrmTask, type AgentInfo,
