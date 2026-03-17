@@ -290,6 +290,20 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 }
 
 function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: LeadFormData) => void }) {
+  const [langOpen, setLangOpen] = useState(false);
+
+  // Auto-suggest language when nationality changes
+  useEffect(() => {
+    if (form.nationality && !form.preferred_language) {
+      const suggested = NATIONALITY_LANGUAGE_MAP[form.nationality];
+      if (suggested) {
+        setForm({ ...form, preferred_language: suggested });
+      }
+    }
+  }, [form.nationality]);
+
+  const selectedLang = LANGUAGE_OPTIONS.find(l => l.value === form.preferred_language);
+
   return (
     <FieldGroup>
       <div className="text-center mb-2">
@@ -314,25 +328,69 @@ function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: Lead
           <FieldLabel>Nationality</FieldLabel>
           <NationalitySelect
             value={form.nationality}
-            onValueChange={(v) => setForm({ ...form, nationality: v })}
+            onValueChange={(v) => {
+              const suggestedLang = NATIONALITY_LANGUAGE_MAP[v];
+              setForm({
+                ...form,
+                nationality: v,
+                ...(suggestedLang && !form.preferred_language ? { preferred_language: suggestedLang } : {}),
+              });
+            }}
             placeholder="Select nationality"
           />
         </div>
         <div className="space-y-2">
           <FieldLabel>Preferred Language</FieldLabel>
-          <Select value={form.preferred_language} onValueChange={(v) => setForm({ ...form, preferred_language: v })}>
-            <SelectTrigger className="h-11">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <SelectValue />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {LANGUAGE_OPTIONS.map(l => (
-                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={langOpen} onOpenChange={setLangOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={langOpen}
+                className="w-full h-11 justify-between font-normal"
+              >
+                {selectedLang ? (
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{selectedLang.flag}</span>
+                    <span>{selectedLang.label}</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Globe className="w-4 h-4" />
+                    Select language
+                  </span>
+                )}
+                <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[240px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search language..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No language found.</CommandEmpty>
+                  <CommandGroup className="max-h-[200px] overflow-auto">
+                    {LANGUAGE_OPTIONS.map((lang) => (
+                      <CommandItem
+                        key={lang.value}
+                        value={`${lang.label} ${lang.flag}`}
+                        onSelect={() => {
+                          setForm({ ...form, preferred_language: lang.value });
+                          setLangOpen(false);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="text-lg">{lang.flag}</span>
+                        <span className="flex-1">{lang.label}</span>
+                        {form.preferred_language === lang.value && (
+                          <Check className="h-4 w-4 text-accent" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </FieldGroup>
