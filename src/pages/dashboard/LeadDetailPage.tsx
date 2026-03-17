@@ -24,6 +24,7 @@ import { FileAttachments } from "@/components/FileAttachments";
 import ConvertToBookingModal from "@/components/leads/ConvertToBookingModal";
 import { TaskTimeline } from "@/components/tasks/TaskTimeline";
 import { createNotification } from "@/hooks/useNotifications";
+import { getMutationErrorMessage, isNetworkMutationError, runMutationWithRetry } from "@/lib/supabaseMutation";
 
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
