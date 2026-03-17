@@ -268,49 +268,95 @@ export default function BookingDetailPage() {
 
   const saveTraveler = useMutation({
     mutationFn: async (traveler: any) => {
-      if (traveler.id && !traveler._isNew) {
-        const { error } = await supabase.from("booking_travelers").update({
-          full_name: traveler.full_name,
-          date_of_birth: traveler.date_of_birth || null,
-          gender: traveler.gender || null,
-          nationality: traveler.nationality || null,
-          email: traveler.email || null,
-          phone: traveler.phone || null,
-          passport_number: traveler.passport_number || null,
-          passport_expiry: traveler.passport_expiry || null,
-          passport_country: traveler.passport_country || null,
-          is_lead_traveler: traveler.is_lead_traveler || false,
-          is_adult: traveler.is_adult !== false,
-          special_requirements: traveler.special_requirements || null,
-          room_preference: traveler.room_preference || null,
-        }).eq("id", traveler.id);
-        if (error) throw error;
+      const payload = {
+        full_name: traveler.full_name,
+        date_of_birth: traveler.date_of_birth || null,
+        gender: traveler.gender || null,
+        nationality: traveler.nationality || null,
+        email: traveler.email || null,
+        phone: traveler.phone || null,
+        passport_number: traveler.passport_number || null,
+        passport_expiry: traveler.passport_expiry || null,
+        passport_country: traveler.passport_country || null,
+        is_lead_traveler: traveler.is_lead_traveler || false,
+        is_adult: traveler.is_adult !== false,
+        special_requirements: traveler.special_requirements || null,
+        room_preference: traveler.room_preference || null,
+      };
+
+      const isUpdate = traveler.id && !traveler._isNew;
+      console.log("Traveler Save Payload:", { isUpdate, travelerId: traveler.id, payload });
+
+      if (isUpdate) {
+        // Try direct first, then fallback to proxy
+        const { data, error, status } = await supabase
+          .from("booking_travelers")
+          .update(payload)
+          .eq("id", traveler.id)
+          .select("*")
+          .single();
+        console.log("Traveler Save Response:", { data, error, status });
+        if (error) {
+          console.error("Traveler Save Error (direct update):", error);
+          // Fallback to proxy-mutation
+          console.log("Falling back to proxy-mutation for update...");
+          const { data: proxyData, error: proxyError } = await supabase.functions.invoke("proxy-mutation", {
+            body: {
+              table: "booking_travelers",
+              operation: "update",
+              payload,
+              filters: [{ column: "id", value: traveler.id }],
+              select: "*",
+              single: true,
+            },
+          });
+          console.log("Traveler Save Proxy Response:", { proxyData, proxyError });
+          if (proxyError) throw proxyError;
+          if (proxyData?.error) throw proxyData.error;
+          return proxyData?.data;
+        }
+        return data;
       } else {
-        const { error } = await supabase.from("booking_travelers").insert({
-          booking_id: id!,
-          company_id: booking!.company_id,
-          full_name: traveler.full_name,
-          date_of_birth: traveler.date_of_birth || null,
-          gender: traveler.gender || null,
-          nationality: traveler.nationality || null,
-          email: traveler.email || null,
-          phone: traveler.phone || null,
-          passport_number: traveler.passport_number || null,
-          passport_expiry: traveler.passport_expiry || null,
-          passport_country: traveler.passport_country || null,
-          is_lead_traveler: traveler.is_lead_traveler || false,
-          is_adult: traveler.is_adult !== false,
-          special_requirements: traveler.special_requirements || null,
-          room_preference: traveler.room_preference || null,
-        });
-        if (error) throw error;
+        const insertPayload = { ...payload, booking_id: id!, company_id: booking!.company_id };
+        const { data, error, status } = await supabase
+          .from("booking_travelers")
+          .insert(insertPayload)
+          .select("*")
+          .single();
+        console.log("Traveler Save Response:", { data, error, status });
+        if (error) {
+          console.error("Traveler Save Error (direct insert):", error);
+          console.log("Falling back to proxy-mutation for insert...");
+          const { data: proxyData, error: proxyError } = await supabase.functions.invoke("proxy-mutation", {
+            body: {
+              table: "booking_travelers",
+              operation: "insert",
+              payload: insertPayload,
+              select: "*",
+              single: true,
+            },
+          });
+          console.log("Traveler Save Proxy Response:", { proxyData, proxyError });
+          if (proxyError) throw proxyError;
+          if (proxyData?.error) throw proxyData.error;
+          return proxyData?.data;
+        }
+        return data;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["booking-travelers", id] });
       setShowTravelerDialog(false);
       setEditingTraveler(null);
-      toast({ title: isArabic ? "تم حفظ المسافر" : "Traveler saved" });
+      toast({ title: isArabic ? "تم حفظ المسافر بنجاح" : "Traveler saved successfully" });
+    },
+    onError: (error: any) => {
+      console.error("Traveler Save Final Error:", error);
+      toast({
+        title: isArabic ? "فشل حفظ المسافر" : "Failed to save traveler",
+        description: error?.message || "Something went wrong, please try again",
+        variant: "destructive",
+      });
     },
   });
 
