@@ -384,6 +384,10 @@ export default function LeadDetailPage() {
           payload: { lead_id: lead.id, activity_type: "assigned", assigned_to: assignedTo },
           userId: user.id,
           companyId,
+          fallback: {
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
