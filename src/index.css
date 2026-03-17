@@ -9,27 +9,27 @@
     --font-display: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Modern SaaS neutral palette */
-    --background: 228 14% 96%;
-    --foreground: 220 30% 12%;
+    /* Modern SaaS neutral palette - high contrast */
+    --background: 220 14% 96%;
+    --foreground: 220 39% 11%;
 
-    /* Pure white cards for hierarchy */
+    /* Pure white cards */
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 12%;
+    --card-foreground: 220 39% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 12%;
+    --popover-foreground: 220 39% 11%;
 
-    /* Deep navy primary */
-    --primary: 220 40% 13%;
+    /* Deep navy primary - stronger */
+    --primary: 220 43% 11%;
     --primary-foreground: 0 0% 100%;
 
     /* Warm sand secondary */
-    --secondary: 228 14% 93%;
-    --secondary-foreground: 220 30% 15%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 39% 16%;
 
-    --muted: 228 12% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 12% 93%;
+    --muted-foreground: 220 9% 42%;
 
     /* Warm gold accent */
     --accent: 38 65% 50%;
@@ -38,9 +38,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 14% 89%;
-    --input: 228 14% 87%;
-    --ring: 38 65% 50%;
+    --border: 220 13% 82%;
+    --input: 220 13% 82%;
+    --ring: 220 43% 11%;
 
     --radius: 0.75rem;
 
@@ -58,7 +58,7 @@
     --gold: 38 65% 50%;
     --gold-light: 38 55% 65%;
     --gold-dark: 38 70% 38%;
-    --navy: 220 40% 13%;
+    --navy: 220 43% 11%;
     --navy-light: 220 30% 22%;
     --cream: 40 33% 96%;
     --cream-dark: 35 20% 90%;
@@ -69,10 +69,10 @@
     --gradient-luxury: linear-gradient(135deg, hsl(220 40% 10%), hsl(220 30% 18%), hsl(38 40% 25%));
 
     /* Shadows - modern SaaS style */
-    --shadow-xs: 0 1px 2px hsl(220 30% 12% / 0.04);
-    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.06), 0 1px 2px hsl(220 30% 12% / 0.04);
-    --shadow-md: 0 4px 6px -1px hsl(220 30% 12% / 0.06), 0 2px 4px -2px hsl(220 30% 12% / 0.04);
-    --shadow-lg: 0 10px 15px -3px hsl(220 30% 12% / 0.06), 0 4px 6px -4px hsl(220 30% 12% / 0.04);
+    --shadow-xs: 0 1px 2px hsl(220 30% 12% / 0.05);
+    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.08), 0 1px 2px hsl(220 30% 12% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(220 30% 12% / 0.08), 0 2px 4px -2px hsl(220 30% 12% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(220 30% 12% / 0.08), 0 4px 6px -4px hsl(220 30% 12% / 0.05);
     --shadow-gold: 0 4px 20px hsl(38 65% 50% / 0.15);
   }
 
