@@ -108,26 +108,51 @@ export default function TasksPage() {
 
   async function handleCancel(t: CrmTask) {
     try {
-      const { error } = await supabase
-        .from("crm_tasks" as any)
-        .update({ status: "cancelled" } as any)
-        .eq("id", t.id);
-      if (error) throw error;
+      await runMutationWithRetry(
+        {
+          table: "crm_tasks",
+          operation: "update",
+          payload: { status: "cancelled" },
+          userId,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("crm_tasks" as any)
+            .update({ status: "cancelled" } as any)
+            .eq("id", t.id)
+            .select("id")
+            .single()) as any,
+      );
       toast({ title: "Task cancelled" });
       fetchTasks();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 
   async function handleDelete(id: string) {
     try {
-      const { error } = await supabase.from("crm_tasks" as any).delete().eq("id", id);
-      if (error) throw error;
+      await runMutationWithRetry(
+        {
+          table: "crm_tasks",
+          operation: "delete",
+          payload: { id },
+          userId,
+          companyId,
+        },
+        async () =>
+          (await supabase
+            .from("crm_tasks" as any)
+            .delete()
+            .eq("id", id)
+            .select("id")
+            .single()) as any,
+      );
       toast({ title: "Task deleted" });
       fetchTasks();
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Error", description: getMutationErrorMessage(err), variant: "destructive" });
     }
   }
 
