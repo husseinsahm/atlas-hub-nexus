@@ -184,13 +184,13 @@
   }
 
   .luxury-input {
-    @apply bg-card border border-input rounded-lg px-4 py-3 text-sm transition-all duration-200;
+    @apply bg-card border border-input rounded-lg px-4 py-3 text-sm text-foreground transition-all duration-200 shadow-sm;
     font-family: var(--font-body);
   }
   .luxury-input:focus {
     @apply outline-none ring-2;
-    ring-color: hsl(var(--gold) / 0.3);
-    border-color: hsl(var(--gold));
+    ring-color: hsl(var(--ring) / 0.4);
+    border-color: hsl(var(--foreground) / 0.3);
   }
 
   .glass-panel {
