@@ -44,6 +44,11 @@ export function TaskCompletionDialog({ open, onOpenChange, task, userId, onCompl
           payload: completionPayload,
           userId,
           companyId: task.company_id,
+          fallback: {
+            filters: [{ column: "id", value: task.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -62,6 +67,10 @@ export function TaskCompletionDialog({ open, onOpenChange, task, userId, onCompl
             payload: { task_id: task.id, action: "completed" },
             userId,
             companyId: task.company_id,
+            fallback: {
+              select: "id",
+              single: true,
+            },
           },
           async () =>
             (await supabase
@@ -99,6 +108,10 @@ export function TaskCompletionDialog({ open, onOpenChange, task, userId, onCompl
             payload: nextPayload,
             userId,
             companyId: task.company_id,
+            fallback: {
+              select: "id",
+              single: true,
+            },
           },
           async () =>
             (await supabase

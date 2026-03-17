@@ -126,6 +126,11 @@ export function TaskDialog({
             payload,
             userId,
             companyId,
+            fallback: {
+              filters: [{ column: "id", value: editingTask.id }],
+              select: "id",
+              single: true,
+            },
           },
           async () =>
             (await supabase
@@ -144,6 +149,10 @@ export function TaskDialog({
             payload,
             userId,
             companyId,
+            fallback: {
+              select: "id",
+              single: true,
+            },
           },
           async () =>
             (await supabase
@@ -166,6 +175,10 @@ export function TaskDialog({
               },
               userId,
               companyId,
+              fallback: {
+                select: "id",
+                single: true,
+              },
             },
             async () =>
               (await supabase
