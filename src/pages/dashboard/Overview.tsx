@@ -605,8 +605,7 @@ function CompanyDashboard() {
             label={isArabic ? "مؤقتة" : "Tentative"} 
             value={bookingStats.tentative} 
             icon={Clock} 
-            bgGradient="bg-gradient-to-br from-amber-50 to-yellow-50/60"
-            iconBg="bg-gradient-to-br from-amber-400 to-amber-500 text-white"
+            colorKey="amber"
             subtitle={isArabic ? "تحتاج تأكيد" : "Awaiting confirmation"}
             trend={5}
             onClick={() => navigate("/dashboard/bookings")}
@@ -615,8 +614,7 @@ function CompanyDashboard() {
             label={isArabic ? "مؤكدة" : "Confirmed"} 
             value={bookingStats.confirmed} 
             icon={CheckCircle} 
-            bgGradient="bg-gradient-to-br from-emerald-50 to-green-50/60"
-            iconBg="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white"
+            colorKey="emerald"
             subtitle={isArabic ? "جاهزة للعمليات" : "Ready for operations"}
             trend={12}
             onClick={() => navigate("/dashboard/bookings")}
@@ -625,8 +623,7 @@ function CompanyDashboard() {
             label={isArabic ? "قيد التنفيذ" : "In Operation"} 
             value={bookingStats.inOperation} 
             icon={Plane} 
-            bgGradient="bg-gradient-to-br from-blue-50 to-indigo-50/60"
-            iconBg="bg-gradient-to-br from-blue-400 to-blue-500 text-white"
+            colorKey="blue"
             subtitle={isArabic ? "حاليًا نشطة" : "Currently active"}
             trend={-3}
             onClick={() => navigate("/dashboard/bookings")}
@@ -635,8 +632,7 @@ function CompanyDashboard() {
             label={isArabic ? "مكتملة" : "Completed"} 
             value={bookingStats.completed} 
             icon={CheckCircle} 
-            bgGradient="bg-gradient-to-br from-slate-50 to-gray-50/60"
-            iconBg="bg-gradient-to-br from-slate-400 to-slate-500 text-white"
+            colorKey="slate"
             subtitle={isArabic ? "هذا الشهر" : "This month"}
             trend={8}
             onClick={() => navigate("/dashboard/bookings")}
