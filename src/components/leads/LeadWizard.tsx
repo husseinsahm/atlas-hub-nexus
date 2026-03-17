@@ -1,18 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Progress } from "@/components/ui/progress";
 import { DestinationTagInput } from "@/components/ui/destination-tag-input";
 import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
   User, Phone, Mail, MessageCircle, Plane, DollarSign, Flame,
   FileText, ChevronRight, ChevronLeft, Check, Sparkles, UserPlus,
-  Globe, Users, Calendar, MapPin,
+  Globe, Users, Calendar, MapPin, ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,15 +55,33 @@ const URGENCY_OPTIONS = [
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "ar", label: "Arabic" },
-  { value: "fr", label: "French" },
-  { value: "es", label: "Spanish" },
-  { value: "de", label: "German" },
-  { value: "tr", label: "Turkish" },
-  { value: "ru", label: "Russian" },
-  { value: "zh", label: "Chinese" },
+  { value: "ar", label: "Arabic", flag: "🇸🇦" },
+  { value: "en", label: "English", flag: "🇺🇸" },
+  { value: "ja", label: "Japanese", flag: "🇯🇵" },
+  { value: "de", label: "German", flag: "🇩🇪" },
+  { value: "fr", label: "French", flag: "🇫🇷" },
+  { value: "it", label: "Italian", flag: "🇮🇹" },
+  { value: "es", label: "Spanish", flag: "🇪🇸" },
+  { value: "zh", label: "Chinese", flag: "🇨🇳" },
+  { value: "ru", label: "Russian", flag: "🇷🇺" },
+  { value: "tr", label: "Turkish", flag: "🇹🇷" },
 ];
+
+// Map nationality codes to suggested language
+const NATIONALITY_LANGUAGE_MAP: Record<string, string> = {
+  SA: "ar", AE: "ar", EG: "ar", JO: "ar", LB: "ar", KW: "ar", QA: "ar",
+  BH: "ar", OM: "ar", MA: "ar", TN: "ar", DZ: "ar", IQ: "ar", SY: "ar",
+  PS: "ar", YE: "ar", LY: "ar", SD: "ar",
+  US: "en", GB: "en", AU: "en", CA: "en", NZ: "en", IE: "en",
+  JP: "ja",
+  DE: "de", AT: "de", CH: "de",
+  FR: "fr", BE: "fr",
+  IT: "it",
+  ES: "es", MX: "es", AR: "es", CO: "es",
+  CN: "zh", TW: "zh", HK: "zh",
+  RU: "ru",
+  TR: "tr",
+};
 
 interface TeamMember {
   userId: string;
@@ -267,6 +290,20 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 }
 
 function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: LeadFormData) => void }) {
+  const [langOpen, setLangOpen] = useState(false);
+
+  // Auto-suggest language when nationality changes
+  useEffect(() => {
+    if (form.nationality && !form.preferred_language) {
+      const suggested = NATIONALITY_LANGUAGE_MAP[form.nationality];
+      if (suggested) {
+        setForm({ ...form, preferred_language: suggested });
+      }
+    }
+  }, [form.nationality]);
+
+  const selectedLang = LANGUAGE_OPTIONS.find(l => l.value === form.preferred_language);
+
   return (
     <FieldGroup>
       <div className="text-center mb-2">
@@ -291,25 +328,69 @@ function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: Lead
           <FieldLabel>Nationality</FieldLabel>
           <NationalitySelect
             value={form.nationality}
-            onValueChange={(v) => setForm({ ...form, nationality: v })}
+            onValueChange={(v) => {
+              const suggestedLang = NATIONALITY_LANGUAGE_MAP[v];
+              setForm({
+                ...form,
+                nationality: v,
+                ...(suggestedLang && !form.preferred_language ? { preferred_language: suggestedLang } : {}),
+              });
+            }}
             placeholder="Select nationality"
           />
         </div>
         <div className="space-y-2">
           <FieldLabel>Preferred Language</FieldLabel>
-          <Select value={form.preferred_language} onValueChange={(v) => setForm({ ...form, preferred_language: v })}>
-            <SelectTrigger className="h-11">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <SelectValue />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {LANGUAGE_OPTIONS.map(l => (
-                <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={langOpen} onOpenChange={setLangOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={langOpen}
+                className="w-full h-11 justify-between font-normal"
+              >
+                {selectedLang ? (
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{selectedLang.flag}</span>
+                    <span>{selectedLang.label}</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Globe className="w-4 h-4" />
+                    Select language
+                  </span>
+                )}
+                <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[240px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search language..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>No language found.</CommandEmpty>
+                  <CommandGroup className="max-h-[200px] overflow-auto">
+                    {LANGUAGE_OPTIONS.map((lang) => (
+                      <CommandItem
+                        key={lang.value}
+                        value={`${lang.label} ${lang.flag}`}
+                        onSelect={() => {
+                          setForm({ ...form, preferred_language: lang.value });
+                          setLangOpen(false);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="text-lg">{lang.flag}</span>
+                        <span className="flex-1">{lang.label}</span>
+                        {form.preferred_language === lang.value && (
+                          <Check className="h-4 w-4 text-accent" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </FieldGroup>
@@ -317,6 +398,15 @@ function StepPersonal({ form, setForm }: { form: LeadFormData; setForm: (f: Lead
 }
 
 function StepContact({ form, setForm }: { form: LeadFormData; setForm: (f: LeadFormData) => void }) {
+  const [sameAsPhone, setSameAsPhone] = useState(false);
+
+  // Sync WhatsApp when "same as phone" is checked
+  useEffect(() => {
+    if (sameAsPhone && form.phone) {
+      setForm({ ...form, whatsapp: form.phone });
+    }
+  }, [sameAsPhone, form.phone]);
+
   return (
     <FieldGroup>
       <div className="text-center mb-2">
@@ -345,21 +435,41 @@ function StepContact({ form, setForm }: { form: LeadFormData; setForm: (f: LeadF
           <FieldLabel>Phone Number</FieldLabel>
           <PhoneInput
             value={form.phone}
-            onValueChange={(v) => setForm({ ...form, phone: v })}
+            onValueChange={(v) => {
+              const updates: Partial<LeadFormData> = { phone: v };
+              if (sameAsPhone) updates.whatsapp = v;
+              setForm({ ...form, ...updates });
+            }}
             defaultCountry="AE"
           />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <FieldLabel>
-            <span className="flex items-center gap-1.5">
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-              WhatsApp Number
-            </span>
-          </FieldLabel>
+          <div className="flex items-center justify-between">
+            <FieldLabel>
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                WhatsApp Number
+              </span>
+            </FieldLabel>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={sameAsPhone}
+                onCheckedChange={(checked) => {
+                  const isChecked = checked === true;
+                  setSameAsPhone(isChecked);
+                  if (isChecked && form.phone) {
+                    setForm({ ...form, whatsapp: form.phone });
+                  }
+                }}
+              />
+              <span className="text-xs font-medium text-muted-foreground">Same as phone</span>
+            </label>
+          </div>
           <PhoneInput
             value={form.whatsapp}
             onValueChange={(v) => setForm({ ...form, whatsapp: v })}
             defaultCountry="AE"
+            disabled={sameAsPhone}
           />
         </div>
       </div>
