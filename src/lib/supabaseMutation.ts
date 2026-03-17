@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 type MutationOperation = "insert" | "update" | "delete";
+type MutationFilterOperator = "eq" | "is" | "in";
 
 type RootCause =
   | "missing_or_expired_session"
@@ -9,6 +10,18 @@ type RootCause =
   | "possible_auth_header_issue"
   | "unknown";
 
+interface MutationFallbackFilter {
+  column: string;
+  operator?: MutationFilterOperator;
+  value: unknown;
+}
+
+interface MutationFallbackConfig {
+  filters?: MutationFallbackFilter[];
+  select?: string;
+  single?: boolean;
+}
+
 interface MutationDebugContext {
   table: string;
   operation: MutationOperation;
@@ -16,6 +29,7 @@ interface MutationDebugContext {
   userId?: string;
   companyId?: string;
   maxRetries?: number;
+  fallback?: MutationFallbackConfig;
 }
 
 interface MutationSessionInfo {
@@ -28,6 +42,13 @@ interface MutationSessionInfo {
 interface MutationResult<T> {
   data: T;
   error: unknown;
+  status?: number;
+  statusText?: string;
+}
+
+interface MutationFallbackResponse<T> {
+  data: T;
+  error?: unknown;
   status?: number;
   statusText?: string;
 }
@@ -124,6 +145,47 @@ const refreshSessionIfNeeded = async (): Promise<MutationSessionInfo> => {
   return sessionInfo;
 };
 
+const invokeFallbackMutation = async <T>(context: MutationDebugContext, attempt: number): Promise<T> => {
+  console.log("REQUEST START", {
+    table: `${context.table} (fallback)` ,
+    operation: context.operation,
+    payload: context.payload ?? null,
+    userId: context.userId ?? null,
+    companyId: context.companyId ?? null,
+    attempt,
+    fallback: context.fallback ?? null,
+  });
+
+  const { data, error } = await supabase.functions.invoke("proxy-mutation", {
+    body: {
+      table: context.table,
+      operation: context.operation,
+      payload: context.payload ?? null,
+      filters: context.fallback?.filters ?? [],
+      select: context.fallback?.select ?? "*",
+      single: context.fallback?.single ?? false,
+    },
+  });
+
+  const response = (data || null) as MutationFallbackResponse<T> | null;
+
+  console.log("RESPONSE", {
+    table: `${context.table} (fallback)` ,
+    operation: context.operation,
+    attempt,
+    status: response?.status,
+    statusText: response?.statusText,
+    data: response?.data ?? null,
+    error: error ?? response?.error ?? null,
+  });
+
+  if (error) throw error;
+  if (!response) throw new Error("Empty fallback response");
+  if (response.error) throw response.error;
+
+  return response.data;
+};
+
 export async function runMutationWithRetry<T>(
   context: MutationDebugContext,
   mutation: (attempt: number) => Promise<MutationResult<T>>,
@@ -184,6 +246,29 @@ export async function runMutationWithRetry<T>(
         rootCause,
         error: err,
       });
+
+      if (isNetworkMutationError(err) && context.fallback) {
+        try {
+          return await invokeFallbackMutation<T>(context, attempt);
+        } catch (fallbackErr) {
+          lastError = fallbackErr;
+          const fallbackRootCause = detectRootCause({ err: fallbackErr, session, hasConfig });
+          console.error("NETWORK ERROR", {
+            table: `${context.table} (fallback)`,
+            operation: context.operation,
+            attempt,
+            rootCause: fallbackRootCause,
+            error: fallbackErr,
+          });
+
+          if (!isNetworkMutationError(fallbackErr) || attempt === maxRetries) {
+            break;
+          }
+
+          await sleep(500 * 2 ** (attempt - 1));
+          continue;
+        }
+      }
 
       if (!isNetworkMutationError(err) || attempt === maxRetries) {
         break;

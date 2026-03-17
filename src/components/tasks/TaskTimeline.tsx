@@ -72,6 +72,11 @@ export function TaskTimeline({ relatedType, relatedId, companyId, userId, agents
           payload: { status: "cancelled" },
           userId,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: t.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -97,6 +102,11 @@ export function TaskTimeline({ relatedType, relatedId, companyId, userId, agents
           payload: { id },
           userId,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase

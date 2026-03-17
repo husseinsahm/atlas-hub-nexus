@@ -278,6 +278,11 @@ export default function LeadDetailPage() {
             payload: { status: newStatus },
             userId: user.id,
             companyId: lead.company_id,
+            fallback: {
+              filters: [{ column: "id", value: leadId }],
+              select: "id, status, company_id, updated_at",
+              single: true,
+            },
           },
           async () =>
             (await supabase
@@ -306,6 +311,10 @@ export default function LeadDetailPage() {
           },
           userId: user.id,
           companyId: lead.company_id,
+          fallback: {
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -353,6 +362,11 @@ export default function LeadDetailPage() {
           payload: { assigned_to: assignedTo },
           userId: user.id,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: lead.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -370,6 +384,10 @@ export default function LeadDetailPage() {
           payload: { lead_id: lead.id, activity_type: "assigned", assigned_to: assignedTo },
           userId: user.id,
           companyId,
+          fallback: {
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -418,6 +436,10 @@ export default function LeadDetailPage() {
           payload: { lead_id: lead.id, activity_type: "note_added" },
           userId: user.id,
           companyId: lead.company_id,
+          fallback: {
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase

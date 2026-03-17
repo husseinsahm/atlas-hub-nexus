@@ -115,6 +115,11 @@ export default function TasksPage() {
           payload: { status: "cancelled" },
           userId,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: t.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -140,6 +145,11 @@ export default function TasksPage() {
           payload: { id },
           userId,
           companyId,
+          fallback: {
+            filters: [{ column: "id", value: id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase

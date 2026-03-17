@@ -51,6 +51,11 @@ export function TaskRescheduleDialog({ open, onOpenChange, task, userId, onResch
           payload,
           userId,
           companyId: task.company_id,
+          fallback: {
+            filters: [{ column: "id", value: task.id }],
+            select: "id",
+            single: true,
+          },
         },
         async () =>
           (await supabase
@@ -69,6 +74,10 @@ export function TaskRescheduleDialog({ open, onOpenChange, task, userId, onResch
             payload: { task_id: task.id, action: "rescheduled" },
             userId,
             companyId: task.company_id,
+            fallback: {
+              select: "id",
+              single: true,
+            },
           },
           async () =>
             (await supabase
