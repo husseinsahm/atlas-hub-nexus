@@ -633,7 +633,7 @@ export default function LeadDetailPage() {
                     Internal Comments
                   </TabsTrigger>
                   <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Follow-ups
+                    Tasks
                   </TabsTrigger>
                   <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
                     Attachments
