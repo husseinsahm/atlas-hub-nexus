@@ -87,164 +87,98 @@ const useCountUp = (end: number, duration: number = 1000) => {
 
 // ─── PREMIUM COMPONENTS ───
 
-// Premium Stat Card with animations - memoized to prevent hook issues
+const statusColorMap: Record<string, { icon: string; border: string; bg: string; text: string }> = {
+  amber: { icon: "bg-amber-500", border: "border-amber-200 dark:border-amber-800", bg: "bg-amber-50/50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-400" },
+  emerald: { icon: "bg-emerald-500", border: "border-emerald-200 dark:border-emerald-800", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-400" },
+  blue: { icon: "bg-blue-500", border: "border-blue-200 dark:border-blue-800", bg: "bg-blue-50/50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-400" },
+  slate: { icon: "bg-slate-500", border: "border-border", bg: "bg-card", text: "text-muted-foreground" },
+  gold: { icon: "bg-gradient-to-br from-amber-400 to-orange-500", border: "border-amber-200 dark:border-amber-800", bg: "bg-amber-50/30 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-400" },
+};
+
 const PremiumStatCard = memo(({
-  label, 
-  value, 
-  icon: Icon, 
-  bgGradient, 
-  iconBg,
-  trend, 
-  trendLabel,
-  subtitle, 
-  onClick 
+  label, value, icon: Icon, colorKey = "slate", subtitle, trend, trendLabel, onClick,
 }: {
-  label: string;
-  value: number;
-  icon: React.ElementType;
-  trend?: number;
-  trendLabel?: string;
-  bgGradient: string;
-  iconBg: string;
-  subtitle?: string;
-  onClick?: () => void;
+  label: string; value: number; icon: React.ElementType; colorKey?: string;
+  subtitle?: string; trend?: number; trendLabel?: string; onClick?: () => void;
 }) => {
   const animatedValue = useCountUp(value, 800);
   const positive = (trend ?? 0) >= 0;
-  
+  const colors = statusColorMap[colorKey] || statusColorMap.slate;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
       className={cn(
-        "relative overflow-hidden rounded-2xl p-5 cursor-pointer group transition-all duration-300",
-        "hover:shadow-lg hover:-translate-y-1",
-        "border border-border/50",
-        bgGradient
+        "rounded-xl p-5 cursor-pointer group transition-all duration-200 border bg-card hover:shadow-md hover:-translate-y-0.5",
+        colors.border
       )}
       onClick={onClick}
     >
-      {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.1)_0%,_transparent_60%)]" />
-      
-      <div className="relative flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold text-foreground/60 uppercase tracking-[0.15em]">{label}</p>
-          <p className="text-[32px] font-extrabold font-display text-foreground mt-1 leading-none tabular-nums">
-            {animatedValue.toLocaleString()}
-          </p>
-          {subtitle && (
-            <p className="text-[11px] text-foreground/50 mt-1.5 font-medium">{subtitle}</p>
-          )}
-        </div>
-        <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-          iconBg
-        )}>
-          <Icon className="w-5 h-5" />
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">{label}</p>
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shadow-sm", colors.icon)}>
+          <Icon className="w-[18px] h-[18px] text-white" />
         </div>
       </div>
-      
+
+      <p className="text-3xl font-extrabold font-display text-foreground leading-none tabular-nums">
+        {animatedValue.toLocaleString()}
+      </p>
+
+      {subtitle && (
+        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      )}
+
       {trend !== undefined && (
-        <div className={cn(
-          "flex items-center gap-1.5 mt-4 text-xs font-semibold",
-          positive ? "text-emerald-700" : "text-red-600"
-        )}>
-          <div className={cn(
-            "flex items-center justify-center w-5 h-5 rounded-full",
-            positive ? "bg-emerald-500/20" : "bg-red-500/20"
-          )}>
+        <div className={cn("flex items-center gap-1.5 mt-3 text-xs font-semibold", positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+          <div className={cn("flex items-center justify-center w-5 h-5 rounded-full", positive ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40")}>
             {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           </div>
           <span>{Math.abs(trend)}%</span>
-          <span className="text-foreground/50 font-normal">{trendLabel || "vs last week"}</span>
+          <span className="text-muted-foreground font-normal">{trendLabel || "vs last week"}</span>
         </div>
       )}
-      
-      {/* Hover glow effect */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-white/5 to-transparent" />
     </motion.div>
   );
 });
 
-// Revenue Card with special styling - memoized to prevent hook issues
-const RevenueStatCard = memo(({ 
-  label, 
-  value, 
-  currency,
-  trend,
-  onClick 
-}: {
-  label: string;
-  value: number;
-  currency: string;
-  trend?: number;
-  onClick?: () => void;
+const RevenueStatCard = memo(({ label, value, currency, trend, onClick }: {
+  label: string; value: number; currency: string; trend?: number; onClick?: () => void;
 }) => {
   const displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString();
   const positive = (trend ?? 0) >= 0;
-  
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.2 }}
-      className={cn(
-        "relative overflow-hidden rounded-2xl p-5 cursor-pointer group transition-all duration-300",
-        "hover:shadow-lg hover:-translate-y-1",
-        "border border-amber-200/50 bg-gradient-to-br from-amber-50 via-amber-50/80 to-orange-50/60"
-      )}
+      transition={{ duration: 0.35, delay: 0.15 }}
+      className="rounded-xl p-5 cursor-pointer group transition-all duration-200 border border-amber-200 dark:border-amber-800 bg-card hover:shadow-md hover:-translate-y-0.5"
       onClick={onClick}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(251,191,36,0.1)_0%,_transparent_60%)]" />
-      
-      <div className="relative flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold text-amber-700/70 uppercase tracking-[0.15em]">{label}</p>
-          <div className="flex items-baseline gap-1 mt-1">
-            <p className="text-[32px] font-extrabold font-display text-amber-900 leading-none">
-              {displayValue}
-            </p>
-            <span className="text-sm font-semibold text-amber-700/60">{currency}</span>
-          </div>
-        </div>
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/20">
-          <DollarSign className="w-5 h-5 text-white" />
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">{label}</p>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm bg-gradient-to-br from-amber-400 to-orange-500">
+          <DollarSign className="w-[18px] h-[18px] text-white" />
         </div>
       </div>
-      
+
+      <div className="flex items-baseline gap-1.5">
+        <p className="text-3xl font-extrabold font-display text-foreground leading-none">{displayValue}</p>
+        <span className="text-sm font-medium text-muted-foreground">{currency}</span>
+      </div>
+
       {trend !== undefined && (
-        <div className={cn(
-          "flex items-center gap-1.5 mt-4 text-xs font-semibold",
-          positive ? "text-amber-700" : "text-red-600"
-        )}>
-          <div className={cn(
-            "flex items-center justify-center w-5 h-5 rounded-full",
-            positive ? "bg-emerald-500/20" : "bg-red-500/20"
-          )}>
+        <div className={cn("flex items-center gap-1.5 mt-3 text-xs font-semibold", positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+          <div className={cn("flex items-center justify-center w-5 h-5 rounded-full", positive ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40")}>
             {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           </div>
           <span>{Math.abs(trend)}%</span>
-          <span className="text-amber-700/50 font-normal">vs last month</span>
+          <span className="text-muted-foreground font-normal">vs last month</span>
         </div>
       )}
-      
-      {/* Revenue sparkline visualization */}
-      <div className="mt-4 h-8 flex items-end justify-center">
-        <svg width="80" height="20" className="text-amber-600/40">
-          <path
-            d="M 0 15 Q 20 5, 40 8 T 80 3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="drop-shadow-sm"
-          />
-        </svg>
-      </div>
-      
-      {/* Hover glow effect */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-amber-400/5 to-transparent" />
     </motion.div>
   );
 });
@@ -671,8 +605,7 @@ function CompanyDashboard() {
             label={isArabic ? "مؤقتة" : "Tentative"} 
             value={bookingStats.tentative} 
             icon={Clock} 
-            bgGradient="bg-gradient-to-br from-amber-50 to-yellow-50/60"
-            iconBg="bg-gradient-to-br from-amber-400 to-amber-500 text-white"
+            colorKey="amber"
             subtitle={isArabic ? "تحتاج تأكيد" : "Awaiting confirmation"}
             trend={5}
             onClick={() => navigate("/dashboard/bookings")}
@@ -681,8 +614,7 @@ function CompanyDashboard() {
             label={isArabic ? "مؤكدة" : "Confirmed"} 
             value={bookingStats.confirmed} 
             icon={CheckCircle} 
-            bgGradient="bg-gradient-to-br from-emerald-50 to-green-50/60"
-            iconBg="bg-gradient-to-br from-emerald-400 to-emerald-500 text-white"
+            colorKey="emerald"
             subtitle={isArabic ? "جاهزة للعمليات" : "Ready for operations"}
             trend={12}
             onClick={() => navigate("/dashboard/bookings")}
@@ -691,8 +623,7 @@ function CompanyDashboard() {
             label={isArabic ? "قيد التنفيذ" : "In Operation"} 
             value={bookingStats.inOperation} 
             icon={Plane} 
-            bgGradient="bg-gradient-to-br from-blue-50 to-indigo-50/60"
-            iconBg="bg-gradient-to-br from-blue-400 to-blue-500 text-white"
+            colorKey="blue"
             subtitle={isArabic ? "حاليًا نشطة" : "Currently active"}
             trend={-3}
             onClick={() => navigate("/dashboard/bookings")}
@@ -701,8 +632,7 @@ function CompanyDashboard() {
             label={isArabic ? "مكتملة" : "Completed"} 
             value={bookingStats.completed} 
             icon={CheckCircle} 
-            bgGradient="bg-gradient-to-br from-slate-50 to-gray-50/60"
-            iconBg="bg-gradient-to-br from-slate-400 to-slate-500 text-white"
+            colorKey="slate"
             subtitle={isArabic ? "هذا الشهر" : "This month"}
             trend={8}
             onClick={() => navigate("/dashboard/bookings")}
