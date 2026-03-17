@@ -187,11 +187,46 @@ export default function LeadDetailPage() {
     if (!lead || !user) return;
     if (newStatus === lead.status) return;
     const oldStatus = lead.status;
+
+    // Verify session is still valid before making the request
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      console.error("[updateStatus] Session invalid:", sessionError);
+      toast({ title: "Session expired", description: "Please log in again.", variant: "destructive" });
+      return;
+    }
+
     // Optimistically update UI
     setLead({ ...lead, status: newStatus });
+
+    const attemptUpdate = async (attempt: number): Promise<boolean> => {
+      try {
+        console.log(`[updateStatus] Attempt ${attempt}: updating lead ${lead.id} to ${newStatus}`);
+        const { data, error } = await supabase
+          .from("leads")
+          .update({ status: newStatus })
+          .eq("id", lead.id)
+          .select();
+        
+        if (error) {
+          console.error(`[updateStatus] Supabase error on attempt ${attempt}:`, error);
+          throw error;
+        }
+        console.log(`[updateStatus] Success on attempt ${attempt}:`, data);
+        return true;
+      } catch (err: any) {
+        console.error(`[updateStatus] Attempt ${attempt} failed:`, err);
+        if (attempt < 3 && (err.message === "Failed to fetch" || err.message?.includes("TypeError"))) {
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          return attemptUpdate(attempt + 1);
+        }
+        throw err;
+      }
+    };
+
     try {
-      const { error } = await supabase.from("leads").update({ status: newStatus }).eq("id", lead.id);
-      if (error) throw error;
+      await attemptUpdate(1);
       // Log activity (non-blocking)
       supabase.from("lead_activities").insert({
         lead_id: lead.id, user_id: user.id, activity_type: "status_changed",
@@ -201,7 +236,15 @@ export default function LeadDetailPage() {
     } catch (err: any) {
       // Revert on failure
       setLead({ ...lead, status: oldStatus });
-      toast({ title: "Error updating status", description: err.message || "Network error. Please try again.", variant: "destructive" });
+      const isNetworkError = err.message === "Failed to fetch" || err instanceof TypeError;
+      console.error("[updateStatus] Final failure:", { error: err, isNetworkError, leadId: lead.id, newStatus });
+      toast({
+        title: isNetworkError ? "Network error" : "Error updating status",
+        description: isNetworkError
+          ? "Could not reach the server. Please check your connection and try again."
+          : err.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
     }
   }
 
