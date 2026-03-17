@@ -3,17 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ClipboardList, Loader2, Search, Filter, AlertTriangle,
-  Clock, CheckCircle2, Calendar, Plus, BarChart3,
-} from "lucide-react";
-import { format, isPast, isToday, startOfDay, endOfDay, addDays } from "date-fns";
+import { ClipboardList, Loader2, Search, AlertTriangle, Clock, CheckCircle2, Calendar, Plus } from "lucide-react";
+import { isPast, isToday } from "date-fns";
+import { getMutationErrorMessage, runMutationWithRetry } from "@/lib/supabaseMutation";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
 import { TaskCompletionDialog } from "@/components/tasks/TaskCompletionDialog";
