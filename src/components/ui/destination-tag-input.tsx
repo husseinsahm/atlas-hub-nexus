@@ -112,8 +112,8 @@ export function DestinationTagInput({
     <div ref={containerRef} className={cn("relative", className)}>
       <div
         className={cn(
-          "flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[44px] cursor-text transition-colors",
-          "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ring-offset-background",
+          "flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[44px] cursor-text transition-all shadow-sm",
+          "focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:border-foreground/30 ring-offset-background",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         onClick={() => !disabled && inputRef.current?.focus()}
@@ -121,7 +121,7 @@ export function DestinationTagInput({
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-accent/15 text-accent-foreground border border-accent/30 px-2.5 py-0.5 text-xs font-medium animate-fade-in"
+            className="inline-flex items-center gap-1 rounded-full bg-secondary text-foreground border border-border px-2.5 py-0.5 text-xs font-semibold animate-fade-in"
           >
             <MapPin className="w-3 h-3 text-accent shrink-0" />
             {tag}

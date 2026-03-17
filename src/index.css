@@ -9,27 +9,27 @@
     --font-display: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Modern SaaS neutral palette */
-    --background: 228 14% 96%;
-    --foreground: 220 30% 12%;
+    /* Modern SaaS neutral palette - high contrast */
+    --background: 220 14% 96%;
+    --foreground: 220 39% 11%;
 
-    /* Pure white cards for hierarchy */
+    /* Pure white cards */
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 12%;
+    --card-foreground: 220 39% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 12%;
+    --popover-foreground: 220 39% 11%;
 
-    /* Deep navy primary */
-    --primary: 220 40% 13%;
+    /* Deep navy primary - stronger */
+    --primary: 220 43% 11%;
     --primary-foreground: 0 0% 100%;
 
     /* Warm sand secondary */
-    --secondary: 228 14% 93%;
-    --secondary-foreground: 220 30% 15%;
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 39% 16%;
 
-    --muted: 228 12% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 12% 93%;
+    --muted-foreground: 220 9% 42%;
 
     /* Warm gold accent */
     --accent: 38 65% 50%;
@@ -38,9 +38,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 14% 89%;
-    --input: 228 14% 87%;
-    --ring: 38 65% 50%;
+    --border: 220 13% 82%;
+    --input: 220 13% 82%;
+    --ring: 220 43% 11%;
 
     --radius: 0.75rem;
 
@@ -58,7 +58,7 @@
     --gold: 38 65% 50%;
     --gold-light: 38 55% 65%;
     --gold-dark: 38 70% 38%;
-    --navy: 220 40% 13%;
+    --navy: 220 43% 11%;
     --navy-light: 220 30% 22%;
     --cream: 40 33% 96%;
     --cream-dark: 35 20% 90%;
@@ -69,62 +69,51 @@
     --gradient-luxury: linear-gradient(135deg, hsl(220 40% 10%), hsl(220 30% 18%), hsl(38 40% 25%));
 
     /* Shadows - modern SaaS style */
-    --shadow-xs: 0 1px 2px hsl(220 30% 12% / 0.04);
-    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.06), 0 1px 2px hsl(220 30% 12% / 0.04);
-    --shadow-md: 0 4px 6px -1px hsl(220 30% 12% / 0.06), 0 2px 4px -2px hsl(220 30% 12% / 0.04);
-    --shadow-lg: 0 10px 15px -3px hsl(220 30% 12% / 0.06), 0 4px 6px -4px hsl(220 30% 12% / 0.04);
+    --shadow-xs: 0 1px 2px hsl(220 30% 12% / 0.05);
+    --shadow-sm: 0 1px 3px hsl(220 30% 12% / 0.08), 0 1px 2px hsl(220 30% 12% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(220 30% 12% / 0.08), 0 2px 4px -2px hsl(220 30% 12% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(220 30% 12% / 0.08), 0 4px 6px -4px hsl(220 30% 12% / 0.05);
     --shadow-gold: 0 4px 20px hsl(38 65% 50% / 0.15);
   }
 
   .dark {
-    /* Background: #0f172a */
     --background: 222 84% 5%;
-    /* Foreground: #e5e7eb */
-    --foreground: 220 13% 91%;
+    --foreground: 220 14% 93%;
 
-    /* Cards: #1e293b */
     --card: 215 41% 17%;
-    --card-foreground: 220 13% 91%;
+    --card-foreground: 220 14% 93%;
 
-    /* Popover same as card */
     --popover: 215 41% 17%;
-    --popover-foreground: 220 13% 91%;
+    --popover-foreground: 220 14% 93%;
 
-    /* Primary becomes gold in dark */
     --primary: 38 65% 50%;
     --primary-foreground: 222 84% 5%;
 
-    /* Secondary: slightly lighter than bg */
     --secondary: 217 33% 17%;
-    --secondary-foreground: 220 13% 91%;
+    --secondary-foreground: 220 14% 93%;
 
     --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted-foreground: 215 20% 60%;
 
-    /* Accent keeps gold */
     --accent: 38 65% 50%;
     --accent-foreground: 222 84% 5%;
 
     --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders: #334155 */
-    --border: 217 33% 27%;
-    /* Input slightly brighter border */
-    --input: 217 33% 22%;
+    --border: 217 33% 30%;
+    --input: 217 33% 26%;
     --ring: 38 65% 50%;
 
-    /* Sidebar: #020617 */
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 215 20% 70%;
     --sidebar-primary: 38 65% 50%;
     --sidebar-primary-foreground: 222 84% 5%;
     --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 220 13% 88%;
+    --sidebar-accent-foreground: 220 14% 88%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 38 65% 50%;
 
-    /* Shadows stronger in dark */
     --shadow-xs: 0 1px 2px hsl(222 84% 5% / 0.4);
     --shadow-sm: 0 1px 3px hsl(222 84% 5% / 0.5), 0 1px 2px hsl(222 84% 5% / 0.3);
     --shadow-md: 0 4px 6px -1px hsl(222 84% 5% / 0.5), 0 2px 4px -2px hsl(222 84% 5% / 0.3);
@@ -195,13 +184,13 @@
   }
 
   .luxury-input {
-    @apply bg-card border border-input rounded-lg px-4 py-3 text-sm transition-all duration-200;
+    @apply bg-card border border-input rounded-lg px-4 py-3 text-sm text-foreground transition-all duration-200 shadow-sm;
     font-family: var(--font-body);
   }
   .luxury-input:focus {
     @apply outline-none ring-2;
-    ring-color: hsl(var(--gold) / 0.3);
-    border-color: hsl(var(--gold));
+    ring-color: hsl(var(--ring) / 0.4);
+    border-color: hsl(var(--foreground) / 0.3);
   }
 
   .glass-panel {
@@ -229,7 +218,7 @@
     background: hsl(var(--muted) / 0.5);
   }
   .modern-table th {
-    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
+    @apply text-xs font-bold uppercase tracking-wider text-foreground/70;
   }
 }
 
