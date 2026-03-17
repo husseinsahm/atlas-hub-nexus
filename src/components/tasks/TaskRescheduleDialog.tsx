@@ -9,6 +9,7 @@ import { Calendar, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays } from "date-fns";
+import { getMutationErrorMessage, runMutationWithRetry } from "@/lib/supabaseMutation";
 import type { CrmTask } from "./taskConstants";
 
 interface TaskRescheduleDialogProps {
