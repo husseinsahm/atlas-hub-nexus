@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Progress } from "@/components/ui/progress";
+import { DestinationTagInput } from "@/components/ui/destination-tag-input";
 import {
   User, Phone, Mail, MessageCircle, Plane, DollarSign, Flame,
   FileText, ChevronRight, ChevronLeft, Check, Sparkles, UserPlus,
