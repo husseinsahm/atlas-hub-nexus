@@ -1908,7 +1908,7 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
         currency: booking.currency || "USD",
         created_by: userId,
         status: "draft",
-      } as any).select("id").single();
+      } as any);
       if (error) throw error;
 
       await supabase.from("company_settings").update({ invoice_next_number: nextNum + 1 }).eq("company_id", companyId);
@@ -1916,10 +1916,7 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
       toast({ title: isArabic ? "تم إنشاء الفاتورة" : "Invoice created", description: invoiceNumber });
       queryClient.invalidateQueries({ queryKey: ["booking-invoices", booking.id] });
       queryClient.invalidateQueries({ queryKey: ["company-settings-inv-gen"] });
-
-      if (newInvoice?.id) {
-        navigate(`/dashboard/invoices/${newInvoice.id}`);
-      }
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
