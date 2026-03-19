@@ -499,14 +499,14 @@ export default function LeadsPage() {
         {pipelineStats.map((s) => (
           <Card
             key={s.key}
-            className={`border cursor-pointer transition-all hover:shadow-md ${filterStatus === s.key ? "ring-2 ring-accent border-accent" : "border-border"}`}
+            className={`border cursor-pointer transition-all hover:shadow-md ${filterStatus === s.key ? "ring-2 ring-primary border-primary" : "border-border"}`}
             onClick={() => setFilterStatus(filterStatus === s.key ? "all" : s.key)}
           >
             <CardContent className="p-3 text-center">
-              <div className={`w-8 h-8 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-1.5`}>
+              <div className={`w-8 h-8 rounded-[10px] ${s.bg} flex items-center justify-center mx-auto mb-1.5`}>
                 <s.icon className={`w-4 h-4 ${s.color}`} />
               </div>
-              <p className="text-xl font-bold text-foreground">{s.count}</p>
+              <p className="text-xl font-bold text-foreground stat-number">{s.count}</p>
               <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
             </CardContent>
           </Card>
