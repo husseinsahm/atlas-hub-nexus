@@ -595,6 +595,52 @@ export default function SettingsPage() {
             </div>
           </div>
         </TabsContent>
+
+        {/* ── Invoicing Tab ── */}
+        <TabsContent value="invoicing">
+          <div className="luxury-card p-6 space-y-6">
+            <div>
+              <h3 className="font-semibold font-display text-foreground mb-1">Invoice Settings</h3>
+              <p className="text-xs text-muted-foreground">Default values applied when creating new invoices</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" /> Default Invoice Currency
+                </label>
+                <select value={settingsForm.default_invoice_currency}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, default_invoice_currency: e.target.value })}
+                  className="luxury-input w-full">
+                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Default Tax Rate (%)</label>
+                <input type="number" min="0" max="100" step="0.5" value={settingsForm.default_tax_rate}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, default_tax_rate: parseFloat(e.target.value) || 0 })}
+                  className="luxury-input w-full font-mono" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Default Payment Terms</label>
+              <textarea value={settingsForm.default_payment_terms}
+                onChange={(e) => setSettingsForm({ ...settingsForm, default_payment_terms: e.target.value })}
+                className="luxury-input w-full min-h-[80px] resize-y" rows={3}
+                placeholder="Payment is due within 30 days of the invoice date." />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={saveSettings} disabled={saving}
+                className="gold-gradient border-0 text-accent-foreground font-semibold hover:opacity-90 gap-2">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Invoice Settings
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
         {/* ── Security Tab ── */}
         <TabsContent value="security">
           <PasswordChangeSection />
