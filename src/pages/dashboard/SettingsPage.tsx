@@ -67,6 +67,8 @@ export default function SettingsPage() {
     trip_prefix: "TRP", trip_next_number: 1,
     booking_prefix: "BKG", booking_next_number: 1,
     invoice_prefix: "INV", invoice_next_number: 1,
+    default_tax_rate: 0, default_payment_terms: "Payment is due within 30 days of the invoice date.",
+    default_invoice_currency: "USD",
   });
   const [branchForm, setBranchForm] = useState({ name: "", city: "", country: "", phone: "", email: "", address: "", is_main: false });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
