@@ -33,12 +33,12 @@ type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" |
 type LeadSource = "website" | "referral" | "social_media" | "walk_in" | "phone" | "email" | "partner" | "other";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; icon: React.ElementType }> = {
-  new: { label: "New", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Sparkles },
-  contacted: { label: "Contacted", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: Phone },
-  planning: { label: "Planning", color: "bg-amber-100 text-amber-800 border-amber-200", icon: MapPin },
-  awaiting_client: { label: "Awaiting Client", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Clock },
-  won: { label: "Won", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: Trophy },
-  lost: { label: "Lost", color: "bg-red-100 text-red-600 border-red-200", icon: XCircle },
+  new: { label: "New", color: "bg-primary/10 text-primary border-primary/20", icon: Sparkles },
+  contacted: { label: "Contacted", color: "bg-secondary/10 text-secondary border-secondary/20", icon: Phone },
+  planning: { label: "Planning", color: "bg-warning/10 text-warning border-warning/20", icon: MapPin },
+  awaiting_client: { label: "Awaiting Client", color: "bg-muted text-muted-foreground border-border", icon: Clock },
+  won: { label: "Won", color: "bg-success/10 text-success border-success/20", icon: Trophy },
+  lost: { label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/20", icon: XCircle },
 };
 
 const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
@@ -450,12 +450,12 @@ export default function LeadsPage() {
   }, [agents]);
 
   const pipelineStats = [
-    { key: "new", label: "New", count: statusCounts.new || 0, icon: Sparkles, color: "text-blue-600", bg: "bg-blue-50" },
-    { key: "contacted", label: "Contacted", count: statusCounts.contacted || 0, icon: Phone, color: "text-cyan-600", bg: "bg-cyan-50" },
-    { key: "planning", label: "Planning", count: statusCounts.planning || 0, icon: MapPin, color: "text-amber-600", bg: "bg-amber-50" },
-    { key: "awaiting_client", label: "Awaiting", count: statusCounts.awaiting_client || 0, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
-    { key: "won", label: "Won", count: statusCounts.won || 0, icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { key: "lost", label: "Lost", count: statusCounts.lost || 0, icon: XCircle, color: "text-red-500", bg: "bg-red-50" },
+    { key: "new", label: "New", count: statusCounts.new || 0, icon: Sparkles, color: "text-primary", bg: "bg-primary/10" },
+    { key: "contacted", label: "Contacted", count: statusCounts.contacted || 0, icon: Phone, color: "text-secondary", bg: "bg-secondary/10" },
+    { key: "planning", label: "Planning", count: statusCounts.planning || 0, icon: MapPin, color: "text-warning", bg: "bg-warning/10" },
+    { key: "awaiting_client", label: "Awaiting", count: statusCounts.awaiting_client || 0, icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+    { key: "won", label: "Won", count: statusCounts.won || 0, icon: Trophy, color: "text-success", bg: "bg-success/10" },
+    { key: "lost", label: "Lost", count: statusCounts.lost || 0, icon: XCircle, color: "text-destructive", bg: "bg-destructive/10" },
   ];
 
   return (
@@ -499,14 +499,14 @@ export default function LeadsPage() {
         {pipelineStats.map((s) => (
           <Card
             key={s.key}
-            className={`border cursor-pointer transition-all hover:shadow-md ${filterStatus === s.key ? "ring-2 ring-accent border-accent" : "border-border"}`}
+            className={`border cursor-pointer transition-all hover:shadow-md ${filterStatus === s.key ? "ring-2 ring-primary border-primary" : "border-border"}`}
             onClick={() => setFilterStatus(filterStatus === s.key ? "all" : s.key)}
           >
             <CardContent className="p-3 text-center">
-              <div className={`w-8 h-8 rounded-full ${s.bg} flex items-center justify-center mx-auto mb-1.5`}>
+              <div className={`w-8 h-8 rounded-[10px] ${s.bg} flex items-center justify-center mx-auto mb-1.5`}>
                 <s.icon className={`w-4 h-4 ${s.color}`} />
               </div>
-              <p className="text-xl font-bold text-foreground">{s.count}</p>
+              <p className="text-xl font-bold text-foreground stat-number">{s.count}</p>
               <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
             </CardContent>
           </Card>

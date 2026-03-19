@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
-  LayoutDashboard, CreditCard, DollarSign, BarChart3, Settings, ArrowLeft, ArrowRight,
+  LayoutDashboard, CreditCard, DollarSign, BarChart3, Settings, ArrowLeft, ArrowRight, Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,11 +32,18 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-screen flex bg-background" dir={direction}>
-      {/* Sidebar */}
-      <aside className="w-56 border-e border-border bg-card flex flex-col shrink-0">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-bold font-display text-foreground">Super Admin</h2>
-          <p className="text-[10px] text-muted-foreground">System Management</p>
+      {/* Sidebar — warm dark brown, slightly different from dashboard */}
+      <aside className="w-56 border-e border-sidebar-border flex flex-col shrink-0" style={{ background: 'hsl(20 15% 10%)' }}>
+        <div className="p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+              <Shield className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold font-display text-white">Super Admin</h2>
+              <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-[0.08em]">System Management</p>
+            </div>
+          </div>
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
           {adminNav.map((item) => {
@@ -52,8 +59,8 @@ export function AdminLayout() {
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors",
                   active
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-primary/12 text-primary font-medium"
+                    : "text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
                 )}
               >
                 <Icon className="w-4 h-4" />
@@ -62,11 +69,11 @@ export function AdminLayout() {
             );
           })}
         </nav>
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-sidebar-border">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2 text-xs text-muted-foreground"
+            className="w-full justify-start gap-2 text-xs text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             onClick={() => navigate("/dashboard")}
           >
             <BackIcon className="w-3.5 h-3.5" /> Back to Dashboard

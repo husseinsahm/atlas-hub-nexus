@@ -62,11 +62,11 @@ import { TravelersTab as PremiumTravelersTab } from "@/components/booking/Travel
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; pillBg: string; pillText: string; next?: BookingStatus }> = {
-  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", pillBg: "bg-amber-100 dark:bg-amber-900/50", pillText: "text-amber-700 dark:text-amber-300", next: "confirmed" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", pillBg: "bg-blue-100 dark:bg-blue-900/50", pillText: "text-blue-700 dark:text-blue-300", next: "in_operation" },
-  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", pillBg: "bg-emerald-100 dark:bg-emerald-900/50", pillText: "text-emerald-700 dark:text-emerald-300", next: "completed" },
-  completed: { label: "Completed", labelAr: "مكتمل", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-800/40", pillBg: "bg-slate-100 dark:bg-slate-800/50", pillText: "text-slate-600 dark:text-slate-400" },
-  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40", pillBg: "bg-red-100 dark:bg-red-900/50", pillText: "text-red-700 dark:text-red-300" },
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50/80 dark:bg-amber-950/40", pillBg: "bg-amber-100/80 dark:bg-amber-900/50", pillText: "text-amber-800 dark:text-amber-300", next: "confirmed" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-secondary dark:text-secondary", bg: "bg-secondary/10 dark:bg-secondary/20", pillBg: "bg-secondary/10 dark:bg-secondary/20", pillText: "text-secondary", next: "in_operation" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-primary dark:text-primary", bg: "bg-primary/10 dark:bg-primary/20", pillBg: "bg-primary/10 dark:bg-primary/20", pillText: "text-primary", next: "completed" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-muted-foreground", bg: "bg-muted dark:bg-muted", pillBg: "bg-muted dark:bg-muted", pillText: "text-muted-foreground" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-destructive dark:text-destructive", bg: "bg-destructive/10 dark:bg-destructive/20", pillBg: "bg-destructive/10 dark:bg-destructive/20", pillText: "text-destructive" },
 };
 
 const SERVICE_TYPES = [
@@ -587,7 +587,7 @@ export default function BookingDetailPage() {
               <Button
                 size="sm"
                 onClick={advanceStatus}
-                className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
+                className="text-xs gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
@@ -674,10 +674,10 @@ export default function BookingDetailPage() {
         {/* Quick stat pills */}
         <div className="flex flex-wrap gap-2 mt-4">
           {[
-            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" },
-            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40" },
-            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
-            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" }] : []),
+            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-secondary bg-secondary/10" },
+            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-primary bg-primary/10" },
+            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-success bg-success/10" },
+            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-warning bg-warning/10" }] : []),
           ].map((pill, idx) => (
             <div key={idx} className="flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-xs">
               <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", pill.colorClass)}>
@@ -693,7 +693,7 @@ export default function BookingDetailPage() {
       </motion.div>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-muted/40 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="flex gap-0 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
@@ -708,12 +708,12 @@ export default function BookingDetailPage() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
+                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-primary")} />
                 {isArabic ? tab.labelAr : tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
-                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-accent"
+                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-primary"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}

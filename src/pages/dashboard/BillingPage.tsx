@@ -439,7 +439,7 @@ export default function BillingPage() {
               </div>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-1.5 shrink-0"
+                className="gap-1.5 shrink-0"
                 onClick={() => {
                   const tabsList = document.querySelector('[value="plans"]') as HTMLElement;
                   tabsList?.click();

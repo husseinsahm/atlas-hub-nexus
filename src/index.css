@@ -115,11 +115,14 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* Smooth transitions for themed elements */
-  *, *::before, *::after {
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-    transition-duration: 0.2s;
-    transition-timing-function: ease;
+  /* Smooth transitions for interactive elements */
+  button, a, [role="button"], input, select, textarea {
+    transition: all 0.2s ease;
+  }
+
+  /* Warm link hover */
+  a:hover {
+    color: hsl(var(--primary));
   }
 
   [data-motion], .motion-safe\:transition-none {
