@@ -489,10 +489,10 @@ export default function LeadDetailPage() {
           </Button>
           <div>
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-foreground font-display">{lead.full_name}</h1>
+              <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">{lead.full_name}</h1>
               <Badge className={`${sc.color} border font-medium`}>{sc.label}</Badge>
             </div>
-            <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 mt-1.5 text-[13px] text-muted-foreground">
               {lead.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {lead.email}</span>}
               {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {lead.phone}</span>}
               <span className="flex items-center gap-1">
@@ -505,7 +505,7 @@ export default function LeadDetailPage() {
         {isAdminOrAgent && lead.status !== "won" && lead.status !== "lost" && (
           <Button
             onClick={() => setConvertOpen(true)}
-            className="gold-gradient text-accent-foreground gap-2 shadow-lg hover:shadow-xl transition-shadow shrink-0"
+            className="gap-2 shrink-0"
             size="lg"
           >
             <Plane className="w-5 h-5" />
@@ -513,7 +513,7 @@ export default function LeadDetailPage() {
           </Button>
         )}
         {lead.status === "won" && (
-          <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2 text-sm">
+          <Badge className="bg-success/10 text-success border border-success/20 px-4 py-2 text-sm">
             <Trophy className="w-4 h-4 mr-1.5 inline" /> Converted
           </Badge>
         )}
