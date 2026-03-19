@@ -42,7 +42,7 @@ interface PaymentRecordsProps {
   compact?: boolean;
 }
 
-export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, onTotalPaidChange }: PaymentRecordsProps) {
+export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, onTotalPaidChange, compact = false }: PaymentRecordsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { direction } = useLanguage();
