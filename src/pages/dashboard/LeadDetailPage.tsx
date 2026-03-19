@@ -776,10 +776,10 @@ export default function LeadDetailPage() {
         <div className="lg:col-span-4 space-y-4">
           {/* Assign Agent */}
           {isAdminOrAgent && (
-            <Card className="border border-border bg-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-display flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-accent" /> Assigned Agent
+            <Card className="border border-border bg-card shadow-card overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <UserCheck className="w-3.5 h-3.5" /> Assigned Agent
                 </CardTitle>
               </CardHeader>
               <CardContent>
