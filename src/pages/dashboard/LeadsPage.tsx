@@ -450,12 +450,12 @@ export default function LeadsPage() {
   }, [agents]);
 
   const pipelineStats = [
-    { key: "new", label: "New", count: statusCounts.new || 0, icon: Sparkles, color: "text-blue-600", bg: "bg-blue-50" },
-    { key: "contacted", label: "Contacted", count: statusCounts.contacted || 0, icon: Phone, color: "text-cyan-600", bg: "bg-cyan-50" },
-    { key: "planning", label: "Planning", count: statusCounts.planning || 0, icon: MapPin, color: "text-amber-600", bg: "bg-amber-50" },
-    { key: "awaiting_client", label: "Awaiting", count: statusCounts.awaiting_client || 0, icon: Clock, color: "text-purple-600", bg: "bg-purple-50" },
-    { key: "won", label: "Won", count: statusCounts.won || 0, icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { key: "lost", label: "Lost", count: statusCounts.lost || 0, icon: XCircle, color: "text-red-500", bg: "bg-red-50" },
+    { key: "new", label: "New", count: statusCounts.new || 0, icon: Sparkles, color: "text-primary", bg: "bg-primary/10" },
+    { key: "contacted", label: "Contacted", count: statusCounts.contacted || 0, icon: Phone, color: "text-secondary", bg: "bg-secondary/10" },
+    { key: "planning", label: "Planning", count: statusCounts.planning || 0, icon: MapPin, color: "text-warning", bg: "bg-warning/10" },
+    { key: "awaiting_client", label: "Awaiting", count: statusCounts.awaiting_client || 0, icon: Clock, color: "text-muted-foreground", bg: "bg-muted" },
+    { key: "won", label: "Won", count: statusCounts.won || 0, icon: Trophy, color: "text-success", bg: "bg-success/10" },
+    { key: "lost", label: "Lost", count: statusCounts.lost || 0, icon: XCircle, color: "text-destructive", bg: "bg-destructive/10" },
   ];
 
   return (
