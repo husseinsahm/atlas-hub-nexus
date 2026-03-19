@@ -697,23 +697,19 @@ export default function LeadDetailPage() {
           {/* Tabbed Section */}
           <Card className="border border-border bg-card shadow-card overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <CardHeader className="pb-0">
-                <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none p-0 h-auto">
-                  <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Notes ({noteActivities.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Internal Comments
-                  </TabsTrigger>
-                  <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Tasks
-                  </TabsTrigger>
-                  <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    Attachments
-                  </TabsTrigger>
-                  <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                    All Activity ({activities.length})
-                  </TabsTrigger>
+              <CardHeader className="pb-0 bg-muted/20 border-b border-border/50">
+                <TabsList className="w-full justify-start bg-transparent rounded-none p-0 h-auto">
+                  {[
+                    { value: "notes", label: `Notes (${noteActivities.length})` },
+                    { value: "comments", label: "Internal Comments" },
+                    { value: "followups", label: "Tasks" },
+                    { value: "attachments", label: "Attachments" },
+                    { value: "timeline", label: `All Activity (${activities.length})` },
+                  ].map(tab => (
+                    <TabsTrigger key={tab.value} value={tab.value} className="rounded-none border-b-[3px] border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-xs font-medium">
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
               </CardHeader>
               <CardContent className="pt-4">
