@@ -29,17 +29,17 @@ import {
 } from "recharts";
 
 const COLORS = [
-  "hsl(220,40%,13%)", "hsl(38,80%,55%)", "hsl(160,50%,45%)",
-  "hsl(350,65%,50%)", "hsl(200,60%,50%)", "hsl(280,50%,55%)",
+  "hsl(18,46%,53%)", "hsl(180,49%,32%)", "hsl(120,22%,46%)",
+  "hsl(42,65%,52%)", "hsl(8,56%,53%)", "hsl(25,12%,50%)",
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  new: "hsl(220,40%,13%)",
-  contacted: "hsl(200,60%,50%)",
-  planning: "hsl(38,80%,55%)",
-  awaiting_client: "hsl(30,80%,55%)",
-  won: "hsl(160,50%,45%)",
-  lost: "hsl(350,65%,50%)",
+  new: "hsl(18,46%,53%)",
+  contacted: "hsl(180,49%,32%)",
+  planning: "hsl(42,65%,52%)",
+  awaiting_client: "hsl(25,12%,50%)",
+  won: "hsl(120,22%,46%)",
+  lost: "hsl(8,56%,53%)",
 };
 
 export default function AnalyticsPage() {
