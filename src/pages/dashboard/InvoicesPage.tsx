@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Receipt, Loader2, Calendar, DollarSign, Eye, Plus,
   TrendingUp, Clock, CheckCircle2, AlertCircle, Send, FileText,
-  MoreHorizontal, Pencil, Trash2, Ban,
+  MoreHorizontal, Pencil, Trash2, Ban, ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
