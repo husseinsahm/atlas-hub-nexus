@@ -604,7 +604,7 @@ export default function LeadDetailPage() {
           </Card>
 
           {/* Customer Request Details */}
-          <Card className="border border-border bg-card">
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
                 <FileText className="w-4 h-4 text-accent" /> Customer Request
