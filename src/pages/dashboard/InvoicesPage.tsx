@@ -293,6 +293,19 @@ export default function InvoicesPage() {
     <div className="space-y-6 relative">
       {isLocked && <LockOverlay planRequired="Starter" featureName="Invoicing" />}
 
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <button onClick={() => navigate("/dashboard")} className="hover:text-foreground transition-colors">
+          {isArabic ? "لوحة التحكم" : "Dashboard"}
+        </button>
+        <ChevronRight className="w-3 h-3" />
+        <button onClick={() => navigate("/dashboard/invoices")} className="hover:text-foreground transition-colors">
+          {isArabic ? "المالية" : "Finance"}
+        </button>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-foreground font-medium">{isArabic ? "الفواتير" : "Invoices"}</span>
+      </nav>
+
       {/* Header */}
       <PageHeader
         title={isArabic ? "الفواتير" : "Invoices"}
