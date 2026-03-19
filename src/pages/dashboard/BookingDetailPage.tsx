@@ -587,7 +587,7 @@ export default function BookingDetailPage() {
               <Button
                 size="sm"
                 onClick={advanceStatus}
-                className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
+                className="text-xs gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
