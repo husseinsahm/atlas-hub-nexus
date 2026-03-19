@@ -296,19 +296,17 @@ export default function CustomerDetailPage() {
         {/* Main Content */}
         <div className="lg:col-span-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none p-0 h-auto mb-6">
-              <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Notes ({notes.length})
-              </TabsTrigger>
-              <TabsTrigger value="trips" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Trip History
-              </TabsTrigger>
-              <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Attachments ({attachments.length})
-              </TabsTrigger>
+            <TabsList className="w-full justify-start bg-muted/20 border-b border-border rounded-none p-0 h-auto mb-6">
+              {[
+                { value: "overview", label: "Overview" },
+                { value: "notes", label: `Notes (${notes.length})` },
+                { value: "trips", label: "Trip History" },
+                { value: "attachments", label: `Attachments (${attachments.length})` },
+              ].map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value} className="rounded-none border-b-[3px] border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-xs font-medium">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             {/* Overview */}
