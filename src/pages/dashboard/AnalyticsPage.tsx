@@ -699,8 +699,8 @@ export default function AnalyticsPage() {
                       <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                       <Tooltip formatter={(v: number) => v.toLocaleString()} />
                       <Legend />
-                      <Bar dataKey="revenue" fill="hsl(38,80%,55%)" radius={[4, 4, 0, 0]} name="Revenue" />
-                      <Bar dataKey="cost" fill="hsl(220,40%,13%)" radius={[4, 4, 0, 0]} name="Cost" />
+                      <Bar dataKey="revenue" fill="hsl(18,46%,53%)" radius={[4, 4, 0, 0]} name="Revenue" />
+                      <Bar dataKey="cost" fill="hsl(180,49%,32%)" radius={[4, 4, 0, 0]} name="Cost" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <EmptyChart />}
