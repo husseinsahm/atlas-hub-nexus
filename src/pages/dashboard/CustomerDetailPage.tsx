@@ -334,10 +334,10 @@ export default function CustomerDetailPage() {
 
               {/* Address */}
               {(customer.address || customer.city || customer.country) && (
-                <Card className="border border-border bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-display flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-accent" /> Address
+                <Card className="border border-border bg-card shadow-card overflow-hidden">
+                  <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5" /> Address
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
