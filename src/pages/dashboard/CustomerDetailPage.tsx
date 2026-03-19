@@ -452,9 +452,9 @@ export default function CustomerDetailPage() {
         {/* Right Sidebar */}
         <div className="lg:col-span-4 space-y-4">
           {/* Quick Contact */}
-          <Card className="border border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-display">Quick Contact</CardTitle>
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Contact</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {customer.email && (
