@@ -37,6 +37,7 @@ import SharedBooking from "./pages/shared/SharedBooking";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import TasksPage from "./pages/dashboard/TasksPage";
+import InvoicesPage from "./pages/dashboard/InvoicesPage";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
