@@ -2844,6 +2844,7 @@ export type Database = {
         Returns: boolean
       }
       soft_delete_customer: { Args: { _customer_id: string }; Returns: boolean }
+      soft_delete_invoice: { Args: { _invoice_id: string }; Returns: Json }
       soft_delete_lead: { Args: { _lead_id: string }; Returns: boolean }
     }
     Enums: {
