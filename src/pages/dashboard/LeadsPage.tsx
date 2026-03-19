@@ -33,12 +33,12 @@ type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" |
 type LeadSource = "website" | "referral" | "social_media" | "walk_in" | "phone" | "email" | "partner" | "other";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; icon: React.ElementType }> = {
-  new: { label: "New", color: "bg-blue-100 text-blue-800 border-blue-200", icon: Sparkles },
-  contacted: { label: "Contacted", color: "bg-cyan-100 text-cyan-800 border-cyan-200", icon: Phone },
-  planning: { label: "Planning", color: "bg-amber-100 text-amber-800 border-amber-200", icon: MapPin },
-  awaiting_client: { label: "Awaiting Client", color: "bg-purple-100 text-purple-800 border-purple-200", icon: Clock },
-  won: { label: "Won", color: "bg-emerald-100 text-emerald-800 border-emerald-200", icon: Trophy },
-  lost: { label: "Lost", color: "bg-red-100 text-red-600 border-red-200", icon: XCircle },
+  new: { label: "New", color: "bg-primary/10 text-primary border-primary/20", icon: Sparkles },
+  contacted: { label: "Contacted", color: "bg-secondary/10 text-secondary border-secondary/20", icon: Phone },
+  planning: { label: "Planning", color: "bg-warning/10 text-warning border-warning/20", icon: MapPin },
+  awaiting_client: { label: "Awaiting Client", color: "bg-muted text-muted-foreground border-border", icon: Clock },
+  won: { label: "Won", color: "bg-success/10 text-success border-success/20", icon: Trophy },
+  lost: { label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/20", icon: XCircle },
 };
 
 const SOURCE_OPTIONS: { value: LeadSource; label: string }[] = [
