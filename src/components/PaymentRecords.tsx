@@ -193,7 +193,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Receipt className="w-4 h-4 text-accent" /> Payment Records
+          <Receipt className="w-4 h-4 text-accent" /> {!compact && "Payment Records"}
           {payments.length > 0 && (
             <Badge variant="secondary" className="text-[10px]">{payments.length}</Badge>
           )}
