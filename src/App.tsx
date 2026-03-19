@@ -37,6 +37,7 @@ import SharedBooking from "./pages/shared/SharedBooking";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import TasksPage from "./pages/dashboard/TasksPage";
+import InvoicesPage from "./pages/dashboard/InvoicesPage";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -144,7 +145,7 @@ function AppRoutes() {
         {/* Finance */}
         <Route path="quotations" element={<QuotationsPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="invoices" element={<PlaceholderPage />} />
+        <Route path="invoices" element={<InvoicesPage />} />
         
         {/* Analytics & Reports */}
         <Route path="analytics" element={<AnalyticsPage />} />
