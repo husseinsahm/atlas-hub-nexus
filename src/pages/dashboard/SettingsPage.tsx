@@ -106,6 +106,9 @@ export default function SettingsPage() {
         trip_prefix: s.trip_prefix || "TRP", trip_next_number: s.trip_next_number || 1,
         booking_prefix: s.booking_prefix || "BKG", booking_next_number: s.booking_next_number || 1,
         invoice_prefix: s.invoice_prefix || "INV", invoice_next_number: s.invoice_next_number || 1,
+        default_tax_rate: s.default_tax_rate ?? 0,
+        default_payment_terms: s.default_payment_terms || "Payment is due within 30 days of the invoice date.",
+        default_invoice_currency: s.default_invoice_currency || s.default_currency || "USD",
       });
       if (s.logo_url) setLogoPreview(s.logo_url);
     }
