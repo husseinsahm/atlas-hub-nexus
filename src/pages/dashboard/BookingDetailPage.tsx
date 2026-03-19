@@ -1073,89 +1073,16 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
-        <div className="space-y-6">
-          {/* Financial summary bar */}
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <CardContent className="p-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {[
-                  { label: isArabic ? "التكلفة" : "Total Cost", value: booking.total_cost || 0, editable: true, key: "total_cost", icon: DollarSign },
-                  { label: isArabic ? "سعر البيع" : "Selling Price", value: booking.selling_price || 0, editable: true, key: "selling_price", icon: CreditCard },
-                  { label: isArabic ? "الربح" : "Profit", value: (booking.selling_price || 0) - (booking.total_cost || 0), icon: Activity, isProfit: true },
-                  { label: isArabic ? "الرصيد" : "Balance", value: balance, icon: Clock, isBalance: true },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3 rounded-lg border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <item.icon className="w-4 h-4 text-muted-foreground" />
-                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</Label>
-                    </div>
-                    {item.editable ? (
-                      <Input
-                        type="number"
-                        className="h-9 text-sm font-mono font-bold border-border/60"
-                        defaultValue={item.value}
-                        key={`fin-${item.key}-${item.value}`}
-                        onBlur={e => updateBooking.mutate({ [item.key!]: parseFloat(e.target.value) || 0 })}
-                      />
-                    ) : (
-                      <p className={cn("text-lg font-mono font-bold tabular-nums",
-                        item.isProfit ? (item.value >= 0 ? "text-emerald-600" : "text-destructive") :
-                        item.isBalance ? (balance > 0 ? "text-amber-600" : "text-emerald-600") :
-                        "text-foreground"
-                      )}>
-                        {item.isBalance && balance <= 0 ? (isArabic ? "مدفوع" : "Paid") : item.value.toLocaleString()}
-                        {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1">{booking.currency}</span>}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Payment progress */}
-              {booking.selling_price > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">{isArabic ? "التحصيل" : "Collection Progress"}</span>
-                    <span className="font-mono font-semibold text-foreground">{Math.round(paidPercent)}%</span>
-                  </div>
-                  <Progress value={paidPercent} className="h-2" />
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>{isArabic ? "مدفوع" : "Paid"}: <span className="font-mono font-semibold text-emerald-600">{Number(booking.amount_paid || 0).toLocaleString()}</span></span>
-                    <span>{isArabic ? "متبقي" : "Remaining"}: <span className="font-mono font-semibold text-amber-600">{balance > 0 ? balance.toLocaleString() : "0"}</span></span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Outstanding balance warning */}
-          {balance > 0 && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
-              <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <p className="text-amber-700 dark:text-amber-300">
-                {isArabic ? `يوجد رصيد مستحق بقيمة ${balance.toLocaleString()} ${booking.currency}` : `Outstanding balance of ${balance.toLocaleString()} ${booking.currency} remaining`}
-              </p>
-            </div>
-          )}
-
-          {/* Payment Records */}
-          <Card className="border-border/60 shadow-sm overflow-hidden">
-            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <CreditCard className="w-3.5 h-3.5" />
-                {isArabic ? "سجل المدفوعات" : "Payment Records"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <PaymentRecords
-                bookingId={booking.id}
-                companyId={booking.company_id}
-                currency={booking.currency}
-                sellingPrice={Number(booking.selling_price || 0)}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        <FinancialsTab
+          booking={booking}
+          isArabic={isArabic}
+          balance={balance}
+          paidPercent={paidPercent}
+          updateBooking={updateBooking}
+          navigate={navigate}
+          companyId={companyId}
+          userId={user?.id}
+        />
       )}
 
       {/* ─── TAB: Attachments ─── */}
