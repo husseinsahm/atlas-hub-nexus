@@ -170,6 +170,9 @@ export default function SettingsPage() {
       booking_next_number: settingsForm.booking_next_number,
       invoice_prefix: settingsForm.invoice_prefix,
       invoice_next_number: settingsForm.invoice_next_number,
+      default_tax_rate: settingsForm.default_tax_rate,
+      default_payment_terms: settingsForm.default_payment_terms || null,
+      default_invoice_currency: settingsForm.default_invoice_currency,
       logo_url: logoPreview,
     };
 
