@@ -182,22 +182,36 @@ export default function InvoiceDetailPage() {
 
   async function handleDelete() {
     try {
-      console.log("[InvoiceDetail] Soft-deleting invoice", { id, companyId: invoice?.company_id });
-      const { error, data } = await supabase
-        .from("invoices" as any)
-        .update({ deleted_at: new Date().toISOString() } as any)
-        .eq("id", id!)
-        .select("id");
+      console.log("[InvoiceDetail] Request soft-delete", {
+        invoiceId: id,
+        companyId: invoice?.company_id,
+        invoiceNumber: invoice?.invoice_number,
+      });
+
+      const { data, error } = await (supabase.rpc as any)("soft_delete_invoice", {
+        _invoice_id: id,
+      });
+
       if (error) {
-        console.error("[InvoiceDetail] Delete failed:", error.message, error.details, error.hint);
+        console.error("[InvoiceDetail] soft_delete_invoice failed", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
         throw error;
       }
-      console.log("[InvoiceDetail] Delete success:", data);
+
+      console.log("[InvoiceDetail] soft_delete_invoice success", data);
       toast({ title: isArabic ? "تم حذف الفاتورة" : "Invoice deleted" });
       navigate("/dashboard/invoices");
     } catch (err: any) {
-      console.error("[InvoiceDetail] Delete error:", err);
-      toast({ title: isArabic ? "خطأ في الحذف" : "Delete failed", description: err.message, variant: "destructive" });
+      console.error("[InvoiceDetail] Delete error", err);
+      toast({
+        title: isArabic ? "خطأ في الحذف" : "Delete failed",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   }
 
