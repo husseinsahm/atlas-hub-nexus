@@ -149,10 +149,14 @@
     box-shadow: var(--shadow-md);
   }
 
-  .luxury-input {
-    @apply bg-card border border-input rounded-[10px] px-4 py-3 text-sm text-foreground transition-all duration-200;
-    font-family: var(--font-body);
-    box-shadow: var(--shadow-xs);
+  /* Legacy gold-gradient — maps to primary terracotta */
+  .gold-gradient {
+    background: hsl(var(--primary));
+  }
+
+  /* Button premium helper — solid terracotta */
+  .btn-premium {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
   }
   .luxury-input:focus {
     @apply outline-none ring-2;
