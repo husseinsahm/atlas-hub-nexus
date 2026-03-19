@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,14 +36,15 @@ type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue" | "cancel
 type SortField = "invoice_number" | "issue_date" | "due_date" | "total_amount" | "balance" | "status";
 type SortDir = "asc" | "desc";
 
-const STATUS_CONFIG: Record<InvoiceStatus, { label: string; icon: React.ElementType; className: string; dotColor: string }> = {
-  draft: { label: "Draft", icon: FileText, className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/50" },
-  sent: { label: "Sent", icon: Send, className: "bg-blue-100/80 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", dotColor: "bg-blue-500" },
-  paid: { label: "Paid", icon: CheckCircle2, className: "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", dotColor: "bg-emerald-500" },
-  partial: { label: "Partial", icon: Clock, className: "bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dotColor: "bg-amber-500" },
-  overdue: { label: "Overdue", icon: AlertCircle, className: "bg-destructive/10 text-destructive", dotColor: "bg-destructive" },
-  cancelled: { label: "Cancelled", icon: Ban, className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/40" },
-  void: { label: "Void", icon: Ban, className: "bg-muted text-muted-foreground line-through", dotColor: "bg-muted-foreground/30" },
+/* ── Voyage-warm status palette ── */
+const STATUS_CONFIG: Record<InvoiceStatus, { label: string; labelAr: string; icon: React.ElementType; className: string; dotColor: string; pipelineBg: string }> = {
+  draft:     { label: "Draft",     labelAr: "مسودة",    icon: FileText,    className: "bg-muted text-muted-foreground",                                               dotColor: "bg-muted-foreground/50", pipelineBg: "bg-muted text-muted-foreground" },
+  sent:      { label: "Sent",      labelAr: "مُرسلة",   icon: Send,        className: "bg-secondary/15 text-secondary dark:bg-secondary/25",                            dotColor: "bg-secondary",           pipelineBg: "bg-secondary/15 text-secondary" },
+  partial:   { label: "Partial",   labelAr: "جزئي",     icon: Clock,       className: "bg-[hsl(var(--warning)/0.15)] text-[hsl(var(--warning))]",                       dotColor: "bg-[hsl(var(--warning))]", pipelineBg: "bg-[hsl(var(--warning)/0.15)] text-[hsl(var(--warning))]" },
+  paid:      { label: "Paid",      labelAr: "مدفوعة",   icon: CheckCircle2, className: "bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]",                      dotColor: "bg-[hsl(var(--success))]", pipelineBg: "bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]" },
+  overdue:   { label: "Overdue",   labelAr: "متأخرة",   icon: AlertCircle, className: "bg-destructive/10 text-destructive",                                             dotColor: "bg-destructive",         pipelineBg: "bg-destructive/10 text-destructive" },
+  cancelled: { label: "Cancelled", labelAr: "ملغاة",    icon: Ban,         className: "bg-muted text-muted-foreground",                                                 dotColor: "bg-muted-foreground/40", pipelineBg: "bg-muted text-muted-foreground" },
+  void:      { label: "Void",      labelAr: "باطلة",    icon: Ban,         className: "bg-muted text-muted-foreground line-through",                                    dotColor: "bg-muted-foreground/30", pipelineBg: "bg-muted text-muted-foreground" },
 };
 
 const PAGE_SIZE = 20;
@@ -58,6 +59,7 @@ export default function InvoicesPage() {
   const companyId = user?.activeMembership?.companyId;
   const isArabic = language === "ar";
   const isLocked = !hasFeature("invoicing") && limits.planSlug === "free";
+  const overdueCheckedRef = useRef(false);
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -69,15 +71,10 @@ export default function InvoicesPage() {
 
   // Form state
   const [form, setForm] = useState({
-    booking_id: "",
-    customer_id: "",
+    booking_id: "", customer_id: "",
     issue_date: new Date().toISOString().split("T")[0],
-    due_date: "",
-    subtotal: "",
-    tax_rate: "0",
-    discount_amount: "0",
-    notes: "",
-    terms: "Payment is due within the specified due date. Late payments may incur additional charges.",
+    due_date: "", subtotal: "", tax_rate: "0", discount_amount: "0",
+    notes: "", terms: "Payment is due within the specified due date. Late payments may incur additional charges.",
     currency: "USD",
   });
 
@@ -96,6 +93,33 @@ export default function InvoicesPage() {
     },
     enabled: !!companyId,
   });
+
+  // ── Overdue Auto-Detection ──
+  useEffect(() => {
+    if (!invoices.length || overdueCheckedRef.current || isLoading) return;
+    overdueCheckedRef.current = true;
+
+    const now = new Date();
+    const overdueIds = invoices
+      .filter((inv: any) => ["sent", "partial"].includes(inv.status) && inv.due_date && new Date(inv.due_date) < now)
+      .map((inv: any) => inv.id);
+
+    if (overdueIds.length === 0) return;
+
+    (async () => {
+      const { error } = await supabase
+        .from("invoices" as any)
+        .update({ status: "overdue" } as any)
+        .in("id", overdueIds);
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ["invoices"] });
+        toast({
+          title: isArabic ? `تم تحديث ${overdueIds.length} فاتورة كمتأخرة` : `${overdueIds.length} invoice${overdueIds.length > 1 ? "s" : ""} marked as overdue`,
+          description: isArabic ? "تم الكشف التلقائي عن الفواتير المتأخرة" : "Overdue invoices were detected automatically",
+        });
+      }
+    })();
+  }, [invoices, isLoading]);
 
   // Fetch bookings for dropdown
   const { data: bookings = [] } = useQuery({
@@ -130,22 +154,33 @@ export default function InvoicesPage() {
     enabled: !!companyId,
   });
 
-  // Fetch company settings for invoice prefix/number
+  // Fetch company settings
   const { data: companySettings } = useQuery({
     queryKey: ["company-settings-inv", companyId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("company_settings")
-        .select("invoice_prefix, invoice_next_number, default_currency")
+        .select("invoice_prefix, invoice_next_number, default_currency, default_tax_rate, default_payment_terms, default_invoice_currency")
         .eq("company_id", companyId!)
         .single();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!companyId,
   });
 
-  // Calculate totals from form
+  // Apply company defaults to form when settings load
+  useEffect(() => {
+    if (companySettings) {
+      setForm(f => ({
+        ...f,
+        currency: companySettings.default_invoice_currency || companySettings.default_currency || f.currency,
+        tax_rate: String(companySettings.default_tax_rate ?? f.tax_rate),
+        terms: companySettings.default_payment_terms || f.terms,
+      }));
+    }
+  }, [companySettings]);
+
   const calculatedTotals = useMemo(() => {
     const subtotal = parseFloat(form.subtotal) || 0;
     const taxRate = parseFloat(form.tax_rate) || 0;
@@ -155,10 +190,9 @@ export default function InvoicesPage() {
     return { subtotal, taxRate, taxAmount, discount, total: Math.max(0, total) };
   }, [form.subtotal, form.tax_rate, form.discount_amount]);
 
-  // Create invoice
   async function handleCreate() {
     if (!companyId || !form.customer_id) {
-      toast({ title: "Missing info", description: "Please select a customer", variant: "destructive" });
+      toast({ title: isArabic ? "معلومات ناقصة" : "Missing info", description: isArabic ? "يرجى اختيار عميل" : "Please select a customer", variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -166,34 +200,19 @@ export default function InvoicesPage() {
       const prefix = companySettings?.invoice_prefix || "INV";
       const nextNum = companySettings?.invoice_next_number || 1;
       const invoiceNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
-
       const { error } = await supabase.from("invoices" as any).insert({
-        company_id: companyId,
-        booking_id: form.booking_id || null,
-        customer_id: form.customer_id,
-        invoice_number: invoiceNumber,
-        issue_date: form.issue_date,
-        due_date: form.due_date || null,
-        subtotal: calculatedTotals.subtotal,
-        tax_rate: calculatedTotals.taxRate,
-        tax_amount: calculatedTotals.taxAmount,
-        discount_amount: calculatedTotals.discount,
+        company_id: companyId, booking_id: form.booking_id || null, customer_id: form.customer_id,
+        invoice_number: invoiceNumber, issue_date: form.issue_date, due_date: form.due_date || null,
+        subtotal: calculatedTotals.subtotal, tax_rate: calculatedTotals.taxRate,
+        tax_amount: calculatedTotals.taxAmount, discount_amount: calculatedTotals.discount,
         total_amount: calculatedTotals.total,
-        currency: form.currency || companySettings?.default_currency || "USD",
-        notes: form.notes || null,
-        terms: form.terms || null,
-        created_by: user?.id,
-        status: "draft",
+        currency: form.currency || companySettings?.default_invoice_currency || "USD",
+        notes: form.notes || null, terms: form.terms || null,
+        created_by: user?.id, status: "draft",
       } as any);
       if (error) throw error;
-
-      // Increment invoice number
-      await supabase
-        .from("company_settings")
-        .update({ invoice_next_number: nextNum + 1 })
-        .eq("company_id", companyId);
-
-      toast({ title: "Invoice created", description: `${invoiceNumber} has been created as draft` });
+      await supabase.from("company_settings").update({ invoice_next_number: nextNum + 1 }).eq("company_id", companyId);
+      toast({ title: isArabic ? "تم إنشاء الفاتورة" : "Invoice created", description: `${invoiceNumber}` });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["company-settings-inv"] });
       setShowNewDialog(false);
@@ -205,68 +224,45 @@ export default function InvoicesPage() {
     }
   }
 
-  // Status update
   async function updateStatus(id: string, status: string) {
     try {
-      const { error } = await supabase
-        .from("invoices" as any)
-        .update({ status } as any)
-        .eq("id", id);
+      const { error } = await supabase.from("invoices" as any).update({ status } as any).eq("id", id);
       if (error) throw error;
-      toast({ title: "Status updated" });
+      toast({ title: isArabic ? "تم تحديث الحالة" : "Status updated" });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
-  // Soft delete
   async function softDelete(id: string) {
     try {
-      const { error } = await supabase
-        .from("invoices" as any)
-        .update({ deleted_at: new Date().toISOString() } as any)
-        .eq("id", id);
+      const { error } = await supabase.from("invoices" as any).update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
       if (error) throw error;
-      toast({ title: "Invoice deleted" });
+      toast({ title: isArabic ? "تم حذف الفاتورة" : "Invoice deleted" });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
-  // Copy invoice
   async function copyInvoice(inv: any) {
     if (!companyId) return;
     try {
       const prefix = companySettings?.invoice_prefix || "INV";
       const nextNum = companySettings?.invoice_next_number || 1;
       const invoiceNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
-
       const { error } = await supabase.from("invoices" as any).insert({
-        company_id: companyId,
-        booking_id: inv.booking_id || null,
-        customer_id: inv.customer_id,
-        invoice_number: invoiceNumber,
-        issue_date: new Date().toISOString().split("T")[0],
-        due_date: inv.due_date || null,
-        subtotal: inv.subtotal,
-        tax_rate: inv.tax_rate,
-        tax_amount: inv.tax_amount,
-        discount_amount: inv.discount_amount,
-        total_amount: inv.total_amount,
-        currency: inv.currency,
-        notes: inv.notes || null,
-        terms: inv.terms || null,
-        created_by: user?.id,
-        status: "draft",
-        amount_paid: 0,
+        company_id: companyId, booking_id: inv.booking_id || null, customer_id: inv.customer_id,
+        invoice_number: invoiceNumber, issue_date: new Date().toISOString().split("T")[0],
+        due_date: inv.due_date || null, subtotal: inv.subtotal, tax_rate: inv.tax_rate,
+        tax_amount: inv.tax_amount, discount_amount: inv.discount_amount, total_amount: inv.total_amount,
+        currency: inv.currency, notes: inv.notes || null, terms: inv.terms || null,
+        created_by: user?.id, status: "draft", amount_paid: 0,
       } as any);
       if (error) throw error;
-
       await supabase.from("company_settings").update({ invoice_next_number: nextNum + 1 }).eq("company_id", companyId);
-
-      toast({ title: "Invoice copied", description: `${invoiceNumber} created as draft` });
+      toast({ title: isArabic ? "تم نسخ الفاتورة" : "Invoice copied", description: `${invoiceNumber}` });
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["company-settings-inv"] });
     } catch (err: any) {
@@ -274,34 +270,29 @@ export default function InvoicesPage() {
     }
   }
 
-  // Send reminder (mark as overdue)
   async function sendReminder(id: string) {
     await updateStatus(id, "overdue");
-    toast({ title: "Reminder sent", description: "Invoice marked as overdue" });
+    toast({ title: isArabic ? "تم إرسال تذكير" : "Reminder sent", description: isArabic ? "تم وضع الفاتورة كمتأخرة" : "Invoice marked as overdue" });
   }
 
   function resetForm() {
     setForm({
-      booking_id: "",
-      customer_id: "",
-      issue_date: new Date().toISOString().split("T")[0],
-      due_date: "",
+      booking_id: "", customer_id: "",
+      issue_date: new Date().toISOString().split("T")[0], due_date: "",
       subtotal: "",
-      tax_rate: "0",
+      tax_rate: String(companySettings?.default_tax_rate ?? "0"),
       discount_amount: "0",
       notes: "",
-      terms: "Payment is due within the specified due date. Late payments may incur additional charges.",
-      currency: companySettings?.default_currency || "USD",
+      terms: companySettings?.default_payment_terms || "Payment is due within the specified due date. Late payments may incur additional charges.",
+      currency: companySettings?.default_invoice_currency || companySettings?.default_currency || "USD",
     });
   }
 
-  // When booking is selected, auto-fill
   function onBookingSelect(bookingId: string) {
     const b = bookings.find((bk: any) => bk.id === bookingId);
     if (b) {
       setForm(prev => ({
-        ...prev,
-        booking_id: bookingId,
+        ...prev, booking_id: bookingId,
         customer_id: b.customer_id || prev.customer_id,
         subtotal: String(b.selling_price || 0),
         currency: b.currency || prev.currency,
@@ -309,18 +300,12 @@ export default function InvoicesPage() {
     }
   }
 
-  // Toggle sort
   function toggleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir(d => d === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("desc"); }
     setPage(1);
   }
 
-  // Filter, sort, paginate
   const filtered = useMemo(() => {
     let list = invoices.filter((inv: any) => {
       if (filterStatus !== "all" && inv.status !== filterStatus) return false;
@@ -331,8 +316,6 @@ export default function InvoicesPage() {
       }
       return true;
     });
-
-    // Sort
     list = [...list].sort((a: any, b: any) => {
       let va: any, vb: any;
       switch (sortField) {
@@ -348,14 +331,12 @@ export default function InvoicesPage() {
       if (va > vb) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-
     return list;
   }, [invoices, search, filterStatus, sortField, sortDir, customers]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Stats
   const stats = useMemo(() => {
     const total = invoices.length;
     const totalValue = invoices.reduce((s: number, i: any) => s + Number(i.total_amount || 0), 0);
@@ -366,7 +347,6 @@ export default function InvoicesPage() {
     return { total, totalValue, paid, outstanding };
   }, [invoices]);
 
-  // Pipeline counts
   const pipelineCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     invoices.forEach((i: any) => { counts[i.status] = (counts[i.status] || 0) + 1; });
@@ -396,11 +376,9 @@ export default function InvoicesPage() {
         <button onClick={() => navigate("/dashboard")} className="hover:text-foreground transition-colors">
           {isArabic ? "لوحة التحكم" : "Dashboard"}
         </button>
-        <ChevronRight className="w-3 h-3" />
-        <span className="hover:text-foreground transition-colors">
-          {isArabic ? "المالية" : "Finance"}
-        </span>
-        <ChevronRight className="w-3 h-3" />
+        <ChevronRight className="w-3 h-3 rtl:rotate-180" />
+        <span>{isArabic ? "المالية" : "Finance"}</span>
+        <ChevronRight className="w-3 h-3 rtl:rotate-180" />
         <span className="text-foreground font-medium">{isArabic ? "الفواتير" : "Invoices"}</span>
       </nav>
 
@@ -432,13 +410,13 @@ export default function InvoicesPage() {
                   className={cn(
                     "flex items-center justify-center gap-1.5 text-xs font-medium transition-all relative",
                     filterStatus === status ? "ring-1 ring-inset ring-foreground/10" : "",
-                    idx === 0 ? "rounded-l-lg" : "",
-                    idx === pipelineOrder.length - 1 ? "rounded-r-lg" : "",
-                    sc.className,
+                    idx === 0 ? "rounded-s-lg" : "",
+                    idx === pipelineOrder.length - 1 ? "rounded-e-lg" : "",
+                    sc.pipelineBg,
                   )}
                   style={{ width: `${pct}%` }}
                 >
-                  <span className="truncate">{sc.label}</span>
+                  <span className="truncate">{isArabic ? sc.labelAr : sc.label}</span>
                   <span className="font-bold">{count}</span>
                 </button>
               );
@@ -452,8 +430,8 @@ export default function InvoicesPage() {
         {[
           { label: isArabic ? "إجمالي الفواتير" : "Total Invoices", value: stats.total, icon: Receipt, color: "text-primary", bg: "bg-primary/10" },
           { label: isArabic ? "القيمة الإجمالية" : "Total Value", value: `${stats.totalValue.toLocaleString()}`, icon: DollarSign, color: "text-secondary", bg: "bg-secondary/10" },
-          { label: isArabic ? "المحصل" : "Collected", value: `${stats.paid.toLocaleString()}`, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-          { label: isArabic ? "المستحق" : "Outstanding", value: `${stats.outstanding.toLocaleString()}`, icon: AlertCircle, color: stats.outstanding > 0 ? "text-amber-600" : "text-muted-foreground", bg: stats.outstanding > 0 ? "bg-amber-500/10" : "bg-muted/50" },
+          { label: isArabic ? "المحصل" : "Collected", value: `${stats.paid.toLocaleString()}`, icon: CheckCircle2, color: "text-[hsl(var(--success))]", bg: "bg-[hsl(var(--success)/0.1)]" },
+          { label: isArabic ? "المستحق" : "Outstanding", value: `${stats.outstanding.toLocaleString()}`, icon: AlertCircle, color: stats.outstanding > 0 ? "text-[hsl(var(--warning))]" : "text-muted-foreground", bg: stats.outstanding > 0 ? "bg-[hsl(var(--warning)/0.1)]" : "bg-muted/50" },
         ].map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card className="border-border">
@@ -461,8 +439,8 @@ export default function InvoicesPage() {
                 <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
                   <stat.icon className={cn("w-4 h-4", stat.color)} />
                 </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-body">{stat.label}</p>
                   <p className="text-lg font-bold font-display text-foreground leading-none">{stat.value}</p>
                 </div>
               </CardContent>
@@ -486,12 +464,12 @@ export default function InvoicesPage() {
             </div>
             <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
               <SelectTrigger className="w-full sm:w-36 h-9">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={isArabic ? "الحالة" : "Status"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">{isArabic ? "جميع الحالات" : "All Status"}</SelectItem>
                 {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                  <SelectItem key={k} value={k}>{isArabic ? v.labelAr : v.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -519,10 +497,10 @@ export default function InvoicesPage() {
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium text-foreground">No matching invoices</p>
-                  <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filter</p>
+                  <p className="text-sm font-medium text-foreground">{isArabic ? "لا توجد فواتير مطابقة" : "No matching invoices"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "جرب تعديل البحث أو الفلتر" : "Try adjusting your search or filter"}</p>
                   <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => { setSearch(""); setFilterStatus("all"); setPage(1); }}>
-                    Clear Filters
+                    {isArabic ? "مسح الفلاتر" : "Clear Filters"}
                   </Button>
                 </>
               )}
@@ -533,14 +511,14 @@ export default function InvoicesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <SortableHeader field="invoice_number">Invoice #</SortableHeader>
-                      <TableHead className="text-xs">Customer</TableHead>
-                      <TableHead className="text-xs hidden md:table-cell">Booking</TableHead>
-                      <SortableHeader field="issue_date"><span className="hidden sm:inline">Issue Date</span><span className="sm:hidden">Date</span></SortableHeader>
-                      <SortableHeader field="due_date"><span className="hidden lg:inline">Due Date</span></SortableHeader>
-                      <SortableHeader field="total_amount"><span className="text-end">Total</span></SortableHeader>
-                      <SortableHeader field="balance"><span className="text-end hidden sm:inline">Balance</span></SortableHeader>
-                      <SortableHeader field="status">Status</SortableHeader>
+                      <SortableHeader field="invoice_number">{isArabic ? "رقم الفاتورة" : "Invoice #"}</SortableHeader>
+                      <TableHead className="text-xs">{isArabic ? "العميل" : "Customer"}</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">{isArabic ? "الحجز" : "Booking"}</TableHead>
+                      <SortableHeader field="issue_date"><span className="hidden sm:inline">{isArabic ? "تاريخ الإصدار" : "Issue Date"}</span><span className="sm:hidden">{isArabic ? "التاريخ" : "Date"}</span></SortableHeader>
+                      <SortableHeader field="due_date"><span className="hidden lg:inline">{isArabic ? "تاريخ الاستحقاق" : "Due Date"}</span></SortableHeader>
+                      <SortableHeader field="total_amount"><span className="text-end">{isArabic ? "الإجمالي" : "Total"}</span></SortableHeader>
+                      <SortableHeader field="balance"><span className="text-end hidden sm:inline">{isArabic ? "الرصيد" : "Balance"}</span></SortableHeader>
+                      <SortableHeader field="status">{isArabic ? "الحالة" : "Status"}</SortableHeader>
                       <TableHead className="w-10" />
                     </TableRow>
                   </TableHeader>
@@ -557,7 +535,9 @@ export default function InvoicesPage() {
                           key={inv.id}
                           className={cn(
                             "cursor-pointer transition-colors",
-                            isOverdue ? "border-s-2 border-s-destructive bg-destructive/[0.03] hover:bg-destructive/[0.06]" : "hover:bg-muted/30"
+                            inv.status === "overdue" || isOverdue
+                              ? "border-s-2 border-s-destructive bg-destructive/[0.03] hover:bg-destructive/[0.06]"
+                              : "hover:bg-muted/30"
                           )}
                           onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}
                         >
@@ -578,24 +558,24 @@ export default function InvoicesPage() {
                           </TableCell>
                           <TableCell className="text-xs hidden lg:table-cell">
                             {inv.due_date ? (
-                              <span className={cn(isOverdue && "text-destructive font-medium")}>
+                              <span className={cn((isOverdue || inv.status === "overdue") && "text-destructive font-medium")}>
                                 {format(new Date(inv.due_date), "MMM d, yyyy")}
-                                {isOverdue && " ⚠"}
+                                {(isOverdue || inv.status === "overdue") && " ⚠"}
                               </span>
                             ) : "—"}
                           </TableCell>
-                          <TableCell className="text-end font-mono text-xs font-semibold">
+                          <TableCell className="text-end font-display text-xs font-semibold">
                             {inv.currency} {Number(inv.total_amount || 0).toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-end font-mono text-xs hidden sm:table-cell">
-                            <span className={cn(balance > 0 ? "text-amber-600 font-semibold" : "text-muted-foreground")}>
+                          <TableCell className="text-end font-display text-xs hidden sm:table-cell">
+                            <span className={cn(balance > 0 ? "text-[hsl(var(--warning))] font-semibold" : "text-muted-foreground")}>
                               {balance > 0 ? `${inv.currency} ${balance.toLocaleString()}` : "—"}
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge className={cn("text-[10px] border-0 gap-1", sc.className)}>
+                            <Badge className={cn("text-[10px] border-0 gap-1 rounded-full px-2.5", sc.className)}>
                               <div className={cn("w-1.5 h-1.5 rounded-full", sc.dotColor)} />
-                              {sc.label}
+                              {isArabic ? sc.labelAr : sc.label}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -607,42 +587,42 @@ export default function InvoicesPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48" onClick={e => e.stopPropagation()}>
                                 <DropdownMenuItem onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
-                                  <Eye className="w-3.5 h-3.5 me-2" /> View Details
+                                  <Eye className="w-3.5 h-3.5 me-2" /> {isArabic ? "عرض التفاصيل" : "View Details"}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => copyInvoice(inv)}>
-                                  <Copy className="w-3.5 h-3.5 me-2" /> Copy Invoice
+                                  <Copy className="w-3.5 h-3.5 me-2" /> {isArabic ? "نسخ الفاتورة" : "Copy Invoice"}
                                 </DropdownMenuItem>
                                 {inv.status === "draft" && (
                                   <DropdownMenuItem onClick={() => updateStatus(inv.id, "sent")}>
-                                    <Send className="w-3.5 h-3.5 me-2" /> Mark as Sent
+                                    <Send className="w-3.5 h-3.5 me-2" /> {isArabic ? "وضع كمرسلة" : "Mark as Sent"}
                                   </DropdownMenuItem>
                                 )}
                                 {["sent", "partial", "overdue"].includes(inv.status) && (
                                   <DropdownMenuItem onClick={() => updateStatus(inv.id, "paid")}>
-                                    <CheckCircle2 className="w-3.5 h-3.5 me-2" /> Mark as Paid
+                                    <CheckCircle2 className="w-3.5 h-3.5 me-2" /> {isArabic ? "وضع كمدفوعة" : "Mark as Paid"}
                                   </DropdownMenuItem>
                                 )}
                                 {["sent", "partial"].includes(inv.status) && (
                                   <DropdownMenuItem onClick={() => sendReminder(inv.id)}>
-                                    <Bell className="w-3.5 h-3.5 me-2" /> Send Reminder
+                                    <Bell className="w-3.5 h-3.5 me-2" /> {isArabic ? "إرسال تذكير" : "Send Reminder"}
                                   </DropdownMenuItem>
                                 )}
                                 {inv.booking_id && (
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => navigate(`/dashboard/bookings/${inv.booking_id}`)}>
-                                      <Eye className="w-3.5 h-3.5 me-2" /> View Booking
+                                      <Eye className="w-3.5 h-3.5 me-2" /> {isArabic ? "عرض الحجز" : "View Booking"}
                                     </DropdownMenuItem>
                                   </>
                                 )}
                                 <DropdownMenuSeparator />
                                 {inv.status === "draft" && (
                                   <DropdownMenuItem onClick={() => updateStatus(inv.id, "cancelled")} className="text-destructive">
-                                    <Ban className="w-3.5 h-3.5 me-2" /> Cancel
+                                    <Ban className="w-3.5 h-3.5 me-2" /> {isArabic ? "إلغاء" : "Cancel"}
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem onClick={() => softDelete(inv.id)} className="text-destructive">
-                                  <Trash2 className="w-3.5 h-3.5 me-2" /> Delete
+                                  <Trash2 className="w-3.5 h-3.5 me-2" /> {isArabic ? "حذف" : "Delete"}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -658,32 +638,26 @@ export default function InvoicesPage() {
               {filtered.length > PAGE_SIZE && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border">
                   <p className="text-xs text-muted-foreground">
-                    Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+                    {isArabic ? `عرض ${((page - 1) * PAGE_SIZE) + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} من ${filtered.length}` : `Showing ${((page - 1) * PAGE_SIZE) + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length}`}
                   </p>
                   <div className="flex items-center gap-1">
                     <Button size="icon" variant="outline" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <ChevronLeft className="w-3.5 h-3.5 rtl:rotate-180" />
                     </Button>
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum: number;
-                      if (totalPages <= 5) { pageNum = i + 1; }
-                      else if (page <= 3) { pageNum = i + 1; }
-                      else if (page >= totalPages - 2) { pageNum = totalPages - 4 + i; }
-                      else { pageNum = page - 2 + i; }
+                      if (totalPages <= 5) pageNum = i + 1;
+                      else if (page <= 3) pageNum = i + 1;
+                      else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = page - 2 + i;
                       return (
-                        <Button
-                          key={pageNum}
-                          size="icon"
-                          variant={page === pageNum ? "default" : "outline"}
-                          className="h-7 w-7 text-xs"
-                          onClick={() => setPage(pageNum)}
-                        >
+                        <Button key={pageNum} size="icon" variant={page === pageNum ? "default" : "outline"} className="h-7 w-7 text-xs" onClick={() => setPage(pageNum)}>
                           {pageNum}
                         </Button>
                       );
                     })}
                     <Button size="icon" variant="outline" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
                     </Button>
                   </div>
                 </div>
@@ -700,31 +674,22 @@ export default function InvoicesPage() {
             <DialogTitle className="font-display text-lg">{isArabic ? "فاتورة جديدة" : "Create New Invoice"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            {/* Booking (optional) */}
             <div className="space-y-1.5">
               <Label className="text-xs">{isArabic ? "ملف الحجز (اختياري)" : "Booking (optional)"}</Label>
               <Select value={form.booking_id} onValueChange={onBookingSelect}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder={isArabic ? "ربط بحجز..." : "Link to a booking..."} />
-                </SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder={isArabic ? "ربط بحجز..." : "Link to a booking..."} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">No booking</SelectItem>
                   {bookings.map((b: any) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.booking_number} — {b.title}
-                    </SelectItem>
+                    <SelectItem key={b.id} value={b.id}>{b.booking_number} — {b.title}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Customer */}
             <div className="space-y-1.5">
               <Label className="text-xs">{isArabic ? "العميل" : "Customer"} *</Label>
               <Select value={form.customer_id} onValueChange={v => setForm(f => ({ ...f, customer_id: v }))}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder={isArabic ? "اختر عميل..." : "Select customer..."} />
-                </SelectTrigger>
+                <SelectTrigger className="h-9"><SelectValue placeholder={isArabic ? "اختر عميل..." : "Select customer..."} /></SelectTrigger>
                 <SelectContent>
                   {customers.map((c: any) => (
                     <SelectItem key={c.id} value={c.id}>{c.full_name}</SelectItem>
@@ -732,8 +697,6 @@ export default function InvoicesPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Dates */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">{isArabic ? "تاريخ الإصدار" : "Issue Date"}</Label>
@@ -744,8 +707,6 @@ export default function InvoicesPage() {
                 <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="h-9" />
               </div>
             </div>
-
-            {/* Amount */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">{isArabic ? "المبلغ الفرعي" : "Subtotal"} *</Label>
@@ -763,8 +724,6 @@ export default function InvoicesPage() {
                 </Select>
               </div>
             </div>
-
-            {/* Tax & Discount */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">{isArabic ? "نسبة الضريبة %" : "Tax Rate %"}</Label>
@@ -775,47 +734,39 @@ export default function InvoicesPage() {
                 <Input type="number" value={form.discount_amount} onChange={e => setForm(f => ({ ...f, discount_amount: e.target.value }))} className="h-9" placeholder="0" />
               </div>
             </div>
-
-            {/* Calculated Total */}
             <div className="rounded-lg bg-muted/40 border border-border p-3 space-y-1.5">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Subtotal</span>
+                <span>{isArabic ? "المبلغ الفرعي" : "Subtotal"}</span>
                 <span>{form.currency} {calculatedTotals.subtotal.toLocaleString()}</span>
               </div>
               {calculatedTotals.taxAmount > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Tax ({calculatedTotals.taxRate}%)</span>
+                  <span>{isArabic ? "الضريبة" : "Tax"} ({calculatedTotals.taxRate}%)</span>
                   <span>{form.currency} {calculatedTotals.taxAmount.toLocaleString()}</span>
                 </div>
               )}
               {calculatedTotals.discount > 0 && (
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Discount</span>
+                  <span>{isArabic ? "الخصم" : "Discount"}</span>
                   <span>-{form.currency} {calculatedTotals.discount.toLocaleString()}</span>
                 </div>
               )}
               <div className="border-t border-border pt-1.5 flex justify-between text-sm font-semibold">
-                <span>Total</span>
+                <span>{isArabic ? "الإجمالي" : "Total"}</span>
                 <span className="font-display">{form.currency} {calculatedTotals.total.toLocaleString()}</span>
               </div>
             </div>
-
-            {/* Notes */}
             <div className="space-y-1.5">
               <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder={isArabic ? "ملاحظات اختيارية..." : "Optional notes..."} />
             </div>
-
-            {/* Terms */}
             <div className="space-y-1.5">
               <Label className="text-xs">{isArabic ? "الشروط" : "Terms & Conditions"}</Label>
               <Textarea value={form.terms} onChange={e => setForm(f => ({ ...f, terms: e.target.value }))} rows={2} />
             </div>
           </div>
           <DialogFooter className="pt-3">
-            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
-              {isArabic ? "إلغاء" : "Cancel"}
-            </Button>
+            <Button variant="outline" onClick={() => setShowNewDialog(false)}>{isArabic ? "إلغاء" : "Cancel"}</Button>
             <Button onClick={handleCreate} disabled={saving || !form.customer_id || !form.subtotal}>
               {saving && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
               {isArabic ? "إنشاء فاتورة" : "Create Invoice"}

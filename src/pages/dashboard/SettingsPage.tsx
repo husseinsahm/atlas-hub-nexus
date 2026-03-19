@@ -25,6 +25,8 @@ interface SettingsData {
   trip_prefix: string; trip_next_number: number;
   booking_prefix: string; booking_next_number: number;
   invoice_prefix: string; invoice_next_number: number;
+  default_tax_rate: number; default_payment_terms: string;
+  default_invoice_currency: string;
 }
 
 interface Branch {
