@@ -1934,6 +1934,7 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
 
   return (
     <div className="space-y-6">
+      {/* ─── Financial Summary ─── */}
       <Card className="border-border/60 shadow-sm overflow-hidden">
         <CardContent className="p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -1957,13 +1958,13 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
                     onBlur={e => updateBooking.mutate({ [item.key!]: parseFloat(e.target.value) || 0 })}
                   />
                 ) : (
-                  <p className={cn("text-lg font-mono font-bold tabular-nums",
+                  <p className={cn("text-lg font-mono font-bold tabular-nums font-display",
                     item.isProfit ? (item.value >= 0 ? "text-emerald-600" : "text-destructive") :
                     item.isBalance ? (balance > 0 ? "text-amber-600" : "text-emerald-600") :
                     "text-foreground"
                   )}>
                     {item.isBalance && balance <= 0 ? (isArabic ? "مدفوع" : "Paid") : item.value.toLocaleString()}
-                    {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1">{booking.currency}</span>}
+                    {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1 font-sans">{booking.currency}</span>}
                   </p>
                 )}
               </div>
@@ -1986,7 +1987,7 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
       </Card>
 
       {balance > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
           <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
           <p className="text-amber-700 dark:text-amber-300">
             {isArabic ? `يوجد رصيد مستحق بقيمة ${balance.toLocaleString()} ${booking.currency}` : `Outstanding balance of ${balance.toLocaleString()} ${booking.currency} remaining`}
@@ -1994,14 +1995,41 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
         </div>
       )}
 
-      {/* Linked Invoices */}
+      {/* ─── Payment Records (compact — no duplicate summary) ─── */}
+      <Card className="border-border/60 shadow-sm overflow-hidden">
+        <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <CreditCard className="w-3.5 h-3.5" />
+            {isArabic ? "سجل المدفوعات" : "Payment Records"}
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            {isArabic ? "المبالغ المحصلة فعلياً من العميل" : "Actual payments collected from the client"}
+          </p>
+        </CardHeader>
+        <CardContent className="p-4">
+          <PaymentRecords
+            bookingId={booking.id}
+            companyId={booking.company_id}
+            currency={booking.currency}
+            sellingPrice={Number(booking.selling_price || 0)}
+            compact
+          />
+        </CardContent>
+      </Card>
+
+      {/* ─── Formal Invoices ─── */}
       <Card className="border-border/60 shadow-sm overflow-hidden">
         <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Receipt className="w-3.5 h-3.5" />
-              {isArabic ? "الفواتير" : "Invoices"}
-            </CardTitle>
+            <div>
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Receipt className="w-3.5 h-3.5" />
+                {isArabic ? "الفواتير الرسمية" : "Formal Invoices"}
+              </CardTitle>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {isArabic ? "مستندات رسمية ترسل للعميل" : "Official documents sent to the client"}
+              </p>
+            </div>
             <Button size="sm" className="gap-1.5 text-xs" onClick={handleGenerateInvoice} disabled={generatingInvoice}>
               {generatingInvoice ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Receipt className="w-3.5 h-3.5" />}
               {isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
@@ -2013,17 +2041,20 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
             <div className="text-center py-8">
               <Receipt className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-xs text-muted-foreground">{isArabic ? "لا توجد فواتير مرتبطة" : "No invoices linked to this booking"}</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1 max-w-[250px] mx-auto">
+                {isArabic ? "أنشئ فاتورة رسمية لإرسالها للعميل" : "Generate a formal invoice to send to your client"}
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
               {linkedInvoices.map((inv: any) => {
                 const invBal = Number(inv.total_amount || 0) - Number(inv.amount_paid || 0);
                 return (
-                  <div key={inv.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
+                  <div key={inv.id} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-semibold text-foreground">{inv.invoice_number}</span>
-                        <Badge className={cn("text-[9px] border-0", INV_STATUS_COLORS[inv.status] || "bg-muted text-muted-foreground")}>{inv.status}</Badge>
+                        <Badge className={cn("text-[9px] border-0 rounded-full", INV_STATUS_COLORS[inv.status] || "bg-muted text-muted-foreground")}>{inv.status}</Badge>
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         {inv.issue_date && format(new Date(inv.issue_date), "MMM d, yyyy")}
@@ -2031,7 +2062,7 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
                       </p>
                     </div>
                     <div className="text-end shrink-0">
-                      <p className="text-xs font-mono font-semibold">{inv.currency} {Number(inv.total_amount || 0).toLocaleString()}</p>
+                      <p className="text-xs font-mono font-semibold font-display">{inv.currency} {Number(inv.total_amount || 0).toLocaleString()}</p>
                       {invBal > 0 && <p className="text-[10px] text-amber-600 font-mono">{isArabic ? "متبقي" : "Due"}: {inv.currency} {invBal.toLocaleString()}</p>}
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -2040,24 +2071,6 @@ function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking,
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Payment Records */}
-      <Card className="border-border/60 shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <CreditCard className="w-3.5 h-3.5" />
-            {isArabic ? "سجل المدفوعات" : "Payment Records"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <PaymentRecords
-            bookingId={booking.id}
-            companyId={booking.company_id}
-            currency={booking.currency}
-            sellingPrice={Number(booking.selling_price || 0)}
-          />
         </CardContent>
       </Card>
     </div>

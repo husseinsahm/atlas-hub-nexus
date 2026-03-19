@@ -38,9 +38,11 @@ interface PaymentRecordsProps {
   currency: string;
   sellingPrice: number;
   onTotalPaidChange?: (total: number) => void;
+  /** When true, hides the summary cards and progress bar (used when embedded in a parent that already shows them) */
+  compact?: boolean;
 }
 
-export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, onTotalPaidChange }: PaymentRecordsProps) {
+export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, onTotalPaidChange, compact = false }: PaymentRecordsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { direction } = useLanguage();
@@ -191,7 +193,7 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Receipt className="w-4 h-4 text-accent" /> Payment Records
+          <Receipt className="w-4 h-4 text-accent" /> {!compact && "Payment Records"}
           {payments.length > 0 && (
             <Badge variant="secondary" className="text-[10px]">{payments.length}</Badge>
           )}
@@ -201,55 +203,59 @@ export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, o
         </Button>
       </div>
 
-      {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-lg border border-border p-2.5 text-center">
-          <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Total</p>
-          <p className="text-sm font-bold font-mono text-foreground mt-0.5">{sellingPrice.toLocaleString()}</p>
-          <p className="text-[9px] text-muted-foreground">{currency}</p>
-        </div>
-        <div className="rounded-lg border border-border p-2.5 text-center">
-          <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Paid</p>
-          <p className="text-sm font-bold font-mono text-emerald-600 mt-0.5">{totalPaid.toLocaleString()}</p>
-          <p className="text-[9px] text-muted-foreground">{currency}</p>
-        </div>
-        <div className={cn(
-          "rounded-lg border p-2.5 text-center transition-colors",
-          remaining > 0 ? "border-amber-200 bg-amber-50/50 dark:bg-amber-950/20" : "border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20"
-        )}>
-          <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Remaining</p>
-          <p className={cn("text-sm font-bold font-mono mt-0.5", remaining > 0 ? "text-amber-600" : "text-emerald-600")}>
-            {Math.max(0, remaining).toLocaleString()}
-          </p>
-          <p className="text-[9px] text-muted-foreground">{currency}</p>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      {sellingPrice > 0 && (
-        <div className="space-y-1">
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <motion.div
-              className={cn("h-full rounded-full transition-colors", paidPercentage >= 100 ? "bg-emerald-500" : "bg-accent")}
-              initial={{ width: 0 }}
-              animate={{ width: `${paidPercentage}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] text-muted-foreground">
-              {paidPercentage >= 100 ? "✓ Fully paid" : `${paidPercentage}% paid`}
-            </p>
-            {remaining > 0 && sellingPrice > 0 && (
-              <p className="text-[10px] text-muted-foreground">
-                {remaining.toLocaleString()} {currency} remaining
+      {!compact && (
+        <>
+          {/* Summary bar */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-border p-2.5 text-center">
+              <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Total</p>
+              <p className="text-sm font-bold font-mono text-foreground mt-0.5">{sellingPrice.toLocaleString()}</p>
+              <p className="text-[9px] text-muted-foreground">{currency}</p>
+            </div>
+            <div className="rounded-lg border border-border p-2.5 text-center">
+              <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Paid</p>
+              <p className="text-sm font-bold font-mono text-emerald-600 mt-0.5">{totalPaid.toLocaleString()}</p>
+              <p className="text-[9px] text-muted-foreground">{currency}</p>
+            </div>
+            <div className={cn(
+              "rounded-lg border p-2.5 text-center transition-colors",
+              remaining > 0 ? "border-amber-200 bg-amber-50/50 dark:bg-amber-950/20" : "border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20"
+            )}>
+              <p className="text-[9px] text-muted-foreground uppercase font-medium tracking-wider">Remaining</p>
+              <p className={cn("text-sm font-bold font-mono mt-0.5", remaining > 0 ? "text-amber-600" : "text-emerald-600")}>
+                {Math.max(0, remaining).toLocaleString()}
               </p>
-            )}
+              <p className="text-[9px] text-muted-foreground">{currency}</p>
+            </div>
           </div>
-        </div>
-      )}
 
-      <Separator />
+          {/* Progress bar */}
+          {sellingPrice > 0 && (
+            <div className="space-y-1">
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <motion.div
+                  className={cn("h-full rounded-full transition-colors", paidPercentage >= 100 ? "bg-emerald-500" : "bg-accent")}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${paidPercentage}%` }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">
+                  {paidPercentage >= 100 ? "✓ Fully paid" : `${paidPercentage}% paid`}
+                </p>
+                {remaining > 0 && sellingPrice > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {remaining.toLocaleString()} {currency} remaining
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Separator />
+        </>
+      )}
 
       {/* Payment list */}
       {isLoading ? (
