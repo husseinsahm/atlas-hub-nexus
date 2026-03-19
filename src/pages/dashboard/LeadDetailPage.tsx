@@ -572,44 +572,33 @@ export default function LeadDetailPage() {
         {/* Left Column */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* Lead Summary Card */}
-          <Card className="border border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display flex items-center gap-2">
-                <Bookmark className="w-4 h-4 text-accent" /> Lead Summary
+          {/* Lead Summary Card — Enhanced with mini stat pills */}
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Bookmark className="w-3.5 h-3.5" /> Lead Summary
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</p>
-                  <Badge className={`${sc.color} border`}>{sc.label}</Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Source</p>
-                  <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Urgency</p>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full ${
-                      lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-emerald-500" : "bg-amber-500"
-                    }`} />
-                    <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
+                {[
+                  { label: "Status", content: <Badge className={`${sc.color} border`}>{sc.label}</Badge> },
+                  { label: "Source", content: <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p> },
+                  { label: "Urgency", content: (
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-success" : "bg-warning"}`} />
+                      <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
+                    </div>
+                  )},
+                  { label: "Trip Type", content: <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p> },
+                  { label: "Days Open", content: <p className="text-sm font-bold font-display text-foreground">{daysOpen}</p> },
+                  { label: "Agent", content: <p className="text-sm font-medium text-foreground">{assignedAgent?.fullName || "Unassigned"}</p> },
+                ].map((item, idx) => (
+                  <div key={idx} className="space-y-1.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{item.label}</p>
+                    {item.content}
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Trip Type</p>
-                  <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Days Open</p>
-                  <p className="text-sm font-medium text-foreground">{daysOpen}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Agent</p>
-                  <p className="text-sm font-medium text-foreground">{assignedAgent?.fullName || "Unassigned"}</p>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
