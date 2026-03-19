@@ -535,9 +535,9 @@ export default function LeadDetailPage() {
                     onClick={() => updateStatus(s)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-3 px-2 text-xs font-medium transition-all border-b-2 ${
                       isCurrent
-                        ? "border-accent bg-accent/5 text-accent"
+                        ? "border-primary bg-primary/5 text-primary"
                         : isPassed
-                        ? "border-emerald-400 bg-emerald-50/50 text-emerald-700"
+                        ? "border-success bg-success/5 text-success"
                         : "border-transparent text-muted-foreground hover:bg-muted/50"
                     }`}
                   >

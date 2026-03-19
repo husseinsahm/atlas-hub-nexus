@@ -693,7 +693,7 @@ export default function BookingDetailPage() {
       </motion.div>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-muted/40 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="flex gap-0 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
@@ -708,12 +708,12 @@ export default function BookingDetailPage() {
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
+                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-primary")} />
                 {isArabic ? tab.labelAr : tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
-                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-accent"
+                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-primary"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}

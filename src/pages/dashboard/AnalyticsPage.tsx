@@ -719,7 +719,7 @@ export default function AnalyticsPage() {
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                       <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
                       <Tooltip formatter={(v: number) => v.toLocaleString()} />
-                      <Line type="monotone" dataKey="profit" stroke="hsl(160,50%,45%)" strokeWidth={2.5} dot={{ r: 4 }} name="Profit" />
+                      <Line type="monotone" dataKey="profit" stroke="hsl(120,22%,46%)" strokeWidth={2.5} dot={{ r: 4 }} name="Profit" />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : <EmptyChart />}
