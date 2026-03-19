@@ -809,9 +809,9 @@ export default function LeadDetailPage() {
 
           {/* Quick Actions */}
           {isAdminOrAgent && (
-            <Card className="border border-border bg-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-display">Quick Actions</CardTitle>
+            <Card className="border border-border bg-card shadow-card overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {lead.status !== "won" && lead.status !== "lost" && (

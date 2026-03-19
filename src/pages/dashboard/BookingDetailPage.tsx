@@ -702,7 +702,7 @@ export default function BookingDetailPage() {
       </motion.div>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-card/80 backdrop-blur-md border-b border-border">
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-card/95 backdrop-blur-lg border-b border-border shadow-sm">
         <div className="flex gap-0 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
@@ -711,7 +711,7 @@ export default function BookingDetailPage() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  "relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-medium whitespace-nowrap transition-all shrink-0",
                   isActive
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -722,7 +722,7 @@ export default function BookingDetailPage() {
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
-                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-primary"
+                    className="absolute bottom-0 inset-x-2 h-[3px] rounded-full bg-primary"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}
@@ -747,7 +747,7 @@ export default function BookingDetailPage() {
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-5">
-            <Card className="border-border/60 shadow-sm overflow-hidden">
+            <Card className="border-border/60 shadow-card overflow-hidden">
               <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
                 <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <Briefcase className="w-3.5 h-3.5" />
