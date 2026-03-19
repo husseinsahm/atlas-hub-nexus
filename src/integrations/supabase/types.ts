@@ -932,7 +932,10 @@ export type Database = {
           company_id: string
           created_at: string
           default_currency: string
+          default_invoice_currency: string
           default_language: string
+          default_payment_terms: string | null
+          default_tax_rate: number
           id: string
           invoice_next_number: number
           invoice_prefix: string
@@ -952,7 +955,10 @@ export type Database = {
           company_id: string
           created_at?: string
           default_currency?: string
+          default_invoice_currency?: string
           default_language?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number
           id?: string
           invoice_next_number?: number
           invoice_prefix?: string
@@ -972,7 +978,10 @@ export type Database = {
           company_id?: string
           created_at?: string
           default_currency?: string
+          default_invoice_currency?: string
           default_language?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number
           id?: string
           invoice_next_number?: number
           invoice_prefix?: string
