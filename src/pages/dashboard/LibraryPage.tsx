@@ -283,10 +283,10 @@ export default function LibraryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Product Library</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your travel services, templates and reusable components</p>
+          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Product Library</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Manage your travel services, templates and reusable components</p>
         </div>
-        <Button onClick={openCreate} className="gold-gradient text-accent-foreground shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={openCreate} className="gap-2">
           <Plus className="w-4 h-4 mr-2" /> Add Item
         </Button>
       </div>

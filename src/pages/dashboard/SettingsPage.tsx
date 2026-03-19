@@ -238,8 +238,8 @@ export default function SettingsPage() {
     <div className="space-y-6 animate-fade-in max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold font-display text-foreground">Company Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage your company profile, branding, and preferences</p>
+        <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Company Settings</h1>
+        <p className="text-[13px] text-muted-foreground mt-1">Manage your company profile, branding, and preferences</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">

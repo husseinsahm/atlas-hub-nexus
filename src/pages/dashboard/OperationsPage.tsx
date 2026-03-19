@@ -182,10 +182,10 @@ export default function OperationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">
+          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">
             {isArabic ? "العمليات" : "Operations"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-[13px] text-muted-foreground mt-1">
             {isArabic ? "إدارة الحجوزات المؤكدة والخدمات" : "Manage confirmed bookings and services"}
           </p>
         </div>
