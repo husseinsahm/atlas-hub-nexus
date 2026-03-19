@@ -695,7 +695,7 @@ export default function LeadDetailPage() {
           </Card>
 
           {/* Tabbed Section */}
-          <Card className="border border-border bg-card">
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <CardHeader className="pb-0">
                 <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none p-0 h-auto">
