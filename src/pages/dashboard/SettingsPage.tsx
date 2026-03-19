@@ -269,6 +269,9 @@ export default function SettingsPage() {
           <TabsTrigger value="numbering" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
             <Hash className="w-3.5 h-3.5" /> Numbering
           </TabsTrigger>
+          <TabsTrigger value="invoicing" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
+            <DollarSign className="w-3.5 h-3.5" /> Invoicing
+          </TabsTrigger>
           <TabsTrigger value="security" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
             <KeyRound className="w-3.5 h-3.5" /> Security
           </TabsTrigger>
