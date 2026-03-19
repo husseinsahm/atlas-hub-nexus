@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Calendar, DollarSign, Loader2, Send, CheckCircle2, Clock,
-  FileText, Pencil, Trash2, Ban, Printer, Download, CreditCard, Banknote,
+  FileText, Trash2, Ban, Printer, Download, CreditCard, Banknote,
   Building2, Smartphone, Receipt, AlertCircle, MoreVertical, User,
   Phone, Mail, MapPin, Briefcase, ChevronRight,
 } from "lucide-react";
@@ -33,23 +33,23 @@ import { format } from "date-fns";
 
 type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue" | "cancelled" | "void";
 
-const STATUS_CONFIG: Record<InvoiceStatus, { label: string; className: string; dotColor: string }> = {
-  draft: { label: "Draft", className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/50" },
-  sent: { label: "Sent", className: "bg-blue-100/80 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", dotColor: "bg-blue-500" },
-  paid: { label: "Paid", className: "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", dotColor: "bg-emerald-500" },
-  partial: { label: "Partial", className: "bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", dotColor: "bg-amber-500" },
-  overdue: { label: "Overdue", className: "bg-destructive/10 text-destructive", dotColor: "bg-destructive" },
-  cancelled: { label: "Cancelled", className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/40" },
-  void: { label: "Void", className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/30" },
+const STATUS_CONFIG: Record<InvoiceStatus, { label: string; labelAr: string; className: string; dotColor: string }> = {
+  draft:     { label: "Draft",     labelAr: "مسودة",   className: "bg-muted text-muted-foreground",                                dotColor: "bg-muted-foreground/50" },
+  sent:      { label: "Sent",      labelAr: "مُرسلة",  className: "bg-secondary/15 text-secondary dark:bg-secondary/25",           dotColor: "bg-secondary" },
+  paid:      { label: "Paid",      labelAr: "مدفوعة",  className: "bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]",      dotColor: "bg-[hsl(var(--success))]" },
+  partial:   { label: "Partial",   labelAr: "جزئي",    className: "bg-[hsl(var(--warning)/0.15)] text-[hsl(var(--warning))]",      dotColor: "bg-[hsl(var(--warning))]" },
+  overdue:   { label: "Overdue",   labelAr: "متأخرة",  className: "bg-destructive/10 text-destructive",                            dotColor: "bg-destructive" },
+  cancelled: { label: "Cancelled", labelAr: "ملغاة",   className: "bg-muted text-muted-foreground",                                dotColor: "bg-muted-foreground/40" },
+  void:      { label: "Void",      labelAr: "باطلة",   className: "bg-muted text-muted-foreground line-through",                   dotColor: "bg-muted-foreground/30" },
 };
 
 const PAYMENT_METHODS = [
-  { value: "cash", label: "Cash", icon: Banknote },
-  { value: "bank_transfer", label: "Bank Transfer", icon: Building2 },
-  { value: "credit_card", label: "Credit Card", icon: CreditCard },
-  { value: "mobile_payment", label: "Mobile Payment", icon: Smartphone },
-  { value: "check", label: "Check", icon: Receipt },
-  { value: "other", label: "Other", icon: DollarSign },
+  { value: "cash", label: "Cash", labelAr: "نقد", icon: Banknote },
+  { value: "bank_transfer", label: "Bank Transfer", labelAr: "تحويل بنكي", icon: Building2 },
+  { value: "credit_card", label: "Credit Card", labelAr: "بطاقة ائتمان", icon: CreditCard },
+  { value: "mobile_payment", label: "Mobile Payment", labelAr: "دفع إلكتروني", icon: Smartphone },
+  { value: "check", label: "Check", labelAr: "شيك", icon: Receipt },
+  { value: "other", label: "Other", labelAr: "أخرى", icon: DollarSign },
 ];
 
 export default function InvoiceDetailPage() {
@@ -72,112 +72,81 @@ export default function InvoiceDetailPage() {
     reference_number: "", notes: "",
   });
 
-  // Fetch invoice
   const { data: invoice, isLoading } = useQuery({
     queryKey: ["invoice-detail", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices" as any)
-        .select("*")
-        .eq("id", id!)
-        .single();
+      const { data, error } = await supabase.from("invoices" as any).select("*").eq("id", id!).single();
       if (error) throw error;
       return data as any;
     },
     enabled: !!id,
   });
 
-  // Fetch customer
   const { data: customer } = useQuery({
     queryKey: ["invoice-customer", invoice?.customer_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("full_name, email, phone, address, city, country")
-        .eq("id", invoice.customer_id)
-        .single();
+      const { data, error } = await supabase.from("customers").select("full_name, email, phone, address, city, country").eq("id", invoice.customer_id).single();
       if (error) throw error;
       return data;
     },
     enabled: !!invoice?.customer_id,
   });
 
-  // Fetch booking
   const { data: booking } = useQuery({
     queryKey: ["invoice-booking", invoice?.booking_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("booking_number, title, start_date, end_date")
-        .eq("id", invoice.booking_id)
-        .single();
+      const { data, error } = await supabase.from("bookings").select("booking_number, title, start_date, end_date").eq("id", invoice.booking_id).single();
       if (error) throw error;
       return data;
     },
     enabled: !!invoice?.booking_id,
   });
 
-  // Fetch company info
   const { data: company } = useQuery({
     queryKey: ["invoice-company", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("name, email, phone, address, logo_url")
-        .eq("id", companyId!)
-        .single();
+      const { data, error } = await supabase.from("companies").select("name, email, phone, address, logo_url").eq("id", companyId!).single();
       if (error) throw error;
       return data;
     },
     enabled: !!companyId,
   });
 
-  // Fetch payments for this invoice
   const { data: payments = [] } = useQuery({
     queryKey: ["invoice-payments", id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payment_records")
-        .select("*")
-        .eq("invoice_id", id!)
-        .order("payment_date", { ascending: false });
+      const { data, error } = await supabase.from("payment_records").select("*").eq("invoice_id", id!).order("payment_date", { ascending: false });
       if (error) throw error;
       return data || [];
     },
     enabled: !!id,
   });
 
-  const totalPaid = payments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
   const totalAmount = Number(invoice?.total_amount || 0);
   const remaining = totalAmount - Number(invoice?.amount_paid || 0);
   const paidPct = totalAmount > 0 ? Math.min(100, Math.round((Number(invoice?.amount_paid || 0) / totalAmount) * 100)) : 0;
 
-  // Status update
   async function updateStatus(status: string) {
     try {
       const { error } = await supabase.from("invoices" as any).update({ status } as any).eq("id", id!);
       if (error) throw error;
-      toast({ title: "Status updated" });
+      toast({ title: isArabic ? "تم تحديث الحالة" : "Status updated" });
       queryClient.invalidateQueries({ queryKey: ["invoice-detail", id] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
-  // Record payment
   async function handleRecordPayment() {
     const amount = parseFloat(paymentForm.amount);
     if (!amount || amount <= 0) {
-      toast({ title: "Invalid amount", variant: "destructive" }); return;
+      toast({ title: isArabic ? "مبلغ غير صحيح" : "Invalid amount", variant: "destructive" }); return;
     }
     setSavingPayment(true);
     try {
-      // Insert payment
       const { error: payErr } = await supabase.from("payment_records").insert({
         booking_id: invoice?.booking_id || null,
-        invoice_id: id,
-        company_id: companyId,
-        amount,
+        invoice_id: id, company_id: companyId, amount,
         currency: invoice?.currency || "USD",
         payment_method: paymentForm.payment_method,
         payment_date: paymentForm.payment_date,
@@ -187,30 +156,19 @@ export default function InvoiceDetailPage() {
       } as any);
       if (payErr) throw payErr;
 
-      // Update invoice amount_paid and status
       const newPaid = Number(invoice?.amount_paid || 0) + amount;
       const newStatus = newPaid >= totalAmount ? "paid" : "partial";
-      const { error: invErr } = await supabase
-        .from("invoices" as any)
-        .update({ amount_paid: newPaid, status: newStatus } as any)
-        .eq("id", id!);
+      const { error: invErr } = await supabase.from("invoices" as any).update({ amount_paid: newPaid, status: newStatus } as any).eq("id", id!);
       if (invErr) throw invErr;
 
-      // Also update booking amount_paid if linked
       if (invoice?.booking_id) {
-        const { data: bk } = await supabase
-          .from("bookings")
-          .select("amount_paid")
-          .eq("id", invoice.booking_id)
-          .single();
+        const { data: bk } = await supabase.from("bookings").select("amount_paid").eq("id", invoice.booking_id).single();
         if (bk) {
-          await supabase.from("bookings")
-            .update({ amount_paid: Number(bk.amount_paid || 0) + amount })
-            .eq("id", invoice.booking_id);
+          await supabase.from("bookings").update({ amount_paid: Number(bk.amount_paid || 0) + amount }).eq("id", invoice.booking_id);
         }
       }
 
-      toast({ title: "Payment recorded" });
+      toast({ title: isArabic ? "تم تسجيل الدفعة" : "Payment recorded" });
       queryClient.invalidateQueries({ queryKey: ["invoice-detail", id] });
       queryClient.invalidateQueries({ queryKey: ["invoice-payments", id] });
       setShowPaymentDialog(false);
@@ -222,27 +180,18 @@ export default function InvoiceDetailPage() {
     }
   }
 
-  // Soft delete
   async function handleDelete() {
     try {
       const { error } = await supabase.from("invoices" as any).update({ deleted_at: new Date().toISOString() } as any).eq("id", id!);
       if (error) throw error;
-      toast({ title: "Invoice deleted" });
+      toast({ title: isArabic ? "تم حذف الفاتورة" : "Invoice deleted" });
       navigate("/dashboard/invoices");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   }
 
-  // Print
-  function handlePrint() {
-    window.print();
-  }
-
-  // Download PDF (uses browser print to PDF)
-  function handleDownloadPDF() {
-    window.print();
-  }
+  function handlePrint() { window.print(); }
 
   if (isLoading) {
     return (
@@ -256,9 +205,9 @@ export default function InvoiceDetailPage() {
     return (
       <div className="text-center py-20">
         <Receipt className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-        <p className="text-foreground font-medium">Invoice not found</p>
+        <p className="text-foreground font-medium">{isArabic ? "الفاتورة غير موجودة" : "Invoice not found"}</p>
         <Button variant="outline" className="mt-4" onClick={() => navigate("/dashboard/invoices")}>
-          Back to Invoices
+          {isArabic ? "العودة للفواتير" : "Back to Invoices"}
         </Button>
       </div>
     );
@@ -273,11 +222,11 @@ export default function InvoiceDetailPage() {
         <button onClick={() => navigate("/dashboard")} className="hover:text-foreground transition-colors">
           {isArabic ? "لوحة التحكم" : "Dashboard"}
         </button>
-        <ChevronRight className="w-3 h-3" />
+        <ChevronRight className="w-3 h-3 rtl:rotate-180" />
         <button onClick={() => navigate("/dashboard/invoices")} className="hover:text-foreground transition-colors">
           {isArabic ? "الفواتير" : "Invoices"}
         </button>
-        <ChevronRight className="w-3 h-3" />
+        <ChevronRight className="w-3 h-3 rtl:rotate-180" />
         <span className="text-foreground font-medium">{invoice.invoice_number}</span>
       </nav>
 
@@ -290,14 +239,14 @@ export default function InvoiceDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 mt-0.5" onClick={() => navigate("/dashboard/invoices")}>
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
               </Button>
               <div>
                 <div className="flex items-center gap-2.5">
                   <h1 className="text-xl font-bold font-display text-foreground">{invoice.invoice_number}</h1>
-                  <Badge className={cn("text-[10px] border-0 gap-1", sc.className)}>
+                  <Badge className={cn("text-[10px] border-0 gap-1 rounded-full px-2.5", sc.className)}>
                     <div className={cn("w-1.5 h-1.5 rounded-full", sc.dotColor)} />
-                    {sc.label}
+                    {isArabic ? sc.labelAr : sc.label}
                   </Badge>
                 </div>
                 {customer && <p className="text-sm text-muted-foreground mt-0.5">{customer.full_name}</p>}
@@ -312,22 +261,21 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {invoice.status === "draft" && canEdit && (
                 <Button size="sm" onClick={() => updateStatus("sent")} className="gap-1.5">
-                  <Send className="w-3.5 h-3.5" /> Send Invoice
+                  <Send className="w-3.5 h-3.5" /> {isArabic ? "إرسال" : "Send Invoice"}
                 </Button>
               )}
               {["sent", "partial", "overdue"].includes(invoice.status) && canEdit && (
                 <Button size="sm" onClick={() => setShowPaymentDialog(true)} className="gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5" /> Record Payment
+                  <DollarSign className="w-3.5 h-3.5" /> {isArabic ? "تسجيل دفعة" : "Record Payment"}
                 </Button>
               )}
               <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
-                <Printer className="w-3.5 h-3.5" /> Print
+                <Printer className="w-3.5 h-3.5" /> {isArabic ? "طباعة" : "Print"}
               </Button>
-              <Button size="sm" variant="outline" onClick={handleDownloadPDF} className="gap-1.5">
+              <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
                 <Download className="w-3.5 h-3.5" /> PDF
               </Button>
 
@@ -340,22 +288,22 @@ export default function InvoiceDetailPage() {
                 <DropdownMenuContent align="end" className="w-44">
                   {invoice.status === "draft" && (
                     <DropdownMenuItem onClick={() => updateStatus("sent")}>
-                      <Send className="w-3.5 h-3.5 me-2" /> Mark as Sent
+                      <Send className="w-3.5 h-3.5 me-2" /> {isArabic ? "وضع كمرسلة" : "Mark as Sent"}
                     </DropdownMenuItem>
                   )}
                   {["sent", "partial"].includes(invoice.status) && (
                     <DropdownMenuItem onClick={() => updateStatus("paid")}>
-                      <CheckCircle2 className="w-3.5 h-3.5 me-2" /> Mark as Paid
+                      <CheckCircle2 className="w-3.5 h-3.5 me-2" /> {isArabic ? "وضع كمدفوعة" : "Mark as Paid"}
                     </DropdownMenuItem>
                   )}
                   {invoice.status !== "void" && invoice.status !== "cancelled" && (
                     <DropdownMenuItem onClick={() => updateStatus("void")}>
-                      <Ban className="w-3.5 h-3.5 me-2" /> Void Invoice
+                      <Ban className="w-3.5 h-3.5 me-2" /> {isArabic ? "إبطال" : "Void Invoice"}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive">
-                    <Trash2 className="w-3.5 h-3.5 me-2" /> Delete
+                    <Trash2 className="w-3.5 h-3.5 me-2" /> {isArabic ? "حذف" : "Delete"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -365,17 +313,17 @@ export default function InvoiceDetailPage() {
           {/* Quick Stats */}
           <div className="flex flex-wrap gap-3 mt-4">
             {[
-              { label: "Total", value: `${invoice.currency} ${totalAmount.toLocaleString()}`, icon: DollarSign, color: "text-foreground" },
-              { label: "Paid", value: `${invoice.currency} ${Number(invoice.amount_paid || 0).toLocaleString()}`, icon: CheckCircle2, color: "text-emerald-600" },
-              { label: "Remaining", value: `${invoice.currency} ${remaining.toLocaleString()}`, icon: AlertCircle, color: remaining > 0 ? "text-amber-600" : "text-muted-foreground" },
-              { label: "Issue Date", value: format(new Date(invoice.issue_date), "MMM d, yyyy"), icon: Calendar, color: "text-muted-foreground" },
-              ...(invoice.due_date ? [{ label: "Due Date", value: format(new Date(invoice.due_date), "MMM d, yyyy"), icon: Clock, color: new Date(invoice.due_date) < new Date() ? "text-destructive" : "text-muted-foreground" }] : []),
+              { label: isArabic ? "الإجمالي" : "Total", value: `${invoice.currency} ${totalAmount.toLocaleString()}`, icon: DollarSign, color: "text-foreground" },
+              { label: isArabic ? "المدفوع" : "Paid", value: `${invoice.currency} ${Number(invoice.amount_paid || 0).toLocaleString()}`, icon: CheckCircle2, color: "text-[hsl(var(--success))]" },
+              { label: isArabic ? "المتبقي" : "Remaining", value: `${invoice.currency} ${remaining.toLocaleString()}`, icon: AlertCircle, color: remaining > 0 ? "text-[hsl(var(--warning))]" : "text-muted-foreground" },
+              { label: isArabic ? "تاريخ الإصدار" : "Issue Date", value: format(new Date(invoice.issue_date), "MMM d, yyyy"), icon: Calendar, color: "text-muted-foreground" },
+              ...(invoice.due_date ? [{ label: isArabic ? "تاريخ الاستحقاق" : "Due Date", value: format(new Date(invoice.due_date), "MMM d, yyyy"), icon: Clock, color: new Date(invoice.due_date) < new Date() ? "text-destructive" : "text-muted-foreground" }] : []),
             ].map(s => (
               <div key={s.label} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/40 border border-border/50">
                 <s.icon className={cn("w-3.5 h-3.5", s.color)} />
                 <div>
-                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                  <p className={cn("text-xs font-semibold", s.color)}>{s.value}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-body">{s.label}</p>
+                  <p className={cn("text-xs font-semibold font-display", s.color)}>{s.value}</p>
                 </div>
               </div>
             ))}
@@ -385,8 +333,8 @@ export default function InvoiceDetailPage() {
           {totalAmount > 0 && (
             <div className="mt-4">
               <div className="flex justify-between items-center mb-1.5">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Payment Progress</span>
-                <span className="text-xs font-semibold">{paidPct}%</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-body">{isArabic ? "تقدم الدفع" : "Payment Progress"}</span>
+                <span className="text-xs font-semibold font-display">{paidPct}%</span>
               </div>
               <Progress value={paidPct} className="h-2" />
             </div>
@@ -415,11 +363,11 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
             <div className="text-end">
-              <h3 className="text-2xl font-bold font-display text-primary">INVOICE</h3>
+              <h3 className="text-2xl font-bold font-display text-primary">{isArabic ? "فاتورة" : "INVOICE"}</h3>
               <p className="text-sm font-mono font-medium mt-1">{invoice.invoice_number}</p>
-              <Badge className={cn("text-[10px] border-0 gap-1 mt-1", sc.className)}>
+              <Badge className={cn("text-[10px] border-0 gap-1 mt-1 rounded-full px-2.5", sc.className)}>
                 <div className={cn("w-1.5 h-1.5 rounded-full", sc.dotColor)} />
-                {sc.label}
+                {isArabic ? sc.labelAr : sc.label}
               </Badge>
             </div>
           </div>
@@ -429,7 +377,7 @@ export default function InvoiceDetailPage() {
           {/* Dates + Bill To */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Bill To</h4>
+              <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 font-body">{isArabic ? "فاتورة إلى" : "Bill To"}</h4>
               <div className="space-y-1">
                 <p className="text-sm font-semibold">{customer?.full_name || "—"}</p>
                 {customer?.email && (
@@ -448,12 +396,12 @@ export default function InvoiceDetailPage() {
             </div>
             <div className="sm:text-end space-y-1.5">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Issue Date</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-body">{isArabic ? "تاريخ الإصدار" : "Issue Date"}</p>
                 <p className="text-sm font-medium">{format(new Date(invoice.issue_date), "MMMM d, yyyy")}</p>
               </div>
               {invoice.due_date && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Due Date</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-body">{isArabic ? "تاريخ الاستحقاق" : "Due Date"}</p>
                   <p className={cn("text-sm font-medium", new Date(invoice.due_date) < new Date() && invoice.status !== "paid" && "text-destructive")}>
                     {format(new Date(invoice.due_date), "MMMM d, yyyy")}
                   </p>
@@ -461,7 +409,7 @@ export default function InvoiceDetailPage() {
               )}
               {booking && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Booking Reference</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-body">{isArabic ? "مرجع الحجز" : "Booking Reference"}</p>
                   <p className="text-sm font-medium">{booking.booking_number} — {booking.title}</p>
                 </div>
               )}
@@ -473,21 +421,21 @@ export default function InvoiceDetailPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30">
-                  <TableHead className="text-xs font-semibold">Description</TableHead>
-                  <TableHead className="text-xs font-semibold text-center w-20">Qty</TableHead>
-                  <TableHead className="text-xs font-semibold text-end w-28">Unit Price</TableHead>
-                  <TableHead className="text-xs font-semibold text-end w-28">Total</TableHead>
+                  <TableHead className="text-xs font-semibold">{isArabic ? "الوصف" : "Description"}</TableHead>
+                  <TableHead className="text-xs font-semibold text-center w-20">{isArabic ? "الكمية" : "Qty"}</TableHead>
+                  <TableHead className="text-xs font-semibold text-end w-28">{isArabic ? "سعر الوحدة" : "Unit Price"}</TableHead>
+                  <TableHead className="text-xs font-semibold text-end w-28">{isArabic ? "الإجمالي" : "Total"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
                   <TableCell className="text-sm">
-                    {booking ? `${booking.title} (${booking.booking_number})` : "Services rendered"}
+                    {booking ? `${booking.title} (${booking.booking_number})` : (isArabic ? "خدمات مقدمة" : "Services rendered")}
                     {invoice.notes && <p className="text-xs text-muted-foreground mt-0.5">{invoice.notes}</p>}
                   </TableCell>
                   <TableCell className="text-sm text-center">1</TableCell>
-                  <TableCell className="text-sm text-end font-mono">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</TableCell>
-                  <TableCell className="text-sm text-end font-mono font-medium">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</TableCell>
+                  <TableCell className="text-sm text-end font-display">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</TableCell>
+                  <TableCell className="text-sm text-end font-display font-medium">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -497,35 +445,35 @@ export default function InvoiceDetailPage() {
           <div className="flex justify-end">
             <div className="w-full max-w-xs space-y-1.5">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-mono">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</span>
+                <span className="text-muted-foreground">{isArabic ? "المبلغ الفرعي" : "Subtotal"}</span>
+                <span className="font-display">{invoice.currency} {Number(invoice.subtotal || 0).toLocaleString()}</span>
               </div>
               {Number(invoice.tax_amount || 0) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax ({invoice.tax_rate}%)</span>
-                  <span className="font-mono">{invoice.currency} {Number(invoice.tax_amount || 0).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{isArabic ? "الضريبة" : "Tax"} ({invoice.tax_rate}%)</span>
+                  <span className="font-display">{invoice.currency} {Number(invoice.tax_amount || 0).toLocaleString()}</span>
                 </div>
               )}
               {Number(invoice.discount_amount || 0) > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount</span>
-                  <span className="font-mono text-destructive">-{invoice.currency} {Number(invoice.discount_amount || 0).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{isArabic ? "الخصم" : "Discount"}</span>
+                  <span className="font-display text-destructive">-{invoice.currency} {Number(invoice.discount_amount || 0).toLocaleString()}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between text-base font-bold">
-                <span>Total</span>
+                <span>{isArabic ? "الإجمالي" : "Total"}</span>
                 <span className="font-display">{invoice.currency} {totalAmount.toLocaleString()}</span>
               </div>
               {Number(invoice.amount_paid || 0) > 0 && (
                 <>
-                  <div className="flex justify-between text-sm text-emerald-600">
-                    <span>Paid</span>
-                    <span className="font-mono">-{invoice.currency} {Number(invoice.amount_paid || 0).toLocaleString()}</span>
+                  <div className="flex justify-between text-sm text-[hsl(var(--success))]">
+                    <span>{isArabic ? "المدفوع" : "Paid"}</span>
+                    <span className="font-display">-{invoice.currency} {Number(invoice.amount_paid || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-base font-bold">
-                    <span>Balance Due</span>
-                    <span className={cn("font-display", remaining > 0 ? "text-amber-600" : "text-emerald-600")}>
+                    <span>{isArabic ? "الرصيد المستحق" : "Balance Due"}</span>
+                    <span className={cn("font-display", remaining > 0 ? "text-[hsl(var(--warning))]" : "text-[hsl(var(--success))]")}>
                       {invoice.currency} {remaining.toLocaleString()}
                     </span>
                   </div>
@@ -537,7 +485,7 @@ export default function InvoiceDetailPage() {
           {/* Terms */}
           {invoice.terms && (
             <div className="pt-4 border-t border-border">
-              <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">Terms & Conditions</h4>
+              <h4 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5 font-body">{isArabic ? "الشروط والأحكام" : "Terms & Conditions"}</h4>
               <p className="text-xs text-muted-foreground whitespace-pre-line">{invoice.terms}</p>
             </div>
           )}
@@ -550,11 +498,11 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
-              Payment History
+              {isArabic ? "سجل الدفعات" : "Payment History"}
             </CardTitle>
             {["sent", "partial", "overdue"].includes(invoice.status) && canEdit && (
               <Button size="sm" variant="outline" onClick={() => setShowPaymentDialog(true)} className="gap-1.5 h-7 text-xs">
-                <DollarSign className="w-3 h-3" /> Record Payment
+                <DollarSign className="w-3 h-3" /> {isArabic ? "تسجيل دفعة" : "Record Payment"}
               </Button>
             )}
           </div>
@@ -563,17 +511,17 @@ export default function InvoiceDetailPage() {
           {payments.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Banknote className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-xs">No payments recorded yet</p>
+              <p className="text-xs">{isArabic ? "لم يتم تسجيل دفعات بعد" : "No payments recorded yet"}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Date</TableHead>
-                  <TableHead className="text-xs">Method</TableHead>
-                  <TableHead className="text-xs text-end">Amount</TableHead>
-                  <TableHead className="text-xs hidden sm:table-cell">Reference</TableHead>
-                  <TableHead className="text-xs hidden md:table-cell">Notes</TableHead>
+                  <TableHead className="text-xs">{isArabic ? "التاريخ" : "Date"}</TableHead>
+                  <TableHead className="text-xs">{isArabic ? "الطريقة" : "Method"}</TableHead>
+                  <TableHead className="text-xs text-end">{isArabic ? "المبلغ" : "Amount"}</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">{isArabic ? "المرجع" : "Reference"}</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">{isArabic ? "ملاحظات" : "Notes"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -586,10 +534,10 @@ export default function InvoiceDetailPage() {
                       <TableCell className="text-xs">
                         <span className="flex items-center gap-1.5">
                           <MethodIcon className="w-3 h-3 text-muted-foreground" />
-                          {method?.label || p.payment_method}
+                          {isArabic ? method?.labelAr : method?.label || p.payment_method}
                         </span>
                       </TableCell>
-                      <TableCell className="text-end font-mono text-xs font-semibold text-emerald-600">
+                      <TableCell className="text-end font-display text-xs font-semibold text-[hsl(var(--success))]">
                         +{p.currency} {Number(p.amount).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">{p.reference_number || "—"}</TableCell>
@@ -607,62 +555,50 @@ export default function InvoiceDetailPage() {
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-lg">Record Payment</DialogTitle>
+            <DialogTitle className="font-display text-lg">{isArabic ? "تسجيل دفعة" : "Record Payment"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            {/* Remaining Balance */}
             <div className="rounded-lg bg-muted/40 border border-border p-3 flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Remaining Balance</span>
-              <span className={cn("text-sm font-bold font-display", remaining > 0 ? "text-amber-600" : "text-emerald-600")}>
+              <span className="text-xs text-muted-foreground">{isArabic ? "الرصيد المتبقي" : "Remaining Balance"}</span>
+              <span className={cn("text-sm font-bold font-display", remaining > 0 ? "text-[hsl(var(--warning))]" : "text-[hsl(var(--success))]")}>
                 {invoice.currency} {remaining.toLocaleString()}
               </span>
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs">Amount *</Label>
-              <Input
-                type="number"
-                value={paymentForm.amount}
-                onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))}
-                placeholder="0.00"
-                className="h-9"
-                max={remaining}
-              />
+              <Label className="text-xs">{isArabic ? "المبلغ" : "Amount"} *</Label>
+              <Input type="number" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="h-9" max={remaining} />
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs">Payment Method</Label>
+              <Label className="text-xs">{isArabic ? "طريقة الدفع" : "Payment Method"}</Label>
               <Select value={paymentForm.payment_method} onValueChange={v => setPaymentForm(f => ({ ...f, payment_method: v }))}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PAYMENT_METHODS.map(m => (
-                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    <SelectItem key={m.value} value={m.value}>{isArabic ? m.labelAr : m.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Payment Date</Label>
+                <Label className="text-xs">{isArabic ? "تاريخ الدفع" : "Payment Date"}</Label>
                 <Input type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm(f => ({ ...f, payment_date: e.target.value }))} className="h-9" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Reference #</Label>
-                <Input value={paymentForm.reference_number} onChange={e => setPaymentForm(f => ({ ...f, reference_number: e.target.value }))} className="h-9" placeholder="Optional" />
+                <Label className="text-xs">{isArabic ? "رقم المرجع" : "Reference #"}</Label>
+                <Input value={paymentForm.reference_number} onChange={e => setPaymentForm(f => ({ ...f, reference_number: e.target.value }))} className="h-9" placeholder={isArabic ? "اختياري" : "Optional"} />
               </div>
             </div>
-
             <div className="space-y-1.5">
-              <Label className="text-xs">Notes</Label>
-              <Textarea value={paymentForm.notes} onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Optional payment notes..." />
+              <Label className="text-xs">{isArabic ? "ملاحظات" : "Notes"}</Label>
+              <Textarea value={paymentForm.notes} onChange={e => setPaymentForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder={isArabic ? "ملاحظات اختيارية..." : "Optional payment notes..."} />
             </div>
           </div>
           <DialogFooter className="pt-3">
-            <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>{isArabic ? "إلغاء" : "Cancel"}</Button>
             <Button onClick={handleRecordPayment} disabled={savingPayment || !paymentForm.amount}>
               {savingPayment && <Loader2 className="w-4 h-4 me-2 animate-spin" />}
-              Record Payment
+              {isArabic ? "تسجيل الدفعة" : "Record Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -672,15 +608,17 @@ export default function InvoiceDetailPage() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
+            <AlertDialogTitle>{isArabic ? "حذف الفاتورة؟" : "Delete Invoice?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove invoice {invoice.invoice_number}. This action cannot be undone.
+              {isArabic
+                ? `سيتم حذف الفاتورة ${invoice.invoice_number} نهائياً. لا يمكن التراجع عن هذا الإجراء.`
+                : `This will permanently remove invoice ${invoice.invoice_number}. This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{isArabic ? "إلغاء" : "Cancel"}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {isArabic ? "حذف" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
