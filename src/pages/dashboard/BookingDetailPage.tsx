@@ -62,11 +62,11 @@ import { TravelersTab as PremiumTravelersTab } from "@/components/booking/Travel
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; pillBg: string; pillText: string; next?: BookingStatus }> = {
-  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", pillBg: "bg-amber-100 dark:bg-amber-900/50", pillText: "text-amber-700 dark:text-amber-300", next: "confirmed" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", pillBg: "bg-blue-100 dark:bg-blue-900/50", pillText: "text-blue-700 dark:text-blue-300", next: "in_operation" },
-  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", pillBg: "bg-emerald-100 dark:bg-emerald-900/50", pillText: "text-emerald-700 dark:text-emerald-300", next: "completed" },
-  completed: { label: "Completed", labelAr: "مكتمل", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-800/40", pillBg: "bg-slate-100 dark:bg-slate-800/50", pillText: "text-slate-600 dark:text-slate-400" },
-  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40", pillBg: "bg-red-100 dark:bg-red-900/50", pillText: "text-red-700 dark:text-red-300" },
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50/80 dark:bg-amber-950/40", pillBg: "bg-amber-100/80 dark:bg-amber-900/50", pillText: "text-amber-800 dark:text-amber-300", next: "confirmed" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-secondary dark:text-secondary", bg: "bg-secondary/10 dark:bg-secondary/20", pillBg: "bg-secondary/10 dark:bg-secondary/20", pillText: "text-secondary", next: "in_operation" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-primary dark:text-primary", bg: "bg-primary/10 dark:bg-primary/20", pillBg: "bg-primary/10 dark:bg-primary/20", pillText: "text-primary", next: "completed" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-muted-foreground", bg: "bg-muted dark:bg-muted", pillBg: "bg-muted dark:bg-muted", pillText: "text-muted-foreground" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-destructive dark:text-destructive", bg: "bg-destructive/10 dark:bg-destructive/20", pillBg: "bg-destructive/10 dark:bg-destructive/20", pillText: "text-destructive" },
 };
 
 const SERVICE_TYPES = [
