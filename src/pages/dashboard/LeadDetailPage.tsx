@@ -29,12 +29,12 @@ import { getMutationErrorMessage, isNetworkMutationError, runMutationWithRetry }
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dotColor: string; icon: React.ElementType }> = {
-  new: { label: "New", color: "bg-blue-100 text-blue-800 border-blue-200", dotColor: "bg-blue-500", icon: Sparkles },
-  contacted: { label: "Contacted", color: "bg-cyan-100 text-cyan-800 border-cyan-200", dotColor: "bg-cyan-500", icon: Phone },
-  planning: { label: "Planning", color: "bg-amber-100 text-amber-800 border-amber-200", dotColor: "bg-amber-500", icon: MapPin },
-  awaiting_client: { label: "Awaiting Client", color: "bg-purple-100 text-purple-800 border-purple-200", dotColor: "bg-purple-500", icon: Clock },
-  won: { label: "Won", color: "bg-emerald-100 text-emerald-800 border-emerald-200", dotColor: "bg-emerald-500", icon: Trophy },
-  lost: { label: "Lost", color: "bg-red-100 text-red-600 border-red-200", dotColor: "bg-red-500", icon: XCircle },
+  new: { label: "New", color: "bg-primary/10 text-primary border-primary/20", dotColor: "bg-primary", icon: Sparkles },
+  contacted: { label: "Contacted", color: "bg-secondary/10 text-secondary border-secondary/20", dotColor: "bg-secondary", icon: Phone },
+  planning: { label: "Planning", color: "bg-warning/10 text-warning border-warning/20", dotColor: "bg-warning", icon: MapPin },
+  awaiting_client: { label: "Awaiting Client", color: "bg-muted text-muted-foreground border-border", dotColor: "bg-muted-foreground/50", icon: Clock },
+  won: { label: "Won", color: "bg-success/10 text-success border-success/20", dotColor: "bg-success", icon: Trophy },
+  lost: { label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/20", dotColor: "bg-destructive", icon: XCircle },
 };
 
 const STATUS_ORDER: LeadStatus[] = ["new", "contacted", "planning", "awaiting_client", "won", "lost"];
