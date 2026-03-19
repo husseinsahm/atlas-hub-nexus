@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -21,7 +21,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Receipt, Loader2, Calendar, DollarSign, Eye, Plus,
   TrendingUp, Clock, CheckCircle2, AlertCircle, Send, FileText,
-  MoreHorizontal, Pencil, Trash2, Ban, ChevronRight,
+  MoreHorizontal, Pencil, Trash2, Ban, ChevronRight, Copy, Bell,
+  ArrowUpDown, ChevronLeft,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -32,6 +33,8 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 type InvoiceStatus = "draft" | "sent" | "paid" | "partial" | "overdue" | "cancelled" | "void";
+type SortField = "invoice_number" | "issue_date" | "due_date" | "total_amount" | "balance" | "status";
+type SortDir = "asc" | "desc";
 
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; icon: React.ElementType; className: string; dotColor: string }> = {
   draft: { label: "Draft", icon: FileText, className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/50" },
@@ -42,6 +45,8 @@ const STATUS_CONFIG: Record<InvoiceStatus, { label: string; icon: React.ElementT
   cancelled: { label: "Cancelled", icon: Ban, className: "bg-muted text-muted-foreground", dotColor: "bg-muted-foreground/40" },
   void: { label: "Void", icon: Ban, className: "bg-muted text-muted-foreground line-through", dotColor: "bg-muted-foreground/30" },
 };
+
+const PAGE_SIZE = 20;
 
 export default function InvoicesPage() {
   const { user } = useAuth();
@@ -58,6 +63,9 @@ export default function InvoicesPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField>("issue_date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Form state
   const [form, setForm] = useState({
@@ -227,6 +235,51 @@ export default function InvoicesPage() {
     }
   }
 
+  // Copy invoice
+  async function copyInvoice(inv: any) {
+    if (!companyId) return;
+    try {
+      const prefix = companySettings?.invoice_prefix || "INV";
+      const nextNum = companySettings?.invoice_next_number || 1;
+      const invoiceNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
+
+      const { error } = await supabase.from("invoices" as any).insert({
+        company_id: companyId,
+        booking_id: inv.booking_id || null,
+        customer_id: inv.customer_id,
+        invoice_number: invoiceNumber,
+        issue_date: new Date().toISOString().split("T")[0],
+        due_date: inv.due_date || null,
+        subtotal: inv.subtotal,
+        tax_rate: inv.tax_rate,
+        tax_amount: inv.tax_amount,
+        discount_amount: inv.discount_amount,
+        total_amount: inv.total_amount,
+        currency: inv.currency,
+        notes: inv.notes || null,
+        terms: inv.terms || null,
+        created_by: user?.id,
+        status: "draft",
+        amount_paid: 0,
+      } as any);
+      if (error) throw error;
+
+      await supabase.from("company_settings").update({ invoice_next_number: nextNum + 1 }).eq("company_id", companyId);
+
+      toast({ title: "Invoice copied", description: `${invoiceNumber} created as draft` });
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      queryClient.invalidateQueries({ queryKey: ["company-settings-inv"] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  }
+
+  // Send reminder (mark as overdue)
+  async function sendReminder(id: string) {
+    await updateStatus(id, "overdue");
+    toast({ title: "Reminder sent", description: "Invoice marked as overdue" });
+  }
+
   function resetForm() {
     setForm({
       booking_id: "",
@@ -256,17 +309,51 @@ export default function InvoicesPage() {
     }
   }
 
-  // Filter
+  // Toggle sort
+  function toggleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+    setPage(1);
+  }
+
+  // Filter, sort, paginate
   const filtered = useMemo(() => {
-    return invoices.filter((inv: any) => {
+    let list = invoices.filter((inv: any) => {
       if (filterStatus !== "all" && inv.status !== filterStatus) return false;
       if (search) {
         const s = search.toLowerCase();
-        return inv.invoice_number?.toLowerCase().includes(s);
+        const customerName = customers.find((c: any) => c.id === inv.customer_id)?.full_name || "";
+        return inv.invoice_number?.toLowerCase().includes(s) || customerName.toLowerCase().includes(s);
       }
       return true;
     });
-  }, [invoices, search, filterStatus]);
+
+    // Sort
+    list = [...list].sort((a: any, b: any) => {
+      let va: any, vb: any;
+      switch (sortField) {
+        case "invoice_number": va = a.invoice_number || ""; vb = b.invoice_number || ""; break;
+        case "issue_date": va = a.issue_date || ""; vb = b.issue_date || ""; break;
+        case "due_date": va = a.due_date || ""; vb = b.due_date || ""; break;
+        case "total_amount": va = Number(a.total_amount || 0); vb = Number(b.total_amount || 0); break;
+        case "balance": va = Number(a.total_amount || 0) - Number(a.amount_paid || 0); vb = Number(b.total_amount || 0) - Number(b.amount_paid || 0); break;
+        case "status": va = a.status || ""; vb = b.status || ""; break;
+        default: va = a.issue_date || ""; vb = b.issue_date || "";
+      }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [invoices, search, filterStatus, sortField, sortDir, customers]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Stats
   const stats = useMemo(() => {
@@ -276,8 +363,7 @@ export default function InvoicesPage() {
     const outstanding = invoices
       .filter((i: any) => ["sent", "partial", "overdue"].includes(i.status))
       .reduce((s: number, i: any) => s + Number(i.total_amount || 0) - Number(i.amount_paid || 0), 0);
-    const overdueCount = invoices.filter((i: any) => i.status === "overdue").length;
-    return { total, totalValue, paid, outstanding, overdueCount };
+    return { total, totalValue, paid, outstanding };
   }, [invoices]);
 
   // Pipeline counts
@@ -289,6 +375,18 @@ export default function InvoicesPage() {
 
   const pipelineOrder: InvoiceStatus[] = ["draft", "sent", "partial", "paid", "overdue"];
 
+  function SortableHeader({ field, children }: { field: SortField; children: React.ReactNode }) {
+    const active = sortField === field;
+    return (
+      <TableHead className="text-xs cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort(field)}>
+        <span className="inline-flex items-center gap-1">
+          {children}
+          <ArrowUpDown className={cn("w-3 h-3", active ? "text-foreground" : "text-muted-foreground/40")} />
+        </span>
+      </TableHead>
+    );
+  }
+
   return (
     <div className="space-y-6 relative">
       {isLocked && <LockOverlay planRequired="Starter" featureName="Invoicing" />}
@@ -299,9 +397,9 @@ export default function InvoicesPage() {
           {isArabic ? "لوحة التحكم" : "Dashboard"}
         </button>
         <ChevronRight className="w-3 h-3" />
-        <button onClick={() => navigate("/dashboard/invoices")} className="hover:text-foreground transition-colors">
+        <span className="hover:text-foreground transition-colors">
           {isArabic ? "المالية" : "Finance"}
-        </button>
+        </span>
         <ChevronRight className="w-3 h-3" />
         <span className="text-foreground font-medium">{isArabic ? "الفواتير" : "Invoices"}</span>
       </nav>
@@ -330,7 +428,7 @@ export default function InvoicesPage() {
               return (
                 <button
                   key={status}
-                  onClick={() => setFilterStatus(filterStatus === status ? "all" : status)}
+                  onClick={() => { setFilterStatus(filterStatus === status ? "all" : status); setPage(1); }}
                   className={cn(
                     "flex items-center justify-center gap-1.5 text-xs font-medium transition-all relative",
                     filterStatus === status ? "ring-1 ring-inset ring-foreground/10" : "",
@@ -352,10 +450,10 @@ export default function InvoicesPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Total Invoices", value: stats.total, icon: Receipt, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Total Value", value: `${stats.totalValue.toLocaleString()}`, icon: DollarSign, color: "text-secondary", bg: "bg-secondary/10" },
-          { label: "Collected", value: `${stats.paid.toLocaleString()}`, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-          { label: "Outstanding", value: `${stats.outstanding.toLocaleString()}`, icon: AlertCircle, color: stats.outstanding > 0 ? "text-amber-600" : "text-muted-foreground", bg: stats.outstanding > 0 ? "bg-amber-500/10" : "bg-muted/50" },
+          { label: isArabic ? "إجمالي الفواتير" : "Total Invoices", value: stats.total, icon: Receipt, color: "text-primary", bg: "bg-primary/10" },
+          { label: isArabic ? "القيمة الإجمالية" : "Total Value", value: `${stats.totalValue.toLocaleString()}`, icon: DollarSign, color: "text-secondary", bg: "bg-secondary/10" },
+          { label: isArabic ? "المحصل" : "Collected", value: `${stats.paid.toLocaleString()}`, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10" },
+          { label: isArabic ? "المستحق" : "Outstanding", value: `${stats.outstanding.toLocaleString()}`, icon: AlertCircle, color: stats.outstanding > 0 ? "text-amber-600" : "text-muted-foreground", bg: stats.outstanding > 0 ? "bg-amber-500/10" : "bg-muted/50" },
         ].map((stat, i) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card className="border-border">
@@ -380,13 +478,13 @@ export default function InvoicesPage() {
             <div className="relative flex-1">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder={isArabic ? "بحث برقم الفاتورة..." : "Search by invoice number..."}
+                placeholder={isArabic ? "بحث برقم الفاتورة أو اسم العميل..." : "Search by invoice number or customer..."}
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
                 className="ps-9 h-9"
               />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setPage(1); }}>
               <SelectTrigger className="w-full sm:w-36 h-9">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -423,121 +521,174 @@ export default function InvoicesPage() {
                 <>
                   <p className="text-sm font-medium text-foreground">No matching invoices</p>
                   <p className="text-xs text-muted-foreground mt-1">Try adjusting your search or filter</p>
-                  <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => { setSearch(""); setFilterStatus("all"); }}>
+                  <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => { setSearch(""); setFilterStatus("all"); setPage(1); }}>
                     Clear Filters
                   </Button>
                 </>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Invoice #</TableHead>
-                    <TableHead className="text-xs">Customer</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Booking</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Issue Date</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Due Date</TableHead>
-                    <TableHead className="text-xs text-end">Total</TableHead>
-                    <TableHead className="text-xs text-end hidden sm:table-cell">Paid</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((inv: any) => {
-                    const sc = STATUS_CONFIG[inv.status as InvoiceStatus] || STATUS_CONFIG.draft;
-                    const isOverdue = inv.due_date && new Date(inv.due_date) < new Date() && ["sent", "partial"].includes(inv.status);
-                    const customerName = customers.find((c: any) => c.id === inv.customer_id)?.full_name || "—";
-                    const bookingNum = bookings.find((b: any) => b.id === inv.booking_id)?.booking_number || "";
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <SortableHeader field="invoice_number">Invoice #</SortableHeader>
+                      <TableHead className="text-xs">Customer</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Booking</TableHead>
+                      <SortableHeader field="issue_date"><span className="hidden sm:inline">Issue Date</span><span className="sm:hidden">Date</span></SortableHeader>
+                      <SortableHeader field="due_date"><span className="hidden lg:inline">Due Date</span></SortableHeader>
+                      <SortableHeader field="total_amount"><span className="text-end">Total</span></SortableHeader>
+                      <SortableHeader field="balance"><span className="text-end hidden sm:inline">Balance</span></SortableHeader>
+                      <SortableHeader field="status">Status</SortableHeader>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginated.map((inv: any) => {
+                      const sc = STATUS_CONFIG[inv.status as InvoiceStatus] || STATUS_CONFIG.draft;
+                      const isOverdue = inv.due_date && new Date(inv.due_date) < new Date() && ["sent", "partial"].includes(inv.status);
+                      const customerName = customers.find((c: any) => c.id === inv.customer_id)?.full_name || "—";
+                      const bookingNum = bookings.find((b: any) => b.id === inv.booking_id)?.booking_number || "";
+                      const balance = Number(inv.total_amount || 0) - Number(inv.amount_paid || 0);
 
-                    return (
-                      <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
-                        <TableCell className="font-mono text-xs font-medium">{inv.invoice_number}</TableCell>
-                        <TableCell className="text-xs">{customerName}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
-                          {bookingNum ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/bookings/${inv.booking_id}`); }}
-                              className="text-primary hover:underline"
-                            >
-                              {bookingNum}
-                            </button>
-                          ) : "—"}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
-                          {format(new Date(inv.issue_date), "MMM d, yyyy")}
-                        </TableCell>
-                        <TableCell className="text-xs hidden lg:table-cell">
-                          {inv.due_date ? (
-                            <span className={cn(isOverdue && "text-destructive font-medium")}>
-                              {format(new Date(inv.due_date), "MMM d, yyyy")}
-                              {isOverdue && " ⚠"}
+                      return (
+                        <TableRow
+                          key={inv.id}
+                          className={cn(
+                            "cursor-pointer transition-colors",
+                            isOverdue ? "border-s-2 border-s-destructive bg-destructive/[0.03] hover:bg-destructive/[0.06]" : "hover:bg-muted/30"
+                          )}
+                          onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}
+                        >
+                          <TableCell className="font-mono text-xs font-medium">{inv.invoice_number}</TableCell>
+                          <TableCell className="text-xs">{customerName}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
+                            {bookingNum ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/bookings/${inv.booking_id}`); }}
+                                className="text-primary hover:underline"
+                              >
+                                {bookingNum}
+                              </button>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
+                            {format(new Date(inv.issue_date), "MMM d, yyyy")}
+                          </TableCell>
+                          <TableCell className="text-xs hidden lg:table-cell">
+                            {inv.due_date ? (
+                              <span className={cn(isOverdue && "text-destructive font-medium")}>
+                                {format(new Date(inv.due_date), "MMM d, yyyy")}
+                                {isOverdue && " ⚠"}
+                              </span>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-end font-mono text-xs font-semibold">
+                            {inv.currency} {Number(inv.total_amount || 0).toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-end font-mono text-xs hidden sm:table-cell">
+                            <span className={cn(balance > 0 ? "text-amber-600 font-semibold" : "text-muted-foreground")}>
+                              {balance > 0 ? `${inv.currency} ${balance.toLocaleString()}` : "—"}
                             </span>
-                          ) : "—"}
-                        </TableCell>
-                        <TableCell className="text-end font-mono text-xs font-semibold">
-                          {inv.currency} {Number(inv.total_amount || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-end font-mono text-xs hidden sm:table-cell">
-                          {inv.currency} {Number(inv.amount_paid || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={cn("text-[10px] border-0 gap-1", sc.className)}>
-                            <div className={cn("w-1.5 h-1.5 rounded-full", sc.dotColor)} />
-                            {sc.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-7 w-7">
-                                <MoreHorizontal className="w-3.5 h-3.5" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
-                              {inv.status === "draft" && (
-                                <DropdownMenuItem onClick={() => updateStatus(inv.id, "sent")}>
-                                  <Send className="w-3.5 h-3.5 me-2" /> Mark as Sent
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={cn("text-[10px] border-0 gap-1", sc.className)}>
+                              <div className={cn("w-1.5 h-1.5 rounded-full", sc.dotColor)} />
+                              {sc.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                                <Button size="icon" variant="ghost" className="h-7 w-7">
+                                  <MoreHorizontal className="w-3.5 h-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48" onClick={e => e.stopPropagation()}>
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
+                                  <Eye className="w-3.5 h-3.5 me-2" /> View Details
                                 </DropdownMenuItem>
-                              )}
-                              {["sent", "partial", "overdue"].includes(inv.status) && (
-                                <DropdownMenuItem onClick={() => updateStatus(inv.id, "paid")}>
-                                  <CheckCircle2 className="w-3.5 h-3.5 me-2" /> Mark as Paid
+                                <DropdownMenuItem onClick={() => copyInvoice(inv)}>
+                                  <Copy className="w-3.5 h-3.5 me-2" /> Copy Invoice
                                 </DropdownMenuItem>
-                              )}
-                              {["sent", "partial"].includes(inv.status) && (
-                                <DropdownMenuItem onClick={() => updateStatus(inv.id, "partial")}>
-                                  <Clock className="w-3.5 h-3.5 me-2" /> Partial Payment
-                                </DropdownMenuItem>
-                              )}
-                              {inv.booking_id && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => navigate(`/dashboard/bookings/${inv.booking_id}`)}>
-                                    <Eye className="w-3.5 h-3.5 me-2" /> View Booking
+                                {inv.status === "draft" && (
+                                  <DropdownMenuItem onClick={() => updateStatus(inv.id, "sent")}>
+                                    <Send className="w-3.5 h-3.5 me-2" /> Mark as Sent
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                              <DropdownMenuSeparator />
-                              {inv.status === "draft" && (
-                                <DropdownMenuItem onClick={() => updateStatus(inv.id, "cancelled")} className="text-destructive">
-                                  <Ban className="w-3.5 h-3.5 me-2" /> Cancel
+                                )}
+                                {["sent", "partial", "overdue"].includes(inv.status) && (
+                                  <DropdownMenuItem onClick={() => updateStatus(inv.id, "paid")}>
+                                    <CheckCircle2 className="w-3.5 h-3.5 me-2" /> Mark as Paid
+                                  </DropdownMenuItem>
+                                )}
+                                {["sent", "partial"].includes(inv.status) && (
+                                  <DropdownMenuItem onClick={() => sendReminder(inv.id)}>
+                                    <Bell className="w-3.5 h-3.5 me-2" /> Send Reminder
+                                  </DropdownMenuItem>
+                                )}
+                                {inv.booking_id && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => navigate(`/dashboard/bookings/${inv.booking_id}`)}>
+                                      <Eye className="w-3.5 h-3.5 me-2" /> View Booking
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                <DropdownMenuSeparator />
+                                {inv.status === "draft" && (
+                                  <DropdownMenuItem onClick={() => updateStatus(inv.id, "cancelled")} className="text-destructive">
+                                    <Ban className="w-3.5 h-3.5 me-2" /> Cancel
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => softDelete(inv.id)} className="text-destructive">
+                                  <Trash2 className="w-3.5 h-3.5 me-2" /> Delete
                                 </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={() => softDelete(inv.id)} className="text-destructive">
-                                <Trash2 className="w-3.5 h-3.5 me-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {filtered.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="outline" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </Button>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) { pageNum = i + 1; }
+                      else if (page <= 3) { pageNum = i + 1; }
+                      else if (page >= totalPages - 2) { pageNum = totalPages - 4 + i; }
+                      else { pageNum = page - 2 + i; }
+                      return (
+                        <Button
+                          key={pageNum}
+                          size="icon"
+                          variant={page === pageNum ? "default" : "outline"}
+                          className="h-7 w-7 text-xs"
+                          onClick={() => setPage(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    <Button size="icon" variant="outline" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
