@@ -55,10 +55,10 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         success: {
-          DEFAULT: "hsl(var(--success))",
+          DEFAULT: "hsl(var(--success) / <alpha-value>)",
         },
         warning: {
-          DEFAULT: "hsl(var(--warning))",
+          DEFAULT: "hsl(var(--warning) / <alpha-value>)",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
