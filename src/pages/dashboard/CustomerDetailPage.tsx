@@ -478,9 +478,9 @@ export default function CustomerDetailPage() {
           </Card>
 
           {/* Summary */}
-          <Card className="border border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-display">Details</CardTitle>
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
