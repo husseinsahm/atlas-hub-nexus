@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["'Plus Jakarta Sans'", "sans-serif"],
-        body: ["'Inter'", "sans-serif"],
+        display: ["'Playfair Display'", "Georgia", "serif"],
+        body: ["'DM Sans'", "-apple-system", "sans-serif"],
       },
       spacing: {
         "section": "1.5rem",
@@ -54,19 +54,8 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gold: {
-          DEFAULT: "hsl(var(--gold))",
-          light: "hsl(var(--gold-light))",
-          dark: "hsl(var(--gold-dark))",
-        },
-        navy: {
-          DEFAULT: "hsl(var(--navy))",
-          light: "hsl(var(--navy-light))",
-        },
-        cream: {
-          DEFAULT: "hsl(var(--cream))",
-          dark: "hsl(var(--cream-dark))",
-        },
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -85,9 +74,9 @@ export default {
         xl: "calc(var(--radius) + 4px)",
       },
       boxShadow: {
-        "card": "0 1px 3px hsl(220 30% 12% / 0.06), 0 1px 2px hsl(220 30% 12% / 0.04)",
-        "card-hover": "0 4px 6px -1px hsl(220 30% 12% / 0.06), 0 2px 4px -2px hsl(220 30% 12% / 0.04)",
-        "elevated": "0 10px 15px -3px hsl(220 30% 12% / 0.06), 0 4px 6px -4px hsl(220 30% 12% / 0.04)",
+        "card": "0 2px 12px hsl(20 15% 15% / 0.06)",
+        "card-hover": "0 4px 16px hsl(20 15% 15% / 0.08)",
+        "elevated": "0 10px 24px hsl(20 15% 15% / 0.10)",
       },
       keyframes: {
         "accordion-down": {

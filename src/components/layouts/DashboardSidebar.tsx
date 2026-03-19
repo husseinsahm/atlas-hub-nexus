@@ -131,7 +131,7 @@ function SidebarNavItem({ item, collapsed, active, t }: {
       className={`
         flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-150
         ${active
-          ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
+          ? 'bg-[hsl(18_46%_53%/0.12)] text-sidebar-primary font-medium'
           : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
         }
         ${collapsed ? 'justify-center px-2' : ''}
@@ -166,7 +166,7 @@ function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
         <TooltipTrigger asChild>
           <button
             onClick={() => navigate("/admin")}
-            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
+            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-sidebar-primary hover:bg-sidebar-accent transition-colors"
           >
             <Shield className="w-[18px] h-[18px]" />
           </button>
@@ -178,7 +178,7 @@ function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
   return (
     <button
       onClick={() => navigate("/admin")}
-      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors font-medium"
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-sidebar-primary hover:bg-sidebar-accent transition-colors font-medium"
     >
       <Shield className="w-[18px] h-[18px]" />
       <span>Admin Panel</span>
@@ -217,16 +217,16 @@ export function DashboardSidebar() {
         <SidebarHeader className="p-3 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center shrink-0">
-                <Compass className="w-4 h-4 text-accent-foreground" />
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4 text-primary-foreground" />
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-sm font-bold text-sidebar-foreground font-display leading-tight">
-                    {t("app.name") || "Safar"}
+                  <h1 className="text-[15px] font-bold text-white font-display leading-tight tracking-tight">
+                    Voyage
                   </h1>
-                  <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">
-                    {t("app.tagline") || "Travel CRM"}
+                  <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-[0.08em] font-body">
+                    Travel Agency OS
                   </p>
                 </div>
               )}
@@ -258,7 +258,7 @@ export function DashboardSidebar() {
           {filteredGroups.map((group) => (
             <SidebarGroup key={group.label} className="py-1">
               {!collapsed && (
-                <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/50 font-semibold uppercase tracking-wider px-3 py-1.5">
+                <SidebarGroupLabel className="section-label px-3 py-1.5">
                   {group.label}
                 </SidebarGroupLabel>
               )}

@@ -11,7 +11,7 @@ export function DashboardLayout() {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="flex h-screen w-full overflow-hidden bg-[#F9FAFB] dark:bg-background">
+      <div className="flex h-screen w-full overflow-hidden bg-background">
         <DashboardSidebar />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
