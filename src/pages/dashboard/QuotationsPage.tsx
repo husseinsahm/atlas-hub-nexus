@@ -91,8 +91,8 @@ export default function QuotationsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Quotations</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage price quotations generated from trips</p>
+          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Quotations</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Manage price quotations generated from trips</p>
         </div>
       </div>
 

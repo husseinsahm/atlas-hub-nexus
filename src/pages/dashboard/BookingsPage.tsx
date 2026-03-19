@@ -380,21 +380,21 @@ export default function BookingsPage() {
       {/* Limit reached dialog */}
       <LimitReachedDialog open={limitDialogOpen} onOpenChange={setLimitDialogOpen} type="trips" />
 
-      {/* ─── Premium Header ─── */}
+      {/* ─── Page Header ─── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">
+          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">
             {isArabic ? "الحجوزات" : "Bookings"}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-[13px] text-muted-foreground mt-1">
             {bookings.length} {isArabic ? "حجز إجمالي" : "total bookings"}
           </p>
         </div>
-        <Button onClick={handleNewBookingClick} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
+        <Button onClick={handleNewBookingClick} className="gap-2">
           <Plus className="w-4 h-4" />
           {isArabic ? "حجز جديد" : "New Booking"}
         </Button>

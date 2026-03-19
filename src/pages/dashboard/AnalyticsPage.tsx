@@ -299,8 +299,8 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold font-display text-foreground">Reports & Analytics</h1>
-          <p className="text-sm text-muted-foreground mt-1">Business intelligence for {user?.activeMembership?.companyName}</p>
+          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Reports & Analytics</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Business intelligence for {user?.activeMembership?.companyName}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={dateRange} onValueChange={handlePresetChange}>
