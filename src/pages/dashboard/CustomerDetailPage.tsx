@@ -312,10 +312,10 @@ export default function CustomerDetailPage() {
             {/* Overview */}
             <TabsContent value="overview" className="mt-0 space-y-6">
               {/* Personal Info */}
-              <Card className="border border-border bg-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-display flex items-center gap-2">
-                    <User className="w-4 h-4 text-accent" /> Personal Information
+              <Card className="border border-border bg-card shadow-card overflow-hidden">
+                <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Personal Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
