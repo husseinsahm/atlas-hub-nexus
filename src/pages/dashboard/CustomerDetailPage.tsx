@@ -249,30 +249,36 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/customers")}>
-          <ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-lg font-bold text-accent shrink-0">
+      {/* ─── Premium Header ─── */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-2 overflow-hidden border-b border-border bg-gradient-to-br from-card via-card to-muted/30">
+        <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-primary via-secondary to-primary/40" />
+        <div className="absolute -top-16 -end-16 w-48 h-48 rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+        
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/customers")}>
+            <ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
+          </Button>
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-lg font-bold text-primary font-display shadow-sm border border-primary/10">
               {customer.full_name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-display">{customer.full_name}</h1>
-              <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground">
-                {customer.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {customer.email}</span>}
-                {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {customer.phone}</span>}
-              </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">{customer.full_name}</h1>
+              {customer.lead_id && (
+                <Badge className="bg-warning/10 text-warning border border-warning/20 shrink-0">
+                  <Star className="w-3 h-3 mr-1" /> From Lead
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4 mt-1.5 text-[13px] text-muted-foreground">
+              {customer.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {customer.email}</span>}
+              {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {customer.phone}</span>}
+              {customer.nationality && <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {customer.nationality}</span>}
             </div>
           </div>
         </div>
-        {customer.lead_id && (
-          <Badge className="bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
-            <Star className="w-3 h-3 mr-1" /> From Lead
-          </Badge>
-        )}
       </div>
 
       {/* Preference Tags */}
