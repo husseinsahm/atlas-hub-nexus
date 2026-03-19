@@ -249,30 +249,36 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/customers")}>
-          <ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-lg font-bold text-accent shrink-0">
+      {/* ─── Premium Header ─── */}
+      <div className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-2 overflow-hidden border-b border-border bg-gradient-to-br from-card via-card to-muted/30">
+        <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-primary via-secondary to-primary/40" />
+        <div className="absolute -top-16 -end-16 w-48 h-48 rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+        
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/customers")}>
+            <ArrowLeft className="w-5 h-5 rtl:scale-x-[-1]" />
+          </Button>
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-lg font-bold text-primary font-display shadow-sm border border-primary/10">
               {customer.full_name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-display">{customer.full_name}</h1>
-              <div className="flex items-center gap-3 mt-0.5 text-sm text-muted-foreground">
-                {customer.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {customer.email}</span>}
-                {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {customer.phone}</span>}
-              </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">{customer.full_name}</h1>
+              {customer.lead_id && (
+                <Badge className="bg-warning/10 text-warning border border-warning/20 shrink-0">
+                  <Star className="w-3 h-3 mr-1" /> From Lead
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4 mt-1.5 text-[13px] text-muted-foreground">
+              {customer.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {customer.email}</span>}
+              {customer.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {customer.phone}</span>}
+              {customer.nationality && <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> {customer.nationality}</span>}
             </div>
           </div>
         </div>
-        {customer.lead_id && (
-          <Badge className="bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
-            <Star className="w-3 h-3 mr-1" /> From Lead
-          </Badge>
-        )}
       </div>
 
       {/* Preference Tags */}
@@ -290,28 +296,26 @@ export default function CustomerDetailPage() {
         {/* Main Content */}
         <div className="lg:col-span-8">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none p-0 h-auto mb-6">
-              <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Notes ({notes.length})
-              </TabsTrigger>
-              <TabsTrigger value="trips" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Trip History
-              </TabsTrigger>
-              <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
-                Attachments ({attachments.length})
-              </TabsTrigger>
+            <TabsList className="w-full justify-start bg-muted/20 border-b border-border rounded-none p-0 h-auto mb-6">
+              {[
+                { value: "overview", label: "Overview" },
+                { value: "notes", label: `Notes (${notes.length})` },
+                { value: "trips", label: "Trip History" },
+                { value: "attachments", label: `Attachments (${attachments.length})` },
+              ].map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value} className="rounded-none border-b-[3px] border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-xs font-medium">
+                  {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             {/* Overview */}
             <TabsContent value="overview" className="mt-0 space-y-6">
               {/* Personal Info */}
-              <Card className="border border-border bg-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-display flex items-center gap-2">
-                    <User className="w-4 h-4 text-accent" /> Personal Information
+              <Card className="border border-border bg-card shadow-card overflow-hidden">
+                <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Personal Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -330,10 +334,10 @@ export default function CustomerDetailPage() {
 
               {/* Address */}
               {(customer.address || customer.city || customer.country) && (
-                <Card className="border border-border bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-display flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-accent" /> Address
+                <Card className="border border-border bg-card shadow-card overflow-hidden">
+                  <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5" /> Address
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -346,10 +350,10 @@ export default function CustomerDetailPage() {
 
               {/* Client Notes */}
               {customer.notes && (
-                <Card className="border border-border bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-display flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-accent" /> Client Notes
+                <Card className="border border-border bg-card shadow-card overflow-hidden">
+                  <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5" /> Client Notes
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -448,9 +452,9 @@ export default function CustomerDetailPage() {
         {/* Right Sidebar */}
         <div className="lg:col-span-4 space-y-4">
           {/* Quick Contact */}
-          <Card className="border border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-display">Quick Contact</CardTitle>
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Contact</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {customer.email && (
@@ -474,9 +478,9 @@ export default function CustomerDetailPage() {
           </Card>
 
           {/* Summary */}
-          <Card className="border border-border bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-display">Details</CardTitle>
+          <Card className="border border-border bg-card shadow-card overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
@@ -518,10 +522,10 @@ export default function CustomerDetailPage() {
 
           {/* Preferences */}
           {customer.preferences.length > 0 && (
-            <Card className="border border-border bg-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-display flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-accent" /> Preferences
+            <Card className="border border-border bg-card shadow-card overflow-hidden">
+              <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Heart className="w-3.5 h-3.5" /> Preferences
                 </CardTitle>
               </CardHeader>
               <CardContent>
