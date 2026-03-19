@@ -1930,11 +1930,12 @@ export type Database = {
       payment_records: {
         Row: {
           amount: number
-          booking_id: string
+          booking_id: string | null
           company_id: string
           created_at: string
           currency: string
           id: string
+          invoice_id: string | null
           notes: string | null
           payment_date: string
           payment_method: string
@@ -1943,11 +1944,12 @@ export type Database = {
         }
         Insert: {
           amount?: number
-          booking_id: string
+          booking_id?: string | null
           company_id: string
           created_at?: string
           currency?: string
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           payment_date?: string
           payment_method?: string
@@ -1956,11 +1958,12 @@ export type Database = {
         }
         Update: {
           amount?: number
-          booking_id?: string
+          booking_id?: string | null
           company_id?: string
           created_at?: string
           currency?: string
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           payment_date?: string
           payment_method?: string
@@ -1980,6 +1983,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
