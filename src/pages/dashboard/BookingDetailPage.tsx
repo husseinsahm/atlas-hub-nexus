@@ -674,10 +674,10 @@ export default function BookingDetailPage() {
         {/* Quick stat pills */}
         <div className="flex flex-wrap gap-2 mt-4">
           {[
-            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" },
-            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40" },
-            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
-            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" }] : []),
+            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-secondary bg-secondary/10" },
+            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-primary bg-primary/10" },
+            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-success bg-success/10" },
+            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-warning bg-warning/10" }] : []),
           ].map((pill, idx) => (
             <div key={idx} className="flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-xs">
               <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", pill.colorClass)}>
