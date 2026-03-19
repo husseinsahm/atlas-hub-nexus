@@ -38,6 +38,7 @@ import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import TasksPage from "./pages/dashboard/TasksPage";
 import InvoicesPage from "./pages/dashboard/InvoicesPage";
+import InvoiceDetailPage from "./pages/dashboard/InvoiceDetailPage";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -146,6 +147,7 @@ function AppRoutes() {
         <Route path="quotations" element={<QuotationsPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="invoices/:id" element={<InvoiceDetailPage />} />
         
         {/* Analytics & Reports */}
         <Route path="analytics" element={<AnalyticsPage />} />

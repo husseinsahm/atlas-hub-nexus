@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search, Receipt, Loader2, Calendar, DollarSign, Eye, Plus,
   TrendingUp, Clock, CheckCircle2, AlertCircle, Send, FileText,
-  MoreHorizontal, Pencil, Trash2, Ban,
+  MoreHorizontal, Pencil, Trash2, Ban, ChevronRight,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -293,6 +293,19 @@ export default function InvoicesPage() {
     <div className="space-y-6 relative">
       {isLocked && <LockOverlay planRequired="Starter" featureName="Invoicing" />}
 
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <button onClick={() => navigate("/dashboard")} className="hover:text-foreground transition-colors">
+          {isArabic ? "لوحة التحكم" : "Dashboard"}
+        </button>
+        <ChevronRight className="w-3 h-3" />
+        <button onClick={() => navigate("/dashboard/invoices")} className="hover:text-foreground transition-colors">
+          {isArabic ? "المالية" : "Finance"}
+        </button>
+        <ChevronRight className="w-3 h-3" />
+        <span className="text-foreground font-medium">{isArabic ? "الفواتير" : "Invoices"}</span>
+      </nav>
+
       {/* Header */}
       <PageHeader
         title={isArabic ? "الفواتير" : "Invoices"}
@@ -440,7 +453,7 @@ export default function InvoicesPage() {
                     const bookingNum = bookings.find((b: any) => b.id === inv.booking_id)?.booking_number || "";
 
                     return (
-                      <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/30 transition-colors">
+                      <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
                         <TableCell className="font-mono text-xs font-medium">{inv.invoice_number}</TableCell>
                         <TableCell className="text-xs">{customerName}</TableCell>
                         <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
