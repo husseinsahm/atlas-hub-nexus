@@ -12,7 +12,7 @@ import {
   FileText, StickyNote, Pencil, Upload,
   UserCheck, Phone, Mail, Globe,
   Plus, Trash2, MessageSquare, Send,
-  ChevronDown, ChevronUp, User, Shield,
+  ChevronDown, ChevronUp, ChevronRight, User, Shield,
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
