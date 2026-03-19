@@ -303,11 +303,11 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-display">Customers</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your customer database and relationships</p>
+          <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">Customers</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">Manage your customer database and relationships</p>
         </div>
         {isAdminOrAgent && (
-          <Button onClick={openCreate} className="gold-gradient text-accent-foreground gap-2 shadow-md">
+          <Button onClick={openCreate} className="gap-2">
             <UserPlus className="w-4 h-4" /> New Customer
           </Button>
         )}

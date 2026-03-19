@@ -463,31 +463,31 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-display">Leads</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">Leads</h1>
+          <p className="text-[13px] text-muted-foreground mt-1">
             Manage potential customers and track your sales pipeline
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <div className="flex items-center border border-border rounded-[10px] overflow-hidden">
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2 transition-colors ${viewMode === "table" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}
+              className={`p-2 transition-colors ${viewMode === "table" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
               title="Table view"
             >
               <List className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("kanban")}
-              className={`p-2 transition-colors ${viewMode === "kanban" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}
+              className={`p-2 transition-colors ${viewMode === "kanban" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}
               title="Kanban view"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
           {isAdminOrAgent && (
-            <Button onClick={openCreate} className="gold-gradient text-accent-foreground gap-2 shadow-md">
+            <Button onClick={openCreate} className="gap-2">
               <UserPlus className="w-4 h-4" /> New Lead
             </Button>
           )}
