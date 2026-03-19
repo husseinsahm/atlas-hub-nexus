@@ -440,7 +440,7 @@ export default function InvoicesPage() {
                     const bookingNum = bookings.find((b: any) => b.id === inv.booking_id)?.booking_number || "";
 
                     return (
-                      <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/30 transition-colors">
+                      <TableRow key={inv.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
                         <TableCell className="font-mono text-xs font-medium">{inv.invoice_number}</TableCell>
                         <TableCell className="text-xs">{customerName}</TableCell>
                         <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
