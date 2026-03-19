@@ -38,6 +38,8 @@ interface PaymentRecordsProps {
   currency: string;
   sellingPrice: number;
   onTotalPaidChange?: (total: number) => void;
+  /** When true, hides the summary cards and progress bar (used when embedded in a parent that already shows them) */
+  compact?: boolean;
 }
 
 export function PaymentRecords({ bookingId, companyId, currency, sellingPrice, onTotalPaidChange }: PaymentRecordsProps) {
