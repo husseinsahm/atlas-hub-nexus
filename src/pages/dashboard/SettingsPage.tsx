@@ -25,8 +25,6 @@ interface SettingsData {
   trip_prefix: string; trip_next_number: number;
   booking_prefix: string; booking_next_number: number;
   invoice_prefix: string; invoice_next_number: number;
-  default_tax_rate: number; default_payment_terms: string;
-  default_invoice_currency: string;
 }
 
 interface Branch {
@@ -67,8 +65,6 @@ export default function SettingsPage() {
     trip_prefix: "TRP", trip_next_number: 1,
     booking_prefix: "BKG", booking_next_number: 1,
     invoice_prefix: "INV", invoice_next_number: 1,
-    default_tax_rate: 0, default_payment_terms: "Payment is due within 30 days of the invoice date.",
-    default_invoice_currency: "USD",
   });
   const [branchForm, setBranchForm] = useState({ name: "", city: "", country: "", phone: "", email: "", address: "", is_main: false });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -106,9 +102,6 @@ export default function SettingsPage() {
         trip_prefix: s.trip_prefix || "TRP", trip_next_number: s.trip_next_number || 1,
         booking_prefix: s.booking_prefix || "BKG", booking_next_number: s.booking_next_number || 1,
         invoice_prefix: s.invoice_prefix || "INV", invoice_next_number: s.invoice_next_number || 1,
-        default_tax_rate: s.default_tax_rate ?? 0,
-        default_payment_terms: s.default_payment_terms || "Payment is due within 30 days of the invoice date.",
-        default_invoice_currency: s.default_invoice_currency || s.default_currency || "USD",
       });
       if (s.logo_url) setLogoPreview(s.logo_url);
     }
@@ -170,9 +163,6 @@ export default function SettingsPage() {
       booking_next_number: settingsForm.booking_next_number,
       invoice_prefix: settingsForm.invoice_prefix,
       invoice_next_number: settingsForm.invoice_next_number,
-      default_tax_rate: settingsForm.default_tax_rate,
-      default_payment_terms: settingsForm.default_payment_terms || null,
-      default_invoice_currency: settingsForm.default_invoice_currency,
       logo_url: logoPreview,
     };
 
@@ -248,8 +238,8 @@ export default function SettingsPage() {
     <div className="space-y-6 animate-fade-in max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Company Settings</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">Manage your company profile, branding, and preferences</p>
+        <h1 className="text-2xl font-bold font-display text-foreground">Company Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage your company profile, branding, and preferences</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
@@ -268,9 +258,6 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="numbering" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
             <Hash className="w-3.5 h-3.5" /> Numbering
-          </TabsTrigger>
-          <TabsTrigger value="invoicing" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
-            <DollarSign className="w-3.5 h-3.5" /> Invoicing
           </TabsTrigger>
           <TabsTrigger value="security" className="text-xs font-semibold data-[state=active]:bg-card data-[state=active]:shadow-sm gap-1.5">
             <KeyRound className="w-3.5 h-3.5" /> Security
@@ -595,52 +582,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </TabsContent>
-
-        {/* ── Invoicing Tab ── */}
-        <TabsContent value="invoicing">
-          <div className="luxury-card p-6 space-y-6">
-            <div>
-              <h3 className="font-semibold font-display text-foreground mb-1">Invoice Settings</h3>
-              <p className="text-xs text-muted-foreground">Default values applied when creating new invoices</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" /> Default Invoice Currency
-                </label>
-                <select value={settingsForm.default_invoice_currency}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, default_invoice_currency: e.target.value })}
-                  className="luxury-input w-full">
-                  {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Default Tax Rate (%)</label>
-                <input type="number" min="0" max="100" step="0.5" value={settingsForm.default_tax_rate}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, default_tax_rate: parseFloat(e.target.value) || 0 })}
-                  className="luxury-input w-full font-mono" />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Default Payment Terms</label>
-              <textarea value={settingsForm.default_payment_terms}
-                onChange={(e) => setSettingsForm({ ...settingsForm, default_payment_terms: e.target.value })}
-                className="luxury-input w-full min-h-[80px] resize-y" rows={3}
-                placeholder="Payment is due within 30 days of the invoice date." />
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={saveSettings} disabled={saving}
-                className="gold-gradient border-0 text-accent-foreground font-semibold hover:opacity-90 gap-2">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save Invoice Settings
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-
         {/* ── Security Tab ── */}
         <TabsContent value="security">
           <PasswordChangeSection />

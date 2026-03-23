@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,12 +29,12 @@ import { getMutationErrorMessage, isNetworkMutationError, runMutationWithRetry }
 type LeadStatus = "new" | "contacted" | "planning" | "awaiting_client" | "won" | "lost";
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dotColor: string; icon: React.ElementType }> = {
-  new: { label: "New", color: "bg-primary/10 text-primary border-primary/20", dotColor: "bg-primary", icon: Sparkles },
-  contacted: { label: "Contacted", color: "bg-secondary/10 text-secondary border-secondary/20", dotColor: "bg-secondary", icon: Phone },
-  planning: { label: "Planning", color: "bg-warning/10 text-warning border-warning/20", dotColor: "bg-warning", icon: MapPin },
-  awaiting_client: { label: "Awaiting Client", color: "bg-muted text-muted-foreground border-border", dotColor: "bg-muted-foreground/50", icon: Clock },
-  won: { label: "Won", color: "bg-success/10 text-success border-success/20", dotColor: "bg-success", icon: Trophy },
-  lost: { label: "Lost", color: "bg-destructive/10 text-destructive border-destructive/20", dotColor: "bg-destructive", icon: XCircle },
+  new: { label: "New", color: "bg-blue-100 text-blue-800 border-blue-200", dotColor: "bg-blue-500", icon: Sparkles },
+  contacted: { label: "Contacted", color: "bg-cyan-100 text-cyan-800 border-cyan-200", dotColor: "bg-cyan-500", icon: Phone },
+  planning: { label: "Planning", color: "bg-amber-100 text-amber-800 border-amber-200", dotColor: "bg-amber-500", icon: MapPin },
+  awaiting_client: { label: "Awaiting Client", color: "bg-purple-100 text-purple-800 border-purple-200", dotColor: "bg-purple-500", icon: Clock },
+  won: { label: "Won", color: "bg-emerald-100 text-emerald-800 border-emerald-200", dotColor: "bg-emerald-500", icon: Trophy },
+  lost: { label: "Lost", color: "bg-red-100 text-red-600 border-red-200", dotColor: "bg-red-500", icon: XCircle },
 };
 
 const STATUS_ORDER: LeadStatus[] = ["new", "contacted", "planning", "awaiting_client", "won", "lost"];
@@ -482,55 +481,42 @@ export default function LeadDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Premium Header ─── */}
-      <div className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-2 overflow-hidden border-b border-border bg-gradient-to-br from-card via-card to-muted/30">
-        <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-primary via-secondary to-primary/40" />
-        <div className="absolute -top-16 -end-16 w-48 h-48 rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/clients")}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="relative shrink-0 hidden sm:block">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-lg font-bold text-primary font-display shadow-sm border border-primary/10">
-                {lead.full_name.charAt(0).toUpperCase()}
-              </div>
-              <div className={cn("absolute -bottom-0.5 -end-0.5 w-4 h-4 rounded-full border-2 border-card", sc.dotColor)} />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/dashboard/clients")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground font-display">{lead.full_name}</h1>
+              <Badge className={`${sc.color} border font-medium`}>{sc.label}</Badge>
             </div>
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-[22px] font-bold text-foreground font-display leading-tight">{lead.full_name}</h1>
-                <Badge className={`${sc.color} border font-medium`}>{sc.label}</Badge>
-              </div>
-              <div className="flex items-center gap-4 mt-1.5 text-[13px] text-muted-foreground">
-                {lead.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {lead.email}</span>}
-                {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {lead.phone}</span>}
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" /> {format(new Date(lead.created_at), "MMM d, yyyy")}
-                </span>
-              </div>
+            <div className="flex items-center gap-4 mt-1.5 text-sm text-muted-foreground">
+              {lead.email && <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {lead.email}</span>}
+              {lead.phone && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {lead.phone}</span>}
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" /> {format(new Date(lead.created_at), "MMM d, yyyy")}
+              </span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {isAdminOrAgent && lead.status !== "won" && lead.status !== "lost" && (
-              <Button
-                onClick={() => setConvertOpen(true)}
-                className="gap-2"
-                size="lg"
-              >
-                <Plane className="w-5 h-5" />
-                Convert to Booking
-              </Button>
-            )}
-            {lead.status === "won" && (
-              <Badge className="bg-success/10 text-success border border-success/20 px-4 py-2 text-sm">
-                <Trophy className="w-4 h-4 mr-1.5 inline" /> Converted
-              </Badge>
-            )}
           </div>
         </div>
+
+        {isAdminOrAgent && lead.status !== "won" && lead.status !== "lost" && (
+          <Button
+            onClick={() => setConvertOpen(true)}
+            className="gold-gradient text-accent-foreground gap-2 shadow-lg hover:shadow-xl transition-shadow shrink-0"
+            size="lg"
+          >
+            <Plane className="w-5 h-5" />
+            Convert to Booking
+          </Button>
+        )}
+        {lead.status === "won" && (
+          <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 px-4 py-2 text-sm">
+            <Trophy className="w-4 h-4 mr-1.5 inline" /> Converted
+          </Badge>
+        )}
       </div>
 
       {/* Status Pipeline */}
@@ -549,9 +535,9 @@ export default function LeadDetailPage() {
                     onClick={() => updateStatus(s)}
                     className={`flex-1 flex items-center justify-center gap-1.5 py-3 px-2 text-xs font-medium transition-all border-b-2 ${
                       isCurrent
-                        ? "border-primary bg-primary/5 text-primary"
+                        ? "border-accent bg-accent/5 text-accent"
                         : isPassed
-                        ? "border-success bg-success/5 text-success"
+                        ? "border-emerald-400 bg-emerald-50/50 text-emerald-700"
                         : "border-transparent text-muted-foreground hover:bg-muted/50"
                     }`}
                   >
@@ -573,42 +559,53 @@ export default function LeadDetailPage() {
         {/* Left Column */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* Lead Summary Card — Enhanced with mini stat pills */}
-          <Card className="border border-border bg-card shadow-card overflow-hidden">
-            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Bookmark className="w-3.5 h-3.5" /> Lead Summary
+          {/* Lead Summary Card */}
+          <Card className="border border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-display flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-accent" /> Lead Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-5">
+            <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {[
-                  { label: "Status", content: <Badge className={`${sc.color} border`}>{sc.label}</Badge> },
-                  { label: "Source", content: <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p> },
-                  { label: "Urgency", content: (
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2.5 h-2.5 rounded-full ${lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-success" : "bg-warning"}`} />
-                      <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
-                    </div>
-                  )},
-                  { label: "Trip Type", content: <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p> },
-                  { label: "Days Open", content: <p className="text-sm font-bold font-display text-foreground">{daysOpen}</p> },
-                  { label: "Agent", content: <p className="text-sm font-medium text-foreground">{assignedAgent?.fullName || "Unassigned"}</p> },
-                ].map((item, idx) => (
-                  <div key={idx} className="space-y-1.5 p-2.5 rounded-lg bg-muted/30 border border-border/40">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{item.label}</p>
-                    {item.content}
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Status</p>
+                  <Badge className={`${sc.color} border`}>{sc.label}</Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Source</p>
+                  <p className="text-sm font-medium text-foreground capitalize">{lead.source.replace("_", " ")}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Urgency</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      lead.urgency === "high" ? "bg-destructive" : lead.urgency === "low" ? "bg-emerald-500" : "bg-amber-500"
+                    }`} />
+                    <p className="text-sm font-medium text-foreground capitalize">{lead.urgency || "Normal"}</p>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Trip Type</p>
+                  <p className="text-sm font-medium text-foreground">{lead.trip_type || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Days Open</p>
+                  <p className="text-sm font-medium text-foreground">{daysOpen}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Agent</p>
+                  <p className="text-sm font-medium text-foreground">{assignedAgent?.fullName || "Unassigned"}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Customer Request Details */}
-          <Card className="border border-border bg-card shadow-card overflow-hidden">
-            <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5" /> Customer Request
+          <Card className="border border-border bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-display flex items-center gap-2">
+                <FileText className="w-4 h-4 text-accent" /> Customer Request
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -696,21 +693,25 @@ export default function LeadDetailPage() {
           </Card>
 
           {/* Tabbed Section */}
-          <Card className="border border-border bg-card shadow-card overflow-hidden">
+          <Card className="border border-border bg-card">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <CardHeader className="pb-0 bg-muted/20 border-b border-border/50">
-                <TabsList className="w-full justify-start bg-transparent rounded-none p-0 h-auto">
-                  {[
-                    { value: "notes", label: `Notes (${noteActivities.length})` },
-                    { value: "comments", label: "Internal Comments" },
-                    { value: "followups", label: "Tasks" },
-                    { value: "attachments", label: "Attachments" },
-                    { value: "timeline", label: `All Activity (${activities.length})` },
-                  ].map(tab => (
-                    <TabsTrigger key={tab.value} value={tab.value} className="rounded-none border-b-[3px] border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-xs font-medium">
-                      {tab.label}
-                    </TabsTrigger>
-                  ))}
+              <CardHeader className="pb-0">
+                <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none p-0 h-auto">
+                  <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Notes ({noteActivities.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Internal Comments
+                  </TabsTrigger>
+                  <TabsTrigger value="followups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Tasks
+                  </TabsTrigger>
+                  <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    Attachments
+                  </TabsTrigger>
+                  <TabsTrigger value="timeline" className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-2.5 text-sm">
+                    All Activity ({activities.length})
+                  </TabsTrigger>
                 </TabsList>
               </CardHeader>
               <CardContent className="pt-4">
@@ -777,10 +778,10 @@ export default function LeadDetailPage() {
         <div className="lg:col-span-4 space-y-4">
           {/* Assign Agent */}
           {isAdminOrAgent && (
-            <Card className="border border-border bg-card shadow-card overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
-                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <UserCheck className="w-3.5 h-3.5" /> Assigned Agent
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-display flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-accent" /> Assigned Agent
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -810,9 +811,9 @@ export default function LeadDetailPage() {
 
           {/* Quick Actions */}
           {isAdminOrAgent && (
-            <Card className="border border-border bg-card shadow-card overflow-hidden">
-              <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
-                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Quick Actions</CardTitle>
+            <Card className="border border-border bg-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-display">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {lead.status !== "won" && lead.status !== "lost" && (

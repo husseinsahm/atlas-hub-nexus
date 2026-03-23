@@ -177,10 +177,10 @@ export default function CompaniesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">{t("nav.companies")}</h1>
-          <p className="text-[13px] text-muted-foreground mt-1">Manage all registered travel companies</p>
+          <h1 className="text-2xl font-bold font-display text-foreground">{t("nav.companies")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage all registered travel companies</p>
         </div>
-        <Button onClick={() => openEdit()} className="gap-2">
+        <Button onClick={() => openEdit()} className="gold-gradient border-0 text-accent-foreground font-semibold hover:opacity-90 gap-2">
           <Plus className="w-4 h-4" />
           Add Company
         </Button>

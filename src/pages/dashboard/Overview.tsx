@@ -49,104 +49,61 @@ function getGreeting(isArabic: boolean): string {
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
+// Animated counter hook - stable definition
 const useCountUp = (end: number, duration: number = 1000) => {
   const [count, setCount] = useState(0);
   const startTimeRef = useRef<number | null>(null);
   
   useEffect(() => {
-    if (end === 0) { setCount(0); return; }
+    if (end === 0) {
+      setCount(0);
+      return;
+    }
+    
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
       const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(easeOutQuart * end));
-      if (progress < 1) requestAnimationFrame(animate);
-      else setCount(end);
+      const currentCount = Math.floor(easeOutQuart * end);
+      
+      setCount(currentCount);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
     };
+    
     requestAnimationFrame(animate);
-    return () => { startTimeRef.current = null; };
+    
+    return () => {
+      startTimeRef.current = null;
+    };
   }, [end, duration]);
   
   return count;
 };
 
-// ─── MINI SPARKLINE SVG ───
-function Sparkline({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const w = 80;
-  const h = 28;
-  const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(' ');
-  return (
-    <svg width={w} height={h} className="opacity-50">
-      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+// ─── PREMIUM COMPONENTS ───
 
-// ─── STAT CARD CONFIG ───
-interface StatCardConfig {
-  gradient: string;
-  border: string;
-  iconBg: string;
-  sparkColor: string;
-}
-
-const cardStyles: Record<string, StatCardConfig> = {
-  tentative: {
-    gradient: "bg-gradient-to-br from-[hsl(30_80%_96%)] to-[hsl(25_70%_90%)]",
-    border: "border-[hsl(30_50%_85%)]",
-    iconBg: "bg-[hsl(var(--warning))]",
-    sparkColor: "hsl(42, 65%, 52%)",
-  },
-  confirmed: {
-    gradient: "bg-gradient-to-br from-[hsl(180_30%_96%)] to-[hsl(180_40%_91%)]",
-    border: "border-[hsl(180_30%_85%)]",
-    iconBg: "bg-secondary",
-    sparkColor: "hsl(180, 49%, 32%)",
-  },
-  inOperation: {
-    gradient: "bg-gradient-to-br from-[hsl(25_20%_95%)] to-[hsl(25_20%_89%)]",
-    border: "border-[hsl(25_15%_85%)]",
-    iconBg: "bg-primary",
-    sparkColor: "hsl(18, 46%, 53%)",
-  },
-  revenue: {
-    gradient: "bg-gradient-to-br from-[hsl(38_50%_96%)] to-[hsl(38_45%_90%)]",
-    border: "border-[hsl(38_40%_85%)]",
-    iconBg: "bg-[hsl(var(--warning))]",
-    sparkColor: "hsl(42, 65%, 52%)",
-  },
-  completed: {
-    gradient: "bg-gradient-to-br from-muted/50 to-muted",
-    border: "border-border",
-    iconBg: "bg-muted-foreground/60",
-    sparkColor: "hsl(25, 12%, 50%)",
-  },
+const statusColorMap: Record<string, { icon: string; border: string; bg: string; text: string }> = {
+  amber: { icon: "bg-amber-500", border: "border-amber-200 dark:border-amber-800", bg: "bg-amber-50/50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-400" },
+  emerald: { icon: "bg-emerald-500", border: "border-emerald-200 dark:border-emerald-800", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", text: "text-emerald-700 dark:text-emerald-400" },
+  blue: { icon: "bg-blue-500", border: "border-blue-200 dark:border-blue-800", bg: "bg-blue-50/50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-400" },
+  slate: { icon: "bg-slate-500", border: "border-border", bg: "bg-card", text: "text-muted-foreground" },
+  gold: { icon: "bg-gradient-to-br from-amber-400 to-orange-500", border: "border-amber-200 dark:border-amber-800", bg: "bg-amber-50/30 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-400" },
 };
 
-const sparkData: Record<string, number[]> = {
-  tentative: [3, 5, 2, 7, 4, 6, 3],
-  confirmed: [2, 4, 6, 5, 8, 7, 10],
-  inOperation: [1, 3, 2, 5, 4, 3, 6],
-  revenue: [12, 18, 15, 22, 20, 28, 25],
-  completed: [5, 3, 7, 4, 6, 8, 5],
-};
-
-const VoyageStatCard = memo(({
-  label, value, icon: Icon, styleKey, subtitle, trend, trendLabel, onClick, isCurrency, currency,
+const PremiumStatCard = memo(({
+  label, value, icon: Icon, colorKey = "slate", subtitle, trend, trendLabel, onClick,
 }: {
-  label: string; value: number; icon: React.ElementType; styleKey: string;
+  label: string; value: number; icon: React.ElementType; colorKey?: string;
   subtitle?: string; trend?: number; trendLabel?: string; onClick?: () => void;
-  isCurrency?: boolean; currency?: string;
 }) => {
   const animatedValue = useCountUp(value, 800);
   const positive = (trend ?? 0) >= 0;
-  const style = cardStyles[styleKey] || cardStyles.completed;
-  const displayValue = isCurrency
-    ? (value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString())
-    : animatedValue.toLocaleString();
+  const colors = statusColorMap[colorKey] || statusColorMap.slate;
 
   return (
     <motion.div
@@ -154,72 +111,77 @@ const VoyageStatCard = memo(({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
       className={cn(
-        "relative overflow-hidden rounded-[14px] p-5 cursor-pointer group transition-all duration-200 border",
-        style.gradient, style.border,
-        "hover:shadow-card-hover hover:-translate-y-0.5"
+        "rounded-xl p-5 cursor-pointer group transition-all duration-200 border bg-card hover:shadow-md hover:-translate-y-0.5",
+        colors.border
       )}
       onClick={onClick}
     >
-      {/* Sparkline in bottom-right */}
-      <div className="absolute bottom-2 right-3 pointer-events-none">
-        <Sparkline data={sparkData[styleKey] || sparkData.completed} color={style.sparkColor} />
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">{label}</p>
+        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shadow-sm", colors.icon)}>
+          <Icon className="w-[18px] h-[18px] text-white" />
+        </div>
       </div>
 
-      <div className="relative z-10">
-        <div className="flex items-start justify-between mb-3">
-          <p className="section-label">{label}</p>
-          <div className={cn("w-10 h-10 rounded-[10px] flex items-center justify-center shadow-sm", style.iconBg)}>
-            <Icon className="w-[18px] h-[18px] text-white" />
+      <p className="text-3xl font-extrabold font-display text-foreground leading-none tabular-nums">
+        {animatedValue.toLocaleString()}
+      </p>
+
+      {subtitle && (
+        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      )}
+
+      {trend !== undefined && (
+        <div className={cn("flex items-center gap-1.5 mt-3 text-xs font-semibold", positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+          <div className={cn("flex items-center justify-center w-5 h-5 rounded-full", positive ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40")}>
+            {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           </div>
+          <span>{Math.abs(trend)}%</span>
+          <span className="text-muted-foreground font-normal">{trendLabel || "vs last week"}</span>
         </div>
-
-        <div className="flex items-baseline gap-1.5">
-          <p className="text-[28px] font-bold font-display text-foreground leading-none tracking-[-0.02em]">
-            {displayValue}
-          </p>
-          {isCurrency && currency && (
-            <span className="text-sm font-medium text-muted-foreground">{currency}</span>
-          )}
-        </div>
-
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
-        )}
-
-        {trend !== undefined && (
-          <div className={cn("flex items-center gap-1.5 mt-3 text-xs font-semibold",
-            positive ? "text-[hsl(var(--success))]" : "text-destructive"
-          )}>
-            <div className={cn("flex items-center justify-center w-5 h-5 rounded-full",
-              positive ? "bg-[hsl(var(--success)/0.12)]" : "bg-destructive/10"
-            )}>
-              {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-            </div>
-            <span>{Math.abs(trend)}%</span>
-            <span className="text-muted-foreground font-normal">{trendLabel || "vs last week"}</span>
-          </div>
-        )}
-      </div>
+      )}
     </motion.div>
   );
 });
 
-// ─── QUICK ACTION CARD ───
-function QuickActionCard({ icon: Icon, label, color, onClick }: {
-  icon: React.ElementType; label: string; color: string; onClick: () => void;
-}) {
+const RevenueStatCard = memo(({ label, value, currency, trend, onClick }: {
+  label: string; value: number; currency: string; trend?: number; onClick?: () => void;
+}) => {
+  const displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString();
+  const positive = (trend ?? 0) >= 0;
+
   return (
-    <button
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.15 }}
+      className="rounded-xl p-5 cursor-pointer group transition-all duration-200 border border-amber-200 dark:border-amber-800 bg-card hover:shadow-md hover:-translate-y-0.5"
       onClick={onClick}
-      className="group flex items-center gap-3 p-4 rounded-[14px] border border-border bg-card text-start transition-all duration-200 hover:border-primary hover:bg-primary/5 hover:shadow-sm"
     >
-      <div className={cn("w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0", color)}>
-        <Icon className="w-[18px] h-[18px]" />
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">{label}</p>
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-sm bg-gradient-to-br from-amber-400 to-orange-500">
+          <DollarSign className="w-[18px] h-[18px] text-white" />
+        </div>
       </div>
-      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{label}</span>
-    </button>
+
+      <div className="flex items-baseline gap-1.5">
+        <p className="text-3xl font-extrabold font-display text-foreground leading-none">{displayValue}</p>
+        <span className="text-sm font-medium text-muted-foreground">{currency}</span>
+      </div>
+
+      {trend !== undefined && (
+        <div className={cn("flex items-center gap-1.5 mt-3 text-xs font-semibold", positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+          <div className={cn("flex items-center justify-center w-5 h-5 rounded-full", positive ? "bg-emerald-100 dark:bg-emerald-900/40" : "bg-red-100 dark:bg-red-900/40")}>
+            {positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          </div>
+          <span>{Math.abs(trend)}%</span>
+          <span className="text-muted-foreground font-normal">vs last month</span>
+        </div>
+      )}
+    </motion.div>
   );
-}
+});
 
 // ═════════════════════════════════════════════════════════════════
 //  SUPER ADMIN DASHBOARD  
@@ -237,7 +199,9 @@ function SuperAdminDashboard() {
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadSuperAdminData(); }, []);
+  useEffect(() => {
+    loadSuperAdminData();
+  }, []);
 
   const loadSuperAdminData = async () => {
     setLoading(true);
@@ -260,18 +224,27 @@ function SuperAdminDashboard() {
         const totalCompanies = companiesRes.data.length;
         const activeCompanies = companiesRes.data.filter(c => c.is_active).length;
         const totalUsers = membershipsRes.data?.length || 0;
+        
         const totalSubscriptions = subscriptionsRes.data?.length || 0;
         const activeSubscriptions = subscriptionsRes.data?.filter(s => s.status === "active").length || 0;
         const trialSubscriptions = subscriptionsRes.data?.filter(s => s.status === "trialing").length || 0;
         const expiredSubscriptions = subscriptionsRes.data?.filter(s => ["canceled", "unpaid", "past_due"].includes(s.status)).length || 0;
+        
         const totalRevenueMRR = subscriptionsRes.data?.reduce((sum, sub) => {
           if (!sub.plans || sub.status !== "active") return sum;
           return sum + (sub.billing_cycle === "yearly" ? sub.plans.price_yearly / 12 : sub.plans.price_monthly);
         }, 0) || 0;
 
-        setStats({ totalCompanies, activeCompanies, totalUsers, totalSubscriptions, activeSubscriptions, trialSubscriptions, expiredSubscriptions, totalRevenueMRR, totalPlans: 3 });
+        setStats({
+          totalCompanies, activeCompanies, totalUsers,
+          totalSubscriptions, activeSubscriptions, trialSubscriptions,
+          expiredSubscriptions, totalRevenueMRR, totalPlans: 3, // Assuming 3 plans
+        });
       }
-      if (auditRes.data) setAuditLogs(auditRes.data);
+      
+      if (auditRes.data) {
+        setAuditLogs(auditRes.data);
+      }
     } catch (error) {
       console.error("Error loading super admin data:", error);
     } finally {
@@ -290,16 +263,63 @@ function SuperAdminDashboard() {
 
   return (
     <div className="p-6 space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold font-display text-foreground">{isArabic ? "لوحة الإدارة العليا" : "Super Admin Dashboard"}</h1>
+        <h1 className="text-3xl font-bold text-foreground">{isArabic ? "لوحة الإدارة العليا" : "Super Admin Dashboard"}</h1>
         <p className="text-muted-foreground mt-1">{isArabic ? "إدارة النظام والشركات" : "System & company management"}</p>
       </div>
 
+      {/* Key Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <VoyageStatCard label={isArabic ? "الشركات" : "Companies"} value={stats.totalCompanies} icon={Building2} styleKey="confirmed" subtitle={`${stats.activeCompanies} active`} />
-        <VoyageStatCard label={isArabic ? "المستخدمين" : "Users"} value={stats.totalUsers} icon={Users} styleKey="inOperation" subtitle="across all companies" />
-        <VoyageStatCard label={isArabic ? "الاشتراكات" : "Subscriptions"} value={stats.activeSubscriptions} icon={CreditCard} styleKey="tentative" subtitle={`${stats.trialSubscriptions} trial`} />
-        <VoyageStatCard label={isArabic ? "الإيرادات" : "MRR"} value={stats.totalRevenueMRR} icon={DollarSign} styleKey="revenue" isCurrency currency="USD" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">{isArabic ? "إجمالي الشركات" : "Total Companies"}</CardTitle>
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalCompanies}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.activeCompanies} {isArabic ? "نشطة" : "active"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">{isArabic ? "إجمالي المستخدمين" : "Total Users"}</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">
+              {isArabic ? "عبر جميع الشركات" : "across all companies"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">{isArabic ? "الاشتراكات" : "Subscriptions"}</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.activeSubscriptions}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.trialSubscriptions} {isArabic ? "تجريبي" : "trial"}, {stats.expiredSubscriptions} {isArabic ? "منتهي" : "expired"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">{isArabic ? "الإيرادات الشهرية" : "Monthly Revenue"}</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${stats.totalRevenueMRR.toFixed(0)}</div>
+            <p className="text-xs text-muted-foreground">MRR</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Companies Table */}
@@ -309,26 +329,28 @@ function SuperAdminDashboard() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full modern-table">
+            <table className="w-full">
               <thead>
-                <tr className="border-b border-muted">
-                  <th className="text-start p-4">{isArabic ? "الشركة" : "Company"}</th>
-                  <th className="text-start p-4">{isArabic ? "الحالة" : "Status"}</th>
-                  <th className="text-start p-4">{isArabic ? "الاشتراك" : "Subscription"}</th>
-                  <th className="text-start p-4">{isArabic ? "الأعضاء" : "Members"}</th>
-                  <th className="text-start p-4">{isArabic ? "تاريخ الإنشاء" : "Created"}</th>
+                <tr className="border-b">
+                  <th className="text-start p-4 font-medium">{isArabic ? "الشركة" : "Company"}</th>
+                  <th className="text-start p-4 font-medium">{isArabic ? "الحالة" : "Status"}</th>
+                  <th className="text-start p-4 font-medium">{isArabic ? "الاشتراك" : "Subscription"}</th>
+                  <th className="text-start p-4 font-medium">{isArabic ? "الأعضاء" : "Members"}</th>
+                  <th className="text-start p-4 font-medium">{isArabic ? "تاريخ الإنشاء" : "Created"}</th>
                 </tr>
               </thead>
               <tbody>
                 {companies.slice(0, 10).map((company) => (
-                  <tr key={company.id} className="hover:bg-[hsl(18_46%_53%/0.04)] transition-colors">
+                  <tr key={company.id} className="border-b hover:bg-muted/50">
                     <td className="p-4">
-                      <div className="font-medium">{company.name}</div>
-                      <div className="text-sm text-muted-foreground">{company.email}</div>
+                      <div>
+                        <div className="font-medium">{company.name}</div>
+                        <div className="text-sm text-muted-foreground">{company.email}</div>
+                      </div>
                     </td>
                     <td className="p-4">
                       <Badge variant={company.is_active ? "default" : "secondary"}>
-                        {company.is_active ? "Active" : "Inactive"}
+                        {company.is_active ? (isArabic ? "نشط" : "Active") : (isArabic ? "غير نشط" : "Inactive")}
                       </Badge>
                     </td>
                     <td className="p-4">
@@ -337,10 +359,14 @@ function SuperAdminDashboard() {
                           <div className="text-sm font-medium">{company.subscription.plan?.name || "N/A"}</div>
                           <div className="text-xs text-muted-foreground capitalize">{company.subscription.status}</div>
                         </div>
-                      ) : <span className="text-muted-foreground">None</span>}
+                      ) : (
+                        <span className="text-muted-foreground">{isArabic ? "لا يوجد" : "None"}</span>
+                      )}
                     </td>
                     <td className="p-4">{company.memberCount}</td>
-                    <td className="p-4 text-sm text-muted-foreground">{format(new Date(company.created_at), "MMM dd, yyyy")}</td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      {format(new Date(company.created_at), "MMM dd, yyyy")}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -349,20 +375,22 @@ function SuperAdminDashboard() {
         </CardContent>
       </Card>
 
-      {/* Audit Logs */}
+      {/* Recent Activities */}
       <Card>
         <CardHeader>
           <CardTitle>{isArabic ? "الأنشطة الأخيرة" : "Recent Activities"}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-border/60">
+          <div className="divide-y">
             {auditLogs.slice(0, 8).map((log) => (
-              <div key={log.id} className="p-4 flex items-center justify-between hover:bg-[hsl(18_46%_53%/0.04)] transition-colors">
+              <div key={log.id} className="p-4 flex items-center justify-between">
                 <div>
                   <div className="text-sm font-medium">{log.action}</div>
                   <div className="text-xs text-muted-foreground">{log.entity_type} • {log.entity_id}</div>
                 </div>
-                <div className="text-xs text-muted-foreground">{format(new Date(log.created_at), "MMM dd, HH:mm")}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(log.created_at), "MMM dd, HH:mm")}
+                </div>
               </div>
             ))}
           </div>
@@ -395,6 +423,7 @@ function CompanyDashboard() {
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [agentPerformance, setAgentPerformance] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
     if (!companyId) { setLoading(false); return; }
@@ -405,6 +434,8 @@ function CompanyDashboard() {
     setLoading(true);
     const now = new Date();
     const nextWeek = addDays(now, 7);
+    const monthStart = startOfMonth(now).toISOString();
+    const monthEnd = endOfMonth(now).toISOString();
 
     const [membersRes, subRes, bookingsRes, leadsRes] = await Promise.all([
       supabase.from("company_memberships").select("id, user_id").eq("company_id", companyId!).eq("is_active", true),
@@ -419,10 +450,12 @@ function CompanyDashboard() {
     if (bookingsRes.data) {
       const bookings = bookingsRes.data;
       setRecentBookings(bookings.slice(0, 5));
+
       const stats = bookings.reduce((acc, booking) => {
         acc.total++;
         const price = booking.selling_price || 0;
         const paid = booking.amount_paid || 0;
+
         switch (booking.status) {
           case "tentative": acc.tentative++; break;
           case "confirmed": acc.confirmed++; break;
@@ -430,35 +463,52 @@ function CompanyDashboard() {
           case "completed": acc.completed++; break;
           case "cancelled": acc.cancelled++; break;
         }
+
         acc.totalRevenue += price;
         acc.totalPaid += paid;
         return acc;
-      }, { total: 0, tentative: 0, confirmed: 0, inOperation: 0, completed: 0, cancelled: 0, totalRevenue: 0, totalPaid: 0, totalBalance: 0, currency: bookings[0]?.currency || "USD" });
+      }, {
+        total: 0, tentative: 0, confirmed: 0, inOperation: 0, completed: 0, cancelled: 0,
+        totalRevenue: 0, totalPaid: 0, totalBalance: 0, currency: bookings[0]?.currency || "USD",
+      });
+
       stats.totalBalance = stats.totalRevenue - stats.totalPaid;
       setBookingStats(stats);
-      setUpcomingArrivals(bookings.filter(b => {
+
+      // Filter upcoming arrivals (within next 7 days)
+      const upcoming = bookings.filter(b => {
         if (!b.arrival_date) return false;
-        const d = new Date(b.arrival_date);
-        return d >= now && d <= nextWeek;
-      }).slice(0, 5));
+        const arrivalDate = new Date(b.arrival_date);
+        return arrivalDate >= now && arrivalDate <= nextWeek;
+      }).slice(0, 5);
+      
+      setUpcomingArrivals(upcoming);
     }
 
     if (leadsRes.data) {
       const leads = leadsRes.data;
-      setLeadStats(leads.reduce((acc, lead) => {
+      const stats = leads.reduce((acc, lead) => {
         acc.total++;
-        if (lead.status === "new") acc.new++;
-        else if (lead.status === "won") acc.won++;
-        else if (lead.status === "lost") acc.lost++;
+        switch (lead.status) {
+          case "new": acc.new++; break;
+          case "won": acc.won++; break;
+          case "lost": acc.lost++; break;
+        }
         return acc;
-      }, { total: 0, new: 0, won: 0, lost: 0 }));
+      }, { total: 0, new: 0, won: 0, lost: 0 });
+      
+      setLeadStats(stats);
     }
 
+    setRecentActivities([]);
+
+    // Mock agent performance data
     setAgentPerformance([
       { id: "1", name: "Alex Johnson", avatar: "AJ", bookings: 12, revenue: 24500, conversion: 68 },
       { id: "2", name: "Sarah Miller", avatar: "SM", bookings: 9, revenue: 18900, conversion: 72 },
       { id: "3", name: "Mike Chen", avatar: "MC", bookings: 15, revenue: 31200, conversion: 61 },
     ]);
+
     setLoading(false);
   }
 
@@ -471,127 +521,252 @@ function CompanyDashboard() {
     );
   }
 
-  const statusPillClass = (status: string) => {
-    switch (status) {
-      case "tentative": return "bg-[hsl(var(--warning)/0.12)] text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.2)]";
-      case "confirmed": return "bg-secondary/10 text-secondary border-secondary/20";
-      case "in_operation": return "bg-primary/10 text-primary border-primary/20";
-      case "completed": return "bg-muted text-muted-foreground border-border";
-      case "cancelled": return "bg-destructive/10 text-destructive border-destructive/20";
-      default: return "bg-muted text-muted-foreground border-border";
-    }
-  };
-
-  const collectionPct = bookingStats.totalRevenue > 0 
-    ? ((bookingStats.totalPaid / bookingStats.totalRevenue) * 100) 
-    : 0;
-
   return (
     <div className="max-w-[1400px] mx-auto space-y-8">
+      {/* Usage Warning Banners */}
       <UsageWarningBanner />
       <AnnualBillingBanner />
-
-      {/* ── GREETING HEADER ── */}
+      {/* Compact Professional Header */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-[14px] border border-border p-6 lg:p-8"
-        style={{ background: "linear-gradient(135deg, hsl(35 25% 96%) 0%, hsl(30 20% 90%) 100%)" }}
+        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 py-4 px-6 rounded-2xl bg-gradient-to-r from-primary/5 via-primary/3 to-transparent border border-primary/10"
       >
-        <p className="text-[10px] font-semibold text-primary uppercase tracking-[0.08em] mb-1">
-          {format(new Date(), "EEEE, MMMM d, yyyy")}
-        </p>
-        <h1 className="font-display text-[26px] font-bold text-foreground leading-tight">
-          {getGreeting(isArabic)}, <span className="text-primary">{displayName}</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {companyName} • {bookingStats.tentative} {isArabic ? "حجوزات معلقة" : "pending bookings"}
-        </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-foreground leading-tight">{companyName}</h1>
+            <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+            <DollarSign className="w-3 h-3 text-primary" />
+            <span className="text-xs font-semibold text-primary">
+              {bookingStats.totalRevenue.toLocaleString()} {bookingStats.currency}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 rounded-full">
+            <CheckCircle className="w-3 h-3 text-blue-600" />
+            <span className="text-xs font-semibold text-blue-700">{bookingStats.confirmed} {isArabic ? "مؤكد" : "Active"}</span>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 rounded-full">
+            <Clock className="w-3 h-3 text-amber-600" />
+            <span className="text-xs font-semibold text-amber-700">{bookingStats.tentative} {isArabic ? "معلق" : "Pending"}</span>
+          </div>
+        </div>
       </motion.div>
 
       {/* Downgrade Banner */}
       {subscription?.canceled_at && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-[14px] border border-destructive/20 bg-destructive/5 flex items-center gap-4"
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 flex items-center gap-4"
         >
           <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{isArabic ? "سيتم تغيير اشتراكك" : "Your subscription is set to cancel"}</p>
-            <p className="text-xs text-muted-foreground">{isArabic ? "سيبقى اشتراكك نشطاً حتى نهاية الفترة الحالية" : `Active until ${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "end of period"}`}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {isArabic ? "سيتم تغيير اشتراكك" : "Your subscription is set to cancel"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isArabic ? "سيبقى اشتراكك نشطاً حتى نهاية الفترة الحالية" : `Your plan will remain active until ${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "end of period"}`}
+            </p>
           </div>
-          <Button size="sm" variant="outline" onClick={async () => {
-            await supabase.from("subscriptions").update({ status: "active", canceled_at: null }).eq("id", subscription.id);
-            loadCompanyData();
-          }}>{isArabic ? "إعادة التفعيل" : "Reactivate"}</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={async () => {
+              await supabase.from("subscriptions").update({ status: "active", canceled_at: null }).eq("id", subscription.id);
+              loadCompanyData();
+            }}
+          >
+            {isArabic ? "إعادة التفعيل" : "Reactivate"}
+          </Button>
         </motion.div>
       )}
 
-      {/* ── STAT CARDS ── */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      {/* Hero Pipeline Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold text-foreground">{isArabic ? "خط إنجاز الحجوزات" : "Booking Pipeline"}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{isArabic ? "خط إنجاز الحجوزات" : "Booking Pipeline"}</h2>
           <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/bookings")}>
-            <Eye className="w-4 h-4 me-1" /> {isArabic ? "عرض الكل" : "View All"}
+            <Eye className="w-4 h-4 me-1" />
+            {isArabic ? "عرض الكل" : "View All"}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-          <VoyageStatCard label={isArabic ? "مؤقتة" : "Tentative"} value={bookingStats.tentative} icon={Clock} styleKey="tentative"
-            subtitle={isArabic ? "تحتاج تأكيد" : "Awaiting confirmation"} trend={5} onClick={() => navigate("/dashboard/bookings")} />
-          <VoyageStatCard label={isArabic ? "مؤكدة" : "Confirmed"} value={bookingStats.confirmed} icon={CheckCircle} styleKey="confirmed"
-            subtitle={isArabic ? "جاهزة للعمليات" : "Ready for operations"} trend={12} onClick={() => navigate("/dashboard/bookings")} />
-          <VoyageStatCard label={isArabic ? "قيد التنفيذ" : "In Operation"} value={bookingStats.inOperation} icon={Plane} styleKey="inOperation"
-            subtitle={isArabic ? "حاليًا نشطة" : "Currently active"} trend={-3} onClick={() => navigate("/dashboard/bookings")} />
-          <VoyageStatCard label={isArabic ? "مكتملة" : "Completed"} value={bookingStats.completed} icon={CheckCircle} styleKey="completed"
-            subtitle={isArabic ? "هذا الشهر" : "This month"} trend={8} onClick={() => navigate("/dashboard/bookings")} />
-          <VoyageStatCard label={isArabic ? "الإيرادات" : "Revenue"} value={bookingStats.totalRevenue} icon={DollarSign} styleKey="revenue"
-            isCurrency currency={bookingStats.currency} trend={15} trendLabel="vs last month" onClick={() => navigate("/dashboard/bookings")} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <PremiumStatCard 
+            label={isArabic ? "مؤقتة" : "Tentative"} 
+            value={bookingStats.tentative} 
+            icon={Clock} 
+            colorKey="amber"
+            subtitle={isArabic ? "تحتاج تأكيد" : "Awaiting confirmation"}
+            trend={5}
+            onClick={() => navigate("/dashboard/bookings")}
+          />
+          <PremiumStatCard 
+            label={isArabic ? "مؤكدة" : "Confirmed"} 
+            value={bookingStats.confirmed} 
+            icon={CheckCircle} 
+            colorKey="emerald"
+            subtitle={isArabic ? "جاهزة للعمليات" : "Ready for operations"}
+            trend={12}
+            onClick={() => navigate("/dashboard/bookings")}
+          />
+          <PremiumStatCard 
+            label={isArabic ? "قيد التنفيذ" : "In Operation"} 
+            value={bookingStats.inOperation} 
+            icon={Plane} 
+            colorKey="blue"
+            subtitle={isArabic ? "حاليًا نشطة" : "Currently active"}
+            trend={-3}
+            onClick={() => navigate("/dashboard/bookings")}
+          />
+          <PremiumStatCard 
+            label={isArabic ? "مكتملة" : "Completed"} 
+            value={bookingStats.completed} 
+            icon={CheckCircle} 
+            colorKey="slate"
+            subtitle={isArabic ? "هذا الشهر" : "This month"}
+            trend={8}
+            onClick={() => navigate("/dashboard/bookings")}
+          />
+          <RevenueStatCard 
+            label={isArabic ? "الإيرادات" : "Revenue"} 
+            value={bookingStats.totalRevenue} 
+            currency={bookingStats.currency}
+            trend={15}
+            onClick={() => navigate("/dashboard/bookings")}
+          />
         </div>
       </motion.div>
 
-      {/* ── SECONDARY STATS BAR ── */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-        className="flex flex-wrap items-center gap-3 p-4 rounded-[14px] bg-card border border-border shadow-card"
+      {/* Secondary Stats - Compact Summary Bar */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-card border border-border/50 shadow-sm"
       >
-        {[
-          { icon: Target, value: leadStats.total, label: isArabic ? "العملاء المحتملين" : "Total Leads", bg: "bg-primary" },
-          { icon: UserCheck, value: leadStats.won, label: isArabic ? "فوز العملاء" : "Won Leads", bg: "bg-secondary" },
-          { icon: Users, value: teamCount, label: isArabic ? "الفريق" : "Team Members", bg: "bg-muted-foreground/60" },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-2 rounded-[10px] bg-muted/40">
-            <div className={cn("w-9 h-9 rounded-[10px] flex items-center justify-center", item.bg)}>
-              <item.icon className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p className="text-lg font-bold font-display text-foreground leading-none tracking-[-0.02em]">{item.value}</p>
-              <p className="section-label mt-0.5">{item.label}</p>
-            </div>
-            {i < 2 && <div className="w-px h-10 bg-border hidden sm:block ms-4" />}
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+            <Target className="w-4 h-4 text-primary-foreground" />
           </div>
-        ))}
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.total}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "العملاء المحتملين" : "Total Leads"}</p>
+          </div>
+        </div>
+        
+        <div className="w-px h-10 bg-border hidden sm:block" />
+        
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500/5 to-emerald-500/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center">
+            <UserCheck className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{leadStats.won}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "فوز العملاء" : "Won Leads"}</p>
+          </div>
+        </div>
+        
+        <div className="w-px h-10 bg-border hidden sm:block" />
+        
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500/5 to-purple-500/10">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+            <Users className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-lg font-bold font-display text-foreground leading-none">{teamCount}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "الفريق" : "Team Members"}</p>
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Column */}
         <div className="xl:col-span-2 space-y-8">
-          {/* ── QUICK ACTIONS 2×2 ── */}
-          <div>
-            <h3 className="section-label mb-3">{isArabic ? "إجراءات سريعة" : "Quick Actions"}</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <QuickActionCard icon={Plus} label={isArabic ? "حجز جديد" : "New Booking"} color="bg-primary text-primary-foreground" onClick={() => navigate("/dashboard/bookings?action=new")} />
-              <QuickActionCard icon={UserPlus} label={isArabic ? "إضافة عميل" : "Add Lead"} color="bg-secondary text-secondary-foreground" onClick={() => navigate("/dashboard/clients?action=new")} />
-              <QuickActionCard icon={FileText} label={isArabic ? "عرض سعر" : "New Quote"} color="bg-[hsl(var(--warning))] text-white" onClick={() => navigate("/dashboard/quotations?action=new")} />
-              <QuickActionCard icon={Calendar} label={isArabic ? "العمليات" : "Operations"} color="bg-muted-foreground/60 text-white" onClick={() => navigate("/dashboard/operations")} />
-            </div>
-          </div>
-
-          {/* ── RECENT BOOKINGS TABLE ── */}
-          <Card>
+          {/* Upcoming Arrivals Table */}
+          <Card className="border border-border/50 shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{isArabic ? "الحجوزات الأخيرة" : "Recent Bookings"}</CardTitle>
+                <CardTitle className="text-base font-semibold">{isArabic ? "الوصولات القادمة" : "Upcoming Arrivals"}</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/bookings")}>
-                  {isArabic ? "عرض الكل" : "View All"} <ArrowRight className="w-4 h-4 ms-1" />
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {upcomingArrivals.length > 0 ? (
+                <div className="overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                        <th className="text-start p-3 font-medium">{isArabic ? "الضيف" : "Guest"}</th>
+                        <th className="text-start p-3 font-medium">{isArabic ? "الحزمة" : "Package"}</th>
+                        <th className="text-start p-3 font-medium">{isArabic ? "تاريخ الوصول" : "Arrival"}</th>
+                        <th className="text-start p-3 font-medium">{isArabic ? "الحالة" : "Status"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {upcomingArrivals.map((arrival, index) => (
+                        <tr key={arrival.id} className={cn(
+                          "hover:bg-muted/50 transition-colors",
+                          index % 2 === 0 ? "bg-background" : "bg-muted/20"
+                        )}>
+                          <td className="p-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center text-xs font-semibold text-primary">
+                                {arrival.customers?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'G'}
+                              </div>
+                              <span className="font-medium text-sm">{arrival.customers?.full_name || "Guest"}</span>
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm font-medium truncate max-w-[200px]">{arrival.title}</div>
+                            <div className="text-xs text-muted-foreground">{arrival.booking_number}</div>
+                          </td>
+                          <td className="p-3 text-sm">{arrival.arrival_date ? format(new Date(arrival.arrival_date), "MMM dd") : "TBD"}</td>
+                          <td className="p-3">
+                            <Badge 
+                              variant={arrival.status === "confirmed" ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {arrival.status === "confirmed" ? (isArabic ? "مؤكد" : "Confirmed") : (isArabic ? "معلق" : "Pending")}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Calendar className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد وصولات قادمة هذا الأسبوع" : "No arrivals scheduled this week"}</p>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate("/dashboard/bookings")}>
+                    <Plus className="w-4 h-4 me-1" />
+                    {isArabic ? "إنشاء حجز جديد" : "Create New Booking"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Bookings Table */}
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">{isArabic ? "الحجوزات الأخيرة" : "Recent Bookings"}</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/bookings")}>
+                  {isArabic ? "عرض الكل" : "View All"}
+                  <ArrowRight className="w-4 h-4 ms-1" />
                 </Button>
               </div>
             </CardHeader>
@@ -599,132 +774,104 @@ function CompanyDashboard() {
               <div className="overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-muted">
-                      <th className="text-start p-3 section-label">{isArabic ? "العميل" : "Client"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "الحزمة" : "Package"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "المبلغ" : "Amount"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "الحالة" : "Status"}</th>
+                    <tr className="border-b bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                      <th className="text-start p-3 font-medium">{isArabic ? "معرف الحجز" : "Booking ID"}</th>
+                      <th className="text-start p-3 font-medium">{isArabic ? "العميل" : "Client"}</th>
+                      <th className="text-start p-3 font-medium">{isArabic ? "الحزمة" : "Package"}</th>
+                      <th className="text-start p-3 font-medium">{isArabic ? "المبلغ" : "Amount"}</th>
+                      <th className="text-start p-3 font-medium">{isArabic ? "الحالة" : "Status"}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {recentBookings.map((booking) => (
+                    {recentBookings.map((booking, index) => (
                       <tr 
                         key={booking.id} 
-                        className="border-b border-muted/60 hover:bg-[hsl(18_46%_53%/0.06)] transition-colors cursor-pointer"
+                        className={cn(
+                          "hover:bg-muted/50 transition-colors cursor-pointer",
+                          index % 2 === 0 ? "bg-background" : "bg-muted/20"
+                        )}
                         onClick={() => navigate(`/dashboard/bookings/${booking.id}`)}
                       >
                         <td className="p-3">
+                          <div className="text-sm font-medium">{booking.booking_number}</div>
+                          <div className="text-xs text-muted-foreground">{format(new Date(booking.created_at), "MMM dd")}</div>
+                        </td>
+                        <td className="p-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xs font-semibold text-primary">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center text-xs font-semibold text-blue-700">
                               {booking.customers?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'G'}
                             </div>
-                            <div>
-                              <span className="text-sm font-medium">{booking.customers?.full_name || "Guest"}</span>
-                              <div className="text-xs text-muted-foreground">{booking.booking_number}</div>
-                            </div>
+                            <span className="text-sm font-medium">{booking.customers?.full_name || "Guest"}</span>
                           </div>
                         </td>
                         <td className="p-3">
                           <div className="text-sm truncate max-w-[200px]">{booking.title}</div>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm font-display font-semibold tracking-[-0.02em]">
+                          <div className="text-sm font-semibold tabular-nums">
                             {booking.selling_price?.toLocaleString()} {booking.currency}
-                          </span>
+                          </div>
                         </td>
                         <td className="p-3">
-                          <span className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-[20px] text-xs font-medium border",
-                            statusPillClass(booking.status)
-                          )}>
-                            {booking.status === "in_operation" ? (isArabic ? "قيد التنفيذ" : "In Operation") : booking.status}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              booking.status === "confirmed" ? "bg-green-500" :
+                              booking.status === "tentative" ? "bg-yellow-500" :
+                              booking.status === "completed" ? "bg-blue-500" :
+                              "bg-gray-500"
+                            )} />
+                            <span className="text-xs capitalize">{booking.status}</span>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                    {recentBookings.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-sm text-muted-foreground">
-                        {isArabic ? "لا توجد حجوزات" : "No bookings yet"}
-                      </td></tr>
-                    )}
                   </tbody>
                 </table>
               </div>
             </CardContent>
           </Card>
-
-          {/* ── UPCOMING ARRIVALS ── */}
-          {upcomingArrivals.length > 0 && (
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{isArabic ? "الوصولات القادمة" : "Upcoming Arrivals"}</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/bookings")}><ArrowRight className="w-4 h-4" /></Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-muted">
-                      <th className="text-start p-3 section-label">{isArabic ? "الضيف" : "Guest"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "الحزمة" : "Package"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "الوصول" : "Arrival"}</th>
-                      <th className="text-start p-3 section-label">{isArabic ? "الحالة" : "Status"}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {upcomingArrivals.map((a) => (
-                      <tr key={a.id} className="border-b border-muted/60 hover:bg-[hsl(18_46%_53%/0.06)] transition-colors">
-                        <td className="p-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-secondary/20 to-secondary/40 flex items-center justify-center text-xs font-semibold text-secondary">
-                              {a.customers?.full_name?.split(' ').map((n: string) => n[0]).join('') || 'G'}
-                            </div>
-                            <span className="font-medium text-sm">{a.customers?.full_name || "Guest"}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 text-sm">{a.title}<div className="text-xs text-muted-foreground">{a.booking_number}</div></td>
-                        <td className="p-3 text-sm">{a.arrival_date ? format(new Date(a.arrival_date), "MMM dd") : "TBD"}</td>
-                        <td className="p-3">
-                          <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-[20px] text-xs font-medium border", statusPillClass(a.status))}>
-                            {a.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
-        {/* ── RIGHT COLUMN ── */}
+        {/* Right Column */}
         <div className="space-y-8">
           {/* Financial Summary */}
-          <Card>
+          <Card className="border border-border/50 shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">{isArabic ? "الملخص المالي" : "Financial Summary"}</CardTitle>
+              <CardTitle className="text-base font-semibold">{isArabic ? "الملخص المالي" : "Financial Summary"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Progress ring */}
-              <div className="relative w-32 h-32 mx-auto">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
-                  <circle cx="50" cy="50" r="45" fill="none" strokeWidth="8" strokeLinecap="round"
-                    strokeDasharray={`${(collectionPct / 100) * 283} 283`}
-                    stroke="url(#progressGrad)" />
-                  <defs>
-                    <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--secondary))" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-center">
-                  <div>
-                    <div className="text-lg font-bold font-display text-primary tracking-[-0.02em]">{collectionPct.toFixed(0)}%</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{isArabic ? "محصل" : "Collected"}</div>
+              {/* Donut Chart Placeholder */}
+              <div className="relative">
+                <div className="w-32 h-32 mx-auto relative">
+                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      className="text-muted-foreground/20"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      strokeDasharray={`${(bookingStats.totalPaid / (bookingStats.totalRevenue || 1)) * 283} 283`}
+                      className="text-green-500"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {((bookingStats.totalPaid / (bookingStats.totalRevenue || 1)) * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">{isArabic ? "محصل" : "Collected"}</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -732,65 +879,63 @@ function CompanyDashboard() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{isArabic ? "المحصل" : "Collected"}</span>
-                  <span className="text-sm font-display font-semibold text-secondary tracking-[-0.02em]">
+                  <span className="text-sm font-semibold text-green-600 tabular-nums">
                     {bookingStats.totalPaid.toLocaleString()} {bookingStats.currency}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">{isArabic ? "المتبقي" : "Outstanding"}</span>
-                  <span className={cn("text-sm font-display font-semibold tracking-[-0.02em]",
-                    bookingStats.totalBalance > 0 ? "text-primary" : "text-muted-foreground"
+                  <span className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    bookingStats.totalBalance > 0 ? "text-orange-600" : "text-muted-foreground"
                   )}>
                     {bookingStats.totalBalance.toLocaleString()} {bookingStats.currency}
                   </span>
                 </div>
-                <div className="border-t border-border pt-3">
+                <div className="border-t pt-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{isArabic ? "إجمالي الإيرادات" : "Total Revenue"}</span>
-                    <span className="text-sm font-display font-bold tracking-[-0.02em]">
+                    <span className="text-sm font-bold tabular-nums">
                       {bookingStats.totalRevenue.toLocaleString()} {bookingStats.currency}
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Gradient progress bar */}
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${collectionPct}%`, background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)))" }}
-                />
-              </div>
             </CardContent>
           </Card>
 
           {/* Agent Performance */}
-          <Card>
+          <Card className="border border-border/50 shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{isArabic ? "أداء الوكلاء" : "Agent Performance"}</CardTitle>
+                <CardTitle className="text-base font-semibold">{isArabic ? "أداء الوكلاء" : "Agent Performance"}</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/staff")}>
-                  {isArabic ? "عرض الكل" : "View All"} <ArrowRight className="w-4 h-4 ms-1" />
+                  {isArabic ? "عرض الكل" : "View All"}
+                  <ArrowRight className="w-4 h-4 ms-1" />
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {agentPerformance.map((agent, index) => (
                 <div key={agent.id} className="flex items-center gap-4">
-                  <div className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</div>
-                  <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-xs font-semibold text-primary">
-                    {agent.avatar}
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs font-bold text-muted-foreground w-4">#{index + 1}</div>
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary/20 to-primary/40 rounded-full flex items-center justify-center text-xs font-semibold text-primary">
+                      {agent.avatar}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{agent.name}</div>
+                      <div className="text-xs text-muted-foreground">{agent.bookings} bookings • {agent.conversion}%</div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{agent.name}</div>
-                    <div className="text-xs text-muted-foreground">{agent.bookings} bookings • {agent.conversion}%</div>
-                  </div>
-                  <div className="w-24">
-                    <div className="text-xs text-muted-foreground text-end mb-1 font-display font-semibold tracking-[-0.02em]">
+                  <div className="flex-1 ms-auto">
+                    <div className="text-xs text-muted-foreground text-end mb-1">
                       ${agent.revenue.toLocaleString()}
                     </div>
                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-300"
-                        style={{ width: `${(agent.revenue / 35000) * 100}%`, background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)))" }}
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-300"
+                        style={{ width: `${(agent.revenue / 35000) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -799,21 +944,24 @@ function CompanyDashboard() {
             </CardContent>
           </Card>
 
-          {/* Plan */}
+          {/* Collapsible Secondary Section */}
           <Collapsible>
             <CollapsibleTrigger asChild>
-              <Card className="cursor-pointer hover:shadow-card-hover transition-shadow">
+              <Card className="border border-border/50 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{isArabic ? "تفاصيل إضافية" : "Additional Details"}</CardTitle>
+                    <CardTitle className="text-base font-semibold">{isArabic ? "تفاصيل إضافية" : "Additional Details"}</CardTitle>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </CardHeader>
               </Card>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-6">
+              {/* Current Plan */}
               <div className="space-y-4">
-                <h3 className="section-label">{isArabic ? "الخطة الحالية" : "Current Plan"}</h3>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                  {isArabic ? "الخطة الحالية" : "Current Plan"}
+                </h3>
                 <PlanOverviewCard />
               </div>
             </CollapsibleContent>

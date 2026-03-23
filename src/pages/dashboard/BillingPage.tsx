@@ -370,8 +370,8 @@ export default function BillingPage() {
       {limits.planDeactivated && <DeactivatedPlanBanner />}
       <AnnualBillingBanner />
       <div>
-        <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Billing & Subscription</h1>
-        <p className="text-[13px] text-muted-foreground mt-1">Manage your plan, usage, and billing</p>
+        <h1 className="text-2xl font-bold font-display text-foreground">Billing & Subscription</h1>
+        <p className="text-sm text-muted-foreground mt-1">Manage your plan, usage, and billing</p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
@@ -439,7 +439,7 @@ export default function BillingPage() {
               </div>
               <Button
                 size="sm"
-                className="gap-1.5 shrink-0"
+                className="bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-1.5 shrink-0"
                 onClick={() => {
                   const tabsList = document.querySelector('[value="plans"]') as HTMLElement;
                   tabsList?.click();

@@ -211,14 +211,14 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">
+          <h1 className="text-2xl font-bold font-display text-foreground">
             {isArabic ? "قوالب البرامج" : "Itinerary Templates"}
           </h1>
-          <p className="text-[13px] text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-0.5">
             {isArabic ? "قوالب برامج سياحية جاهزة للاستخدام" : "Reusable itinerary templates for quick booking setup"}
           </p>
         </div>
-        <Button onClick={() => setShowNewDialog(true)} className="gap-2" disabled={isLocked}>
+        <Button onClick={() => setShowNewDialog(true)} className="gold-gradient text-accent-foreground gap-2" disabled={isLocked}>
           <Sparkles className="w-4 h-4" />
           {isArabic ? "قالب جديد" : "New Template"}
         </Button>

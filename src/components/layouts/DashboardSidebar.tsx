@@ -131,7 +131,7 @@ function SidebarNavItem({ item, collapsed, active, t }: {
       className={`
         flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-150
         ${active
-          ? 'bg-sidebar-primary/12 text-sidebar-primary font-medium'
+          ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium'
           : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
         }
         ${collapsed ? 'justify-center px-2' : ''}
@@ -166,7 +166,7 @@ function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
         <TooltipTrigger asChild>
           <button
             onClick={() => navigate("/admin")}
-            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-sidebar-primary hover:bg-sidebar-accent transition-colors"
+            className="w-full flex items-center justify-center px-2 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
           >
             <Shield className="w-[18px] h-[18px]" />
           </button>
@@ -178,7 +178,7 @@ function AdminPanelLink({ collapsed }: { collapsed: boolean }) {
   return (
     <button
       onClick={() => navigate("/admin")}
-      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-sidebar-primary hover:bg-sidebar-accent transition-colors font-medium"
+      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors font-medium"
     >
       <Shield className="w-[18px] h-[18px]" />
       <span>Admin Panel</span>
@@ -213,21 +213,20 @@ export function DashboardSidebar() {
 
   return (
     <TooltipProvider>
-      <Sidebar collapsible="icon" className="border-e border-sidebar-border bg-sidebar">
-        {/* ─── Brand Header ─── */}
+      <Sidebar collapsible="icon" className="border-e border-sidebar-border bg-sidebar-background">
         <SidebarHeader className="p-3 border-b border-sidebar-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-                <Compass className="w-4 h-4 text-sidebar-primary-foreground" />
+              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4 text-accent-foreground" />
               </div>
               {!collapsed && (
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[15px] font-bold text-white font-display leading-tight tracking-tight">
-                    Voyage
+                  <h1 className="text-sm font-bold text-sidebar-foreground font-display leading-tight">
+                    {t("app.name") || "Safar"}
                   </h1>
-                  <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-[0.08em] font-body">
-                    Travel Agency OS
+                  <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-wider">
+                    {t("app.tagline") || "Travel CRM"}
                   </p>
                 </div>
               )}
@@ -246,22 +245,20 @@ export function DashboardSidebar() {
             </Button>
           </div>
 
-          {/* Company badge */}
           {companyName && !collapsed && (
-            <div className="mt-2.5">
-              <span className="inline-flex items-center text-[10px] font-medium px-2.5 py-1 rounded-full bg-sidebar-accent text-sidebar-accent-foreground border border-sidebar-border">
+            <div className="mt-2">
+              <Badge variant="outline" className="bg-sidebar-accent text-sidebar-accent-foreground text-[10px] border-sidebar-border">
                 {companyName}
-              </span>
+              </Badge>
             </div>
           )}
         </SidebarHeader>
 
-        {/* ─── Navigation ─── */}
         <SidebarContent className="px-2 py-2 scrollbar-thin">
           {filteredGroups.map((group) => (
             <SidebarGroup key={group.label} className="py-1">
               {!collapsed && (
-                <SidebarGroupLabel className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sidebar-foreground/40 font-body">
+                <SidebarGroupLabel className="text-[10px] text-sidebar-foreground/50 font-semibold uppercase tracking-wider px-3 py-1.5">
                   {group.label}
                 </SidebarGroupLabel>
               )}
@@ -302,12 +299,12 @@ export function DashboardSidebar() {
           {!limits.isTrialing && <PlanBadge collapsed={collapsed} />}
         </div>
 
-        {/* ─── User Profile Footer ─── */}
+        {/* User info footer */}
         <div className="border-t border-sidebar-border p-3">
           <div className={`flex items-center gap-2.5 ${collapsed ? 'justify-center' : ''}`}>
             <Avatar className="w-7 h-7 shrink-0">
               <AvatarImage src={user?.profile?.avatarUrl} />
-              <AvatarFallback className="bg-sidebar-primary/20 text-sidebar-primary text-[10px] font-semibold">
+              <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-[10px]">
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>

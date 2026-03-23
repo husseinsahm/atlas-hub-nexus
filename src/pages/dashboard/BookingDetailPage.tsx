@@ -12,7 +12,7 @@ import {
   FileText, StickyNote, Pencil, Upload,
   UserCheck, Phone, Mail, Globe,
   Plus, Trash2, MessageSquare, Send,
-  ChevronDown, ChevronUp, ChevronRight, User, Shield,
+  ChevronDown, ChevronUp, User, Shield,
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
@@ -62,11 +62,11 @@ import { TravelersTab as PremiumTravelersTab } from "@/components/booking/Travel
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; labelAr: string; color: string; bg: string; pillBg: string; pillText: string; next?: BookingStatus }> = {
-  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50/80 dark:bg-amber-950/40", pillBg: "bg-amber-100/80 dark:bg-amber-900/50", pillText: "text-amber-800 dark:text-amber-300", next: "confirmed" },
-  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-secondary dark:text-secondary", bg: "bg-secondary/10 dark:bg-secondary/20", pillBg: "bg-secondary/10 dark:bg-secondary/20", pillText: "text-secondary", next: "in_operation" },
-  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-primary dark:text-primary", bg: "bg-primary/10 dark:bg-primary/20", pillBg: "bg-primary/10 dark:bg-primary/20", pillText: "text-primary", next: "completed" },
-  completed: { label: "Completed", labelAr: "مكتمل", color: "text-muted-foreground", bg: "bg-muted dark:bg-muted", pillBg: "bg-muted dark:bg-muted", pillText: "text-muted-foreground" },
-  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-destructive dark:text-destructive", bg: "bg-destructive/10 dark:bg-destructive/20", pillBg: "bg-destructive/10 dark:bg-destructive/20", pillText: "text-destructive" },
+  tentative: { label: "Tentative", labelAr: "مبدئي", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", pillBg: "bg-amber-100 dark:bg-amber-900/50", pillText: "text-amber-700 dark:text-amber-300", next: "confirmed" },
+  confirmed: { label: "Confirmed", labelAr: "مؤكد", color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", pillBg: "bg-blue-100 dark:bg-blue-900/50", pillText: "text-blue-700 dark:text-blue-300", next: "in_operation" },
+  in_operation: { label: "In Operation", labelAr: "قيد التنفيذ", color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", pillBg: "bg-emerald-100 dark:bg-emerald-900/50", pillText: "text-emerald-700 dark:text-emerald-300", next: "completed" },
+  completed: { label: "Completed", labelAr: "مكتمل", color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-100 dark:bg-slate-800/40", pillBg: "bg-slate-100 dark:bg-slate-800/50", pillText: "text-slate-600 dark:text-slate-400" },
+  cancelled: { label: "Cancelled", labelAr: "ملغي", color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/40", pillBg: "bg-red-100 dark:bg-red-900/50", pillText: "text-red-700 dark:text-red-300" },
 };
 
 const SERVICE_TYPES = [
@@ -547,12 +547,10 @@ export default function BookingDetailPage() {
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-0 overflow-hidden border-b border-border bg-gradient-to-br from-card via-card to-muted/30"
+        className="relative -mx-6 -mt-6 px-6 pt-5 pb-5 mb-0 overflow-hidden border-b border-border bg-card"
       >
         {/* Top accent line */}
-        <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-primary via-secondary to-primary/40" />
-        {/* Subtle decorative circle */}
-        <div className="absolute -top-20 -end-20 w-60 h-60 rounded-full bg-primary/[0.03] blur-3xl pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-0.5 gold-gradient" />
 
         {/* Top row: Back + Actions */}
         <div className="flex items-center justify-between mb-4">
@@ -589,7 +587,7 @@ export default function BookingDetailPage() {
               <Button
                 size="sm"
                 onClick={advanceStatus}
-                className="text-xs gap-1.5"
+                className="gold-gradient text-accent-foreground text-xs gap-1.5 shadow-md hover:shadow-lg transition-shadow"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {isArabic ? `→ ${STATUS_CONFIG[sc.next].labelAr}` : `→ ${STATUS_CONFIG[sc.next].label}`}
@@ -643,13 +641,6 @@ export default function BookingDetailPage() {
 
         {/* Main info row */}
         <div className="flex items-start gap-4">
-          {/* Avatar with status ring */}
-          <div className="relative shrink-0 hidden sm:block">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-lg font-bold text-primary font-display shadow-sm border border-primary/10">
-              {(customer?.full_name || booking.title).charAt(0).toUpperCase()}
-            </div>
-            <div className={cn("absolute -bottom-0.5 -end-0.5 w-4 h-4 rounded-full border-2 border-card", sc.pillBg.includes("amber") ? "bg-amber-500" : sc.pillBg.includes("secondary") ? "bg-secondary" : sc.pillBg.includes("primary") ? "bg-primary" : "bg-muted-foreground")} />
-          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h1 className="text-xl font-bold font-display text-foreground">
@@ -680,17 +671,17 @@ export default function BookingDetailPage() {
           </div>
         </div>
 
-        {/* Quick stat pills - enhanced with subtle gradients */}
-        <div className="flex flex-wrap gap-2.5 mt-4">
+        {/* Quick stat pills */}
+        <div className="flex flex-wrap gap-2 mt-4">
           {[
-            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-secondary bg-secondary/10", accentBorder: "border-secondary/20" },
-            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-primary bg-primary/10", accentBorder: "border-primary/20" },
-            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-success bg-success/10", accentBorder: "border-success/20" },
-            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-warning bg-warning/10", accentBorder: "border-warning/20" }] : []),
+            { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" },
+            { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40" },
+            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
+            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" }] : []),
           ].map((pill, idx) => (
-            <div key={idx} className={cn("flex items-center gap-2.5 rounded-xl bg-background border px-3.5 py-2.5 text-xs shadow-sm hover:shadow-card transition-shadow", pill.accentBorder)}>
-              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", pill.colorClass)}>
-                <pill.icon className="w-3.5 h-3.5" />
+            <div key={idx} className="flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-xs">
+              <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", pill.colorClass)}>
+                <pill.icon className="w-3 h-3" />
               </div>
               <div>
                 <span className="font-semibold text-foreground tabular-nums">{pill.label}</span>
@@ -702,7 +693,7 @@ export default function BookingDetailPage() {
       </motion.div>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 bg-card/95 backdrop-blur-lg border-b border-border shadow-sm">
+      <div className="sticky top-0 z-10 -mx-6 px-6 bg-muted/40 backdrop-blur-md border-b border-border">
         <div className="flex gap-0 overflow-x-auto scrollbar-thin">
           {TABS.map(tab => {
             const isActive = activeTab === tab.value;
@@ -711,18 +702,18 @@ export default function BookingDetailPage() {
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
                 className={cn(
-                  "relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-medium whitespace-nowrap transition-all shrink-0",
+                  "relative flex items-center gap-1.5 px-4 py-3 text-xs font-medium whitespace-nowrap transition-all shrink-0",
                   isActive
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-primary")} />
+                <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
                 {isArabic ? tab.labelAr : tab.label}
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
-                    className="absolute bottom-0 inset-x-2 h-[3px] rounded-full bg-primary"
+                    className="absolute bottom-0 inset-x-2 h-0.5 rounded-full bg-accent"
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
                   />
                 )}
@@ -747,7 +738,7 @@ export default function BookingDetailPage() {
       {activeTab === "summary" && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-5">
-            <Card className="border-border/60 shadow-card overflow-hidden">
+            <Card className="border-border/60 shadow-sm overflow-hidden">
               <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
                 <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <Briefcase className="w-3.5 h-3.5" />
@@ -1073,16 +1064,89 @@ export default function BookingDetailPage() {
 
       {/* ─── TAB: Financials ─── */}
       {activeTab === "financials" && (
-        <FinancialsTab
-          booking={booking}
-          isArabic={isArabic}
-          balance={balance}
-          paidPercent={paidPercent}
-          updateBooking={updateBooking}
-          navigate={navigate}
-          companyId={companyId}
-          userId={user?.id}
-        />
+        <div className="space-y-6">
+          {/* Financial summary bar */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardContent className="p-5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {[
+                  { label: isArabic ? "التكلفة" : "Total Cost", value: booking.total_cost || 0, editable: true, key: "total_cost", icon: DollarSign },
+                  { label: isArabic ? "سعر البيع" : "Selling Price", value: booking.selling_price || 0, editable: true, key: "selling_price", icon: CreditCard },
+                  { label: isArabic ? "الربح" : "Profit", value: (booking.selling_price || 0) - (booking.total_cost || 0), icon: Activity, isProfit: true },
+                  { label: isArabic ? "الرصيد" : "Balance", value: balance, icon: Clock, isBalance: true },
+                ].map((item, idx) => (
+                  <div key={idx} className="p-3 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <item.icon className="w-4 h-4 text-muted-foreground" />
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</Label>
+                    </div>
+                    {item.editable ? (
+                      <Input
+                        type="number"
+                        className="h-9 text-sm font-mono font-bold border-border/60"
+                        defaultValue={item.value}
+                        key={`fin-${item.key}-${item.value}`}
+                        onBlur={e => updateBooking.mutate({ [item.key!]: parseFloat(e.target.value) || 0 })}
+                      />
+                    ) : (
+                      <p className={cn("text-lg font-mono font-bold tabular-nums",
+                        item.isProfit ? (item.value >= 0 ? "text-emerald-600" : "text-destructive") :
+                        item.isBalance ? (balance > 0 ? "text-amber-600" : "text-emerald-600") :
+                        "text-foreground"
+                      )}>
+                        {item.isBalance && balance <= 0 ? (isArabic ? "مدفوع" : "Paid") : item.value.toLocaleString()}
+                        {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1">{booking.currency}</span>}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Payment progress */}
+              {booking.selling_price > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{isArabic ? "التحصيل" : "Collection Progress"}</span>
+                    <span className="font-mono font-semibold text-foreground">{Math.round(paidPercent)}%</span>
+                  </div>
+                  <Progress value={paidPercent} className="h-2" />
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span>{isArabic ? "مدفوع" : "Paid"}: <span className="font-mono font-semibold text-emerald-600">{Number(booking.amount_paid || 0).toLocaleString()}</span></span>
+                    <span>{isArabic ? "متبقي" : "Remaining"}: <span className="font-mono font-semibold text-amber-600">{balance > 0 ? balance.toLocaleString() : "0"}</span></span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Outstanding balance warning */}
+          {balance > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
+              <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <p className="text-amber-700 dark:text-amber-300">
+                {isArabic ? `يوجد رصيد مستحق بقيمة ${balance.toLocaleString()} ${booking.currency}` : `Outstanding balance of ${balance.toLocaleString()} ${booking.currency} remaining`}
+              </p>
+            </div>
+          )}
+
+          {/* Payment Records */}
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <CreditCard className="w-3.5 h-3.5" />
+                {isArabic ? "سجل المدفوعات" : "Payment Records"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <PaymentRecords
+                bookingId={booking.id}
+                companyId={booking.company_id}
+                currency={booking.currency}
+                sellingPrice={Number(booking.selling_price || 0)}
+              />
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* ─── TAB: Attachments ─── */}
@@ -1844,235 +1908,6 @@ function TimelineTab({ activities, isArabic, getProfileName, onAddComment, isAdd
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Financials Tab with Generate Invoice ───
-function FinancialsTab({ booking, isArabic, balance, paidPercent, updateBooking, navigate, companyId, userId }: any) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [generatingInvoice, setGeneratingInvoice] = useState(false);
-
-  const { data: linkedInvoices = [] } = useQuery({
-    queryKey: ["booking-invoices", booking.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("invoices" as any)
-        .select("id, invoice_number, status, total_amount, amount_paid, currency, issue_date, due_date")
-        .eq("booking_id", booking.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-    enabled: !!booking.id,
-  });
-
-  const { data: settings } = useQuery({
-    queryKey: ["company-settings-inv-gen", companyId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("company_settings")
-        .select("invoice_prefix, invoice_next_number, default_currency")
-        .eq("company_id", companyId!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!companyId,
-  });
-
-  async function handleGenerateInvoice() {
-    if (!companyId || !booking.customer_id) {
-      toast({ title: isArabic ? "لا يوجد عميل مرتبط" : "No customer linked", description: isArabic ? "اربط عميل بالحجز أولاً" : "Link a customer to this booking first", variant: "destructive" });
-      return;
-    }
-    setGeneratingInvoice(true);
-    try {
-      const prefix = settings?.invoice_prefix || "INV";
-      const nextNum = settings?.invoice_next_number || 1;
-      const invoiceNumber = `${prefix}-${String(nextNum).padStart(4, "0")}`;
-
-      const { data: newInvoice, error } = await supabase.from("invoices" as any).insert({
-        company_id: companyId,
-        booking_id: booking.id,
-        customer_id: booking.customer_id,
-        invoice_number: invoiceNumber,
-        issue_date: new Date().toISOString().split("T")[0],
-        subtotal: booking.selling_price || 0,
-        tax_rate: 0,
-        tax_amount: 0,
-        discount_amount: 0,
-        total_amount: booking.selling_price || 0,
-        currency: booking.currency || "USD",
-        created_by: userId,
-        status: "draft",
-      } as any);
-      if (error) throw error;
-
-      await supabase.from("company_settings").update({ invoice_next_number: nextNum + 1 }).eq("company_id", companyId);
-
-      toast({ title: isArabic ? "تم إنشاء الفاتورة" : "Invoice created", description: invoiceNumber });
-      queryClient.invalidateQueries({ queryKey: ["booking-invoices", booking.id] });
-      queryClient.invalidateQueries({ queryKey: ["company-settings-inv-gen"] });
-      queryClient.invalidateQueries({ queryKey: ["invoices"] });
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    } finally {
-      setGeneratingInvoice(false);
-    }
-  }
-
-  const INV_STATUS_COLORS: Record<string, string> = {
-    draft: "bg-muted text-muted-foreground",
-    sent: "bg-blue-100/80 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-    paid: "bg-emerald-100/80 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-    partial: "bg-amber-100/80 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    overdue: "bg-destructive/10 text-destructive",
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* ─── Financial Summary ─── */}
-      <Card className="border-border/60 shadow-sm overflow-hidden">
-        <CardContent className="p-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            {[
-              { label: isArabic ? "التكلفة" : "Total Cost", value: booking.total_cost || 0, editable: true, key: "total_cost", icon: DollarSign },
-              { label: isArabic ? "سعر البيع" : "Selling Price", value: booking.selling_price || 0, editable: true, key: "selling_price", icon: CreditCard },
-              { label: isArabic ? "الربح" : "Profit", value: (booking.selling_price || 0) - (booking.total_cost || 0), icon: Activity, isProfit: true },
-              { label: isArabic ? "الرصيد" : "Balance", value: balance, icon: Clock, isBalance: true },
-            ].map((item, idx) => (
-              <div key={idx} className="p-3 rounded-lg border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <item.icon className="w-4 h-4 text-muted-foreground" />
-                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</Label>
-                </div>
-                {item.editable ? (
-                  <Input
-                    type="number"
-                    className="h-9 text-sm font-mono font-bold border-border/60"
-                    defaultValue={item.value}
-                    key={`fin-${item.key}-${item.value}`}
-                    onBlur={e => updateBooking.mutate({ [item.key!]: parseFloat(e.target.value) || 0 })}
-                  />
-                ) : (
-                  <p className={cn("text-lg font-mono font-bold tabular-nums font-display",
-                    item.isProfit ? (item.value >= 0 ? "text-emerald-600" : "text-destructive") :
-                    item.isBalance ? (balance > 0 ? "text-amber-600" : "text-emerald-600") :
-                    "text-foreground"
-                  )}>
-                    {item.isBalance && balance <= 0 ? (isArabic ? "مدفوع" : "Paid") : item.value.toLocaleString()}
-                    {(item.isBalance ? balance > 0 : true) && <span className="text-xs text-muted-foreground font-normal ms-1 font-sans">{booking.currency}</span>}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-          {booking.selling_price > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{isArabic ? "التحصيل" : "Collection Progress"}</span>
-                <span className="font-mono font-semibold text-foreground">{Math.round(paidPercent)}%</span>
-              </div>
-              <Progress value={paidPercent} className="h-2" />
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>{isArabic ? "مدفوع" : "Paid"}: <span className="font-mono font-semibold text-emerald-600">{Number(booking.amount_paid || 0).toLocaleString()}</span></span>
-                <span>{isArabic ? "متبقي" : "Remaining"}: <span className="font-mono font-semibold text-amber-600">{balance > 0 ? balance.toLocaleString() : "0"}</span></span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {balance > 0 && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs">
-          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-          <p className="text-amber-700 dark:text-amber-300">
-            {isArabic ? `يوجد رصيد مستحق بقيمة ${balance.toLocaleString()} ${booking.currency}` : `Outstanding balance of ${balance.toLocaleString()} ${booking.currency} remaining`}
-          </p>
-        </div>
-      )}
-
-      {/* ─── Payment Records (compact — no duplicate summary) ─── */}
-      <Card className="border-border/60 shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-            <CreditCard className="w-3.5 h-3.5" />
-            {isArabic ? "سجل المدفوعات" : "Payment Records"}
-          </CardTitle>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            {isArabic ? "المبالغ المحصلة فعلياً من العميل" : "Actual payments collected from the client"}
-          </p>
-        </CardHeader>
-        <CardContent className="p-4">
-          <PaymentRecords
-            bookingId={booking.id}
-            companyId={booking.company_id}
-            currency={booking.currency}
-            sellingPrice={Number(booking.selling_price || 0)}
-            compact
-          />
-        </CardContent>
-      </Card>
-
-      {/* ─── Formal Invoices ─── */}
-      <Card className="border-border/60 shadow-sm overflow-hidden">
-        <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Receipt className="w-3.5 h-3.5" />
-                {isArabic ? "الفواتير الرسمية" : "Formal Invoices"}
-              </CardTitle>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {isArabic ? "مستندات رسمية ترسل للعميل" : "Official documents sent to the client"}
-              </p>
-            </div>
-            <Button size="sm" className="gap-1.5 text-xs" onClick={handleGenerateInvoice} disabled={generatingInvoice}>
-              {generatingInvoice ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Receipt className="w-3.5 h-3.5" />}
-              {isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          {linkedInvoices.length === 0 ? (
-            <div className="text-center py-8">
-              <Receipt className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">{isArabic ? "لا توجد فواتير مرتبطة" : "No invoices linked to this booking"}</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-1 max-w-[250px] mx-auto">
-                {isArabic ? "أنشئ فاتورة رسمية لإرسالها للعميل" : "Generate a formal invoice to send to your client"}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {linkedInvoices.map((inv: any) => {
-                const invBal = Number(inv.total_amount || 0) - Number(inv.amount_paid || 0);
-                return (
-                  <div key={inv.id} className="flex items-center gap-3 p-3 rounded-xl border border-border/50 hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/dashboard/invoices/${inv.id}`)}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-semibold text-foreground">{inv.invoice_number}</span>
-                        <Badge className={cn("text-[9px] border-0 rounded-full", INV_STATUS_COLORS[inv.status] || "bg-muted text-muted-foreground")}>{inv.status}</Badge>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {inv.issue_date && format(new Date(inv.issue_date), "MMM d, yyyy")}
-                        {inv.due_date && ` · Due ${format(new Date(inv.due_date), "MMM d, yyyy")}`}
-                      </p>
-                    </div>
-                    <div className="text-end shrink-0">
-                      <p className="text-xs font-mono font-semibold font-display">{inv.currency} {Number(inv.total_amount || 0).toLocaleString()}</p>
-                      {invBal > 0 && <p className="text-[10px] text-amber-600 font-mono">{isArabic ? "متبقي" : "Due"}: {inv.currency} {invBal.toLocaleString()}</p>}
-                    </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export function Topbar() {
           <input
             type="text"
             placeholder={t("topbar.search") || "Search..."}
-            className="w-full h-8 text-xs bg-muted/60 border border-border rounded-[10px] pe-3 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
+            className="w-full h-8 text-xs bg-secondary/60 border-0 rounded-lg pe-3 focus:outline-none focus:ring-1 focus:ring-ring transition-all"
             style={{ paddingInlineStart: 32 }}
           />
         </div>
@@ -44,7 +44,7 @@ export function Topbar() {
         <NotificationBell />
 
         {companyName && !isMobile && (
-          <span className="text-[11px] bg-muted text-muted-foreground px-2.5 py-1 rounded-full font-medium hidden sm:inline-block max-w-32 truncate">
+          <span className="text-[11px] bg-secondary text-secondary-foreground px-2.5 py-1 rounded-full font-medium hidden sm:inline-block max-w-32 truncate">
             {companyName}
           </span>
         )}

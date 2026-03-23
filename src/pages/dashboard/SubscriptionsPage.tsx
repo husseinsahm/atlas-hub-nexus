@@ -237,8 +237,8 @@ export default function SubscriptionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold font-display text-foreground leading-tight">Subscriptions</h1>
-          <p className="text-[13px] text-muted-foreground mt-1">Manage company subscriptions and billing</p>
+          <h1 className="text-2xl font-bold font-display text-foreground">Subscriptions</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage company subscriptions and billing</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchData} className="gap-1.5 text-xs">
