@@ -106,7 +106,10 @@ export default function BookingDetailPage() {
   const isArabic = language === "ar";
   const companyId = user?.activeMembership?.companyId;
 
-  const [activeTab, setActiveTab] = useState("summary");
+  // Read ?tab= from URL for deep-linking (e.g. from notification click)
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialTab = searchParams.get("tab") || "summary";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [showTravelerDialog, setShowTravelerDialog] = useState(false);
   const [editingTraveler, setEditingTraveler] = useState<any>(null);
   const [showServiceDialog, setShowServiceDialog] = useState(false);
