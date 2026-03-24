@@ -295,28 +295,105 @@ export default function TemplatesPage() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log("DELETE TEMPLATE START", { id, companyId, userId: user?.id });
-      const { data, error, status, statusText } = await supabase
-        .from("itinerary_templates")
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", id)
-        .eq("company_id", companyId!)
-        .select("id, deleted_at");
-      console.log("DELETE TEMPLATE RESPONSE", { data, error, status, statusText });
-      if (error) throw error;
-      if (!data || data.length === 0) {
-        throw new Error("No rows updated — possible permission issue");
+
+      if (!companyId || !user?.id) {
+        throw new Error(isArabic ? "جلسة المستخدم غير صالحة" : "Invalid user session");
       }
-      return data;
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log("DELETE TEMPLATE SESSION", {
+        hasSession: !!sessionData.session,
+        hasAccessToken: !!sessionData.session?.access_token,
+        expiresAt: sessionData.session?.expires_at,
+        sessionError: sessionError?.message || null,
+      });
+
+      const { data: existingTemplate, error: existingError, status: preStatus, statusText: preStatusText } = await supabase
+        .from("itinerary_templates")
+        .select("id, company_id, deleted_at, title")
+        .eq("id", id)
+        .eq("company_id", companyId)
+        .maybeSingle();
+
+      console.log("DELETE TEMPLATE PRECHECK", {
+        data: existingTemplate,
+        error: existingError,
+        status: preStatus,
+        statusText: preStatusText,
+      });
+
+      if (existingError) throw existingError;
+      if (!existingTemplate) {
+        throw new Error(isArabic ? "القالب غير موجود أو ليس لديك صلاحية" : "Template not found or access denied");
+      }
+      if (existingTemplate.deleted_at) {
+        throw new Error(isArabic ? "القالب محذوف بالفعل" : "Template already deleted");
+      }
+
+      const payload = { deleted_at: new Date().toISOString() };
+      console.log("DELETE TEMPLATE PAYLOAD", payload);
+
+      await runMutationWithRetry<null>(
+        {
+          table: "itinerary_templates",
+          operation: "update",
+          payload,
+          userId: user.id,
+          companyId,
+          maxRetries: 3,
+        },
+        async (attempt) => {
+          const { error, status, statusText } = await supabase
+            .from("itinerary_templates")
+            .update(payload)
+            .eq("id", id)
+            .eq("company_id", companyId);
+
+          console.log("DELETE TEMPLATE RESPONSE", {
+            attempt,
+            error,
+            status,
+            statusText,
+          });
+
+          return {
+            data: null,
+            error,
+            status,
+            statusText,
+          };
+        },
+      );
+
+      const { data: postCheck, error: postError, status: postStatus, statusText: postStatusText } = await supabase
+        .from("itinerary_templates")
+        .select("id")
+        .eq("id", id)
+        .maybeSingle();
+
+      console.log("DELETE TEMPLATE POSTCHECK", {
+        data: postCheck,
+        error: postError,
+        status: postStatus,
+        statusText: postStatusText,
+        note: "null data is expected after soft delete due SELECT policy filtering deleted rows",
+      });
+
+      return { id };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["itinerary-templates"] });
       toast({ title: isArabic ? "تم حذف القالب" : "Template deleted" });
     },
-    onError: (err: any) => {
-      console.error("DELETE TEMPLATE ERROR", err);
+    onError: (err: unknown) => {
+      console.error("DELETE TEMPLATE ERROR", {
+        error: err,
+        message: getMutationErrorMessage(err),
+        rootCause: (err as Error & { rootCause?: string })?.rootCause ?? null,
+      });
       toast({
         title: isArabic ? "فشل الحذف" : "Delete failed",
-        description: err?.message || "Unknown error",
+        description: getMutationErrorMessage(err),
         variant: "destructive",
       });
     },
