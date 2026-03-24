@@ -2096,6 +2096,7 @@ export type Database = {
       quotations: {
         Row: {
           accepted_at: string | null
+          booking_id: string | null
           client_notes: string | null
           company_id: string
           created_at: string
@@ -2124,6 +2125,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          booking_id?: string | null
           client_notes?: string | null
           company_id: string
           created_at?: string
@@ -2152,6 +2154,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          booking_id?: string | null
           client_notes?: string | null
           company_id?: string
           created_at?: string
@@ -2179,6 +2182,13 @@ export type Database = {
           validity_days?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "quotations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quotations_company_id_fkey"
             columns: ["company_id"]

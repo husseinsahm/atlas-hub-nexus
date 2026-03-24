@@ -109,20 +109,34 @@ export default function QuotationDetailPage() {
     enabled: !!quotation?.company_id,
   });
 
-  // Fetch related booking via trip_id
+  // Fetch related booking - try booking_id first, then trip_id
   const { data: relatedBooking } = useQuery({
-    queryKey: ["quotation-booking", quotation?.trip_id],
+    queryKey: ["quotation-booking", quotation?.booking_id, quotation?.trip_id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("bookings")
-        .select("id, booking_number, title")
-        .eq("trip_id", quotation!.trip_id!)
-        .is("deleted_at", null)
-        .limit(1)
-        .maybeSingle();
-      return data;
+      // Direct booking_id link
+      if (quotation!.booking_id) {
+        const { data } = await supabase
+          .from("bookings")
+          .select("id, booking_number, title")
+          .eq("id", quotation!.booking_id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (data) return data;
+      }
+      // Fallback: match by trip_id
+      if (quotation!.trip_id) {
+        const { data } = await supabase
+          .from("bookings")
+          .select("id, booking_number, title")
+          .eq("trip_id", quotation!.trip_id)
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle();
+        return data;
+      }
+      return null;
     },
-    enabled: !!quotation?.trip_id,
+    enabled: !!quotation && !!(quotation.booking_id || quotation.trip_id),
   });
 
   const updateQuotation = useMutation({
@@ -148,7 +162,20 @@ export default function QuotationDetailPage() {
     const el = printRef.current;
     if (!el) return;
     setExporting(true);
+    
+    // Temporarily expand all days for PDF capture
+    const prevExpanded = expandedDay;
+    // Force all hidden day-content blocks visible
+    const hiddenBlocks = el.querySelectorAll('.hidden.print\\:block');
+    hiddenBlocks.forEach(block => block.classList.remove('hidden'));
+    // Hide chevron icons
+    const chevrons = el.querySelectorAll('.print\\:hidden');
+    chevrons.forEach(ch => (ch as HTMLElement).style.display = 'none');
+    
     try {
+      // Small delay to let DOM update
+      await new Promise(r => setTimeout(r, 100));
+      
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
@@ -172,9 +199,16 @@ export default function QuotationDetailPage() {
     } catch (e: any) {
       toast({ title: "Export failed", description: e.message, variant: "destructive" });
     } finally {
+      // Restore collapsed state
+      hiddenBlocks.forEach(block => {
+        if (prevExpanded === null || !block.closest(`[data-day-idx="${prevExpanded}"]`)) {
+          block.classList.add('hidden');
+        }
+      });
+      chevrons.forEach(ch => (ch as HTMLElement).style.display = '');
       setExporting(false);
     }
-  }, [quotation, isArabic, toast]);
+  }, [quotation, isArabic, toast, expandedDay]);
 
   const saveTextField = useCallback((field: string, value: string | null) => {
     if (value !== null && value !== (quotation?.[field] || "")) {
@@ -449,7 +483,7 @@ export default function QuotationDetailPage() {
                     )}
                   >
                     <button
-                      className="w-full flex items-center gap-3 p-3 text-start hover:bg-muted/30 transition-colors"
+                      className="w-full flex items-center gap-3 p-3 text-start hover:bg-muted/30 transition-colors print:pointer-events-none"
                       onClick={() => setExpandedDay(isOpen ? null : idx)}
                     >
                       <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
@@ -465,42 +499,46 @@ export default function QuotationDetailPage() {
                         </p>
                       </div>
                       {items.length > 0 && (
-                        isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        <span className="print:hidden">
+                          {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </span>
                       )}
                     </button>
                     
-                    {isOpen && (
-                      <div className="px-3 pb-3 space-y-2">
-                        {day.description && (
-                          <p className="text-xs text-muted-foreground px-1 pb-2 border-b border-border">{day.description}</p>
-                        )}
-                        {day.pickup_location && (
-                          <p className="text-[11px] text-muted-foreground px-1">📍 Pickup: {day.pickup_location}</p>
-                        )}
-                        {items.map((item: any, iIdx: number) => {
-                          const ItemIcon = CATEGORY_ICONS[item.category] || FileText;
-                          return (
-                            <div key={iIdx} className="flex items-start gap-2 p-2 bg-card rounded-md border border-border">
-                              <ItemIcon className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground">{item.custom_title || item.title}</p>
-                                {item.custom_description && (
-                                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.custom_description}</p>
-                                )}
-                                <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                                  {item.start_time && <span>⏰ {item.start_time}</span>}
-                                  {item.duration_minutes && <span>{item.duration_minutes}min</span>}
-                                  {item.quantity > 1 && <span>×{item.quantity}</span>}
-                                </div>
+                    {/* Show content when expanded OR when printing/exporting (always visible in print) */}
+                    <div className={cn(
+                      "px-3 pb-3 space-y-2",
+                      !isOpen && "hidden print:block"
+                    )}>
+                      {day.description && (
+                        <p className="text-xs text-muted-foreground px-1 pb-2 border-b border-border">{day.description}</p>
+                      )}
+                      {day.pickup_location && (
+                        <p className="text-[11px] text-muted-foreground px-1">📍 Pickup: {day.pickup_location}</p>
+                      )}
+                      {items.map((item: any, iIdx: number) => {
+                        const ItemIcon = CATEGORY_ICONS[item.category] || FileText;
+                        return (
+                          <div key={iIdx} className="flex items-start gap-2 p-2 bg-card rounded-md border border-border">
+                            <ItemIcon className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-foreground">{item.custom_title || item.title}</p>
+                              {item.custom_description && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.custom_description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+                                {item.start_time && <span>⏰ {item.start_time}</span>}
+                                {item.duration_minutes && <span>{item.duration_minutes}min</span>}
+                                {item.quantity > 1 && <span>×{item.quantity}</span>}
                               </div>
                             </div>
-                          );
-                        })}
-                        {day.dropoff_location && (
-                          <p className="text-[11px] text-muted-foreground px-1 pt-1 border-t border-border">🏁 Drop-off: {day.dropoff_location}</p>
-                        )}
-                      </div>
-                    )}
+                          </div>
+                        );
+                      })}
+                      {day.dropoff_location && (
+                        <p className="text-[11px] text-muted-foreground px-1 pt-1 border-t border-border">🏁 Drop-off: {day.dropoff_location}</p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
