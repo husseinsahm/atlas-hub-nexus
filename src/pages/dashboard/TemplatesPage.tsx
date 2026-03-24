@@ -171,6 +171,64 @@ export default function TemplatesPage() {
         await supabase.from("template_days").insert(days);
       }
 
+      // Save options if available
+      if (aiItinerary?.options && Array.isArray(aiItinerary.options) && aiItinerary.options.length > 0) {
+        const optionsToInsert = aiItinerary.options.map((opt: any, idx: number) => ({
+          template_id: templateData.id,
+          title: opt.title || `Option ${idx + 1}`,
+          description: opt.description || null,
+          duration_nights: opt.duration_nights || 3,
+          departure_from: opt.departure_from || null,
+          sort_order: idx,
+        }));
+        await supabase.from("template_options").insert(optionsToInsert);
+      }
+
+      // Save inclusions
+      if (aiItinerary?.inclusions && Array.isArray(aiItinerary.inclusions) && aiItinerary.inclusions.length > 0) {
+        const inclToInsert = aiItinerary.inclusions.map((item: string, idx: number) => ({
+          template_id: templateData.id,
+          type: "include",
+          content: item,
+          sort_order: idx,
+        }));
+        await supabase.from("template_inclusions").insert(inclToInsert);
+      }
+
+      // Save exclusions
+      if (aiItinerary?.exclusions && Array.isArray(aiItinerary.exclusions) && aiItinerary.exclusions.length > 0) {
+        const exclToInsert = aiItinerary.exclusions.map((item: string, idx: number) => ({
+          template_id: templateData.id,
+          type: "exclude",
+          content: item,
+          sort_order: idx,
+        }));
+        await supabase.from("template_inclusions").insert(exclToInsert);
+      }
+
+      // Save availability
+      if (aiItinerary?.availability && Array.isArray(aiItinerary.availability) && aiItinerary.availability.length > 0) {
+        const availToInsert = aiItinerary.availability.map((av: any, idx: number) => ({
+          template_id: templateData.id,
+          day_of_week: av.day_of_week || "Monday",
+          departure_from: av.departure_from || "",
+          notes: av.notes || null,
+          sort_order: idx,
+        }));
+        await supabase.from("template_availability").insert(availToInsert);
+      }
+
+      // Download and save gallery images
+      if (aiItinerary?.gallery_images && Array.isArray(aiItinerary.gallery_images) && aiItinerary.gallery_images.length > 0) {
+        const galleryToInsert = aiItinerary.gallery_images.slice(0, 20).map((imgUrl: string, idx: number) => ({
+          template_id: templateData.id,
+          image_url: imgUrl,
+          caption: null,
+          sort_order: idx,
+        }));
+        await supabase.from("template_gallery").insert(galleryToInsert);
+      }
+
       return templateData;
     },
     onSuccess: (data) => {
