@@ -31,6 +31,8 @@ import TemplateDetailPage from "./pages/dashboard/TemplateDetailPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
+import InvoicesPage from "./pages/dashboard/InvoicesPage";
+import InvoiceDetailPage from "./pages/dashboard/InvoiceDetailPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
