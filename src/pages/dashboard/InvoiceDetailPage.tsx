@@ -171,6 +171,21 @@ export default function InvoiceDetailPage() {
   // Mark as sent
   const markSent = () => updateInvoice.mutate({ status: "sent" });
 
+  // Export PDF
+  const handleExportPDF = async () => {
+    const el = document.getElementById("invoice-print");
+    if (!el) return;
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = (canvas.height * pdfW) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+    pdf.save(`${invoice?.invoice_number || "invoice"}.pdf`);
+  };
+
   if (isLoading) return <DetailPageLoadingState />;
   if (!invoice) {
     return (
@@ -224,8 +239,11 @@ export default function InvoiceDetailPage() {
               <CreditCard className="w-3 h-3" /> Record Payment
             </Button>
           )}
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.print()}>
-            <Printer className="w-3.5 h-3.5" />
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => window.print()}>
+            <Printer className="w-3 h-3" /> Print
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={handleExportPDF}>
+            <Download className="w-3 h-3" /> Export PDF
           </Button>
         </div>
       </div>

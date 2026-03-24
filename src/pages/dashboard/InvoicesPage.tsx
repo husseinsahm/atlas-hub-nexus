@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { ModalDarkHeader } from "@/components/ui/modal-dark-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -482,13 +483,13 @@ export default function InvoicesPage() {
 
       {/* ─── Create Invoice Dialog ─── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Receipt className="w-4 h-4 text-accent" /> New Invoice
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
+        <DialogContent className="sm:max-w-lg p-0 dark-header-dialog">
+          <ModalDarkHeader
+            icon={<Receipt className="w-5 h-5 text-accent-foreground" />}
+            title="New Invoice"
+            description="Create a new invoice for a customer or booking"
+          />
+          <div className="space-y-4 p-6 pt-4">
             {/* Booking selector */}
             <div>
               <Label className="text-xs">Booking (optional — auto-fills customer & amount)</Label>
@@ -584,7 +585,7 @@ export default function InvoicesPage() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6">
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={creating || !formCustomerId}>
               {creating && <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />}
