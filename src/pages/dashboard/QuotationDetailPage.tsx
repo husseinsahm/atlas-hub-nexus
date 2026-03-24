@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +10,10 @@ import {
   ArrowLeft, Loader2, FileText, Calendar, DollarSign,
   Printer, Send, CheckCircle2, XCircle, Clock, Eye,
   Pencil, Save, User, MapPin, Phone, Mail,
-  Building2, Globe, AlertCircle, Receipt,
+  Building2, Globe, AlertCircle, Receipt, Download,
   ChevronDown, ChevronUp, Hotel, Car, Landmark,
   Utensils, UserCheck, Ticket, Plane, Activity,
-  MessageSquare, RefreshCw, Copy, ExternalLink,
+  MessageSquare, RefreshCw, Copy, ExternalLink, Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
