@@ -41,6 +41,9 @@ export default function TemplatesPage() {
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [enableAI, setEnableAI] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importMode, setImportMode] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
     title: "",
     description: "",
@@ -48,6 +51,49 @@ export default function TemplatesPage() {
     cities: [] as string[],
     trip_type: "",
   });
+
+  const handleImportFromUrl = async () => {
+    if (!importUrl.trim()) return;
+    setIsImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-itinerary", {
+        body: { url: importUrl.trim(), language: isArabic ? "ar" : "en" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const it = data?.itinerary;
+      if (it) {
+        setNewTemplate({
+          title: it.title || "",
+          description: it.description || "",
+          total_days: it.total_days || 7,
+          cities: Array.isArray(it.destinations) ? it.destinations : [],
+          trip_type: it.trip_type || "",
+        });
+        // Store the full AI itinerary for creation
+        setImportedItinerary(it);
+        setImportMode(false);
+        toast({
+          title: isArabic ? "تم الاستيراد بنجاح" : "Imported successfully",
+          description: isArabic
+            ? `تم استخراج "${it.title}" - ${it.total_days} أيام`
+            : `Extracted "${it.title}" - ${it.total_days} days`,
+        });
+      }
+    } catch (e: any) {
+      console.error("Import error:", e);
+      toast({
+        title: isArabic ? "فشل الاستيراد" : "Import failed",
+        description: e?.message || (isArabic ? "تعذر استخراج البرنامج من الرابط" : "Could not extract itinerary from URL"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const [importedItinerary, setImportedItinerary] = useState<any>(null);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["itinerary-templates", companyId],
