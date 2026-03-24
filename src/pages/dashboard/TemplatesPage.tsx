@@ -175,9 +175,7 @@ export default function TemplatesPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["itinerary-templates"] });
-      setShowNewDialog(false);
-      setNewTemplate({ title: "", description: "", total_days: 7, cities: [], trip_type: "" });
-      setEnableAI(true);
+      resetDialog();
       toast({ title: isArabic ? "تم إنشاء القالب" : "Template created" });
       navigate(`/dashboard/templates/${data.id}`);
     },
