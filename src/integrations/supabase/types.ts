@@ -2281,6 +2281,44 @@ export type Database = {
           },
         ]
       }
+      template_availability: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          departure_from: string
+          id: string
+          notes: string | null
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          departure_from: string
+          id?: string
+          notes?: string | null
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          departure_from?: string
+          id?: string
+          notes?: string | null
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_availability_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       template_day_items: {
         Row: {
           category: string
@@ -2390,6 +2428,120 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "template_days_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_gallery: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_gallery_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_inclusions: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          sort_order: number
+          template_id: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          template_id: string
+          type?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          sort_order?: number
+          template_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_inclusions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "itinerary_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_options: {
+        Row: {
+          created_at: string
+          departure_from: string | null
+          description: string | null
+          duration_nights: number
+          id: string
+          sort_order: number
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          departure_from?: string | null
+          description?: string | null
+          duration_nights?: number
+          id?: string
+          sort_order?: number
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          departure_from?: string | null
+          description?: string | null
+          duration_nights?: number
+          id?: string
+          sort_order?: number
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_options_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "itinerary_templates"
