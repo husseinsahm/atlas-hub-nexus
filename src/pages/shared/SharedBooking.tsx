@@ -124,6 +124,8 @@ export default function SharedBooking() {
   const [passwordError, setPasswordError] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successFeedbackType, setSuccessFeedbackType] = useState<string>("");
   
   const isRtl = LANGUAGE_INFO[lang]?.rtl ?? false;
 
@@ -295,6 +297,7 @@ export default function SharedBooking() {
 
   const submitFeedback = useMutation({
     mutationFn: async () => {
+      // 1. Save the feedback
       const { error } = await supabase.from("booking_feedback").insert({
         booking_id: booking!.id,
         feedback_type: feedbackType,
@@ -303,11 +306,59 @@ export default function SharedBooking() {
         message: feedbackMessage.trim() || null,
       });
       if (error) throw error;
+
+      // 2. Create in-app notifications for the agency team
+      try {
+        const { data: members } = await supabase
+          .from("company_memberships")
+          .select("user_id")
+          .eq("company_id", booking!.company_id)
+          .eq("is_active", true);
+
+        const feedbackLabels: Record<string, string> = {
+          approval: "✅ Client Approved Itinerary",
+          change_request: "🔄 Client Requested Changes",
+          comment: "💬 New Client Comment",
+        };
+
+        const notificationTitle = feedbackLabels[feedbackType] || "Client Feedback";
+        const notificationMessage = `${clientName.trim()} ${
+          feedbackType === "approval"
+            ? "approved the itinerary for"
+            : feedbackType === "change_request"
+            ? "requested changes on"
+            : "commented on"
+        } "${booking!.title}"${feedbackMessage.trim() ? `: "${feedbackMessage.trim().substring(0, 100)}"` : ""}`;
+
+        if (members && members.length > 0) {
+          const notifications = members.map((m) => ({
+            user_id: m.user_id,
+            company_id: booking!.company_id,
+            type: `client_feedback_${feedbackType}`,
+            title: notificationTitle,
+            message: notificationMessage,
+            entity_type: "booking",
+            entity_id: booking!.id,
+            is_read: false,
+            is_reminder: feedbackType === "change_request",
+            metadata: {
+              client_name: clientName.trim(),
+              client_email: clientEmail.trim() || null,
+              feedback_type: feedbackType,
+              booking_title: booking!.title,
+            },
+          }));
+          await supabase.from("notifications").insert(notifications as any);
+        }
+      } catch (notifError) {
+        console.error("Failed to create notifications:", notifError);
+        // Don't fail the whole operation if notifications fail
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-booking-feedback", booking?.id] });
-      const msg = feedbackType === "approval" ? t.approvalSent : feedbackType === "change_request" ? t.changesSent : t.feedbackSent;
-      toast({ title: msg });
+      setSuccessFeedbackType(feedbackType);
+      setShowSuccessDialog(true);
       setFeedbackMessage("");
       setFeedbackType("comment");
       setFeedbackOpen(false);
@@ -529,10 +580,10 @@ export default function SharedBooking() {
           >
             <div className="flex items-center gap-3">
               {logoUrl ? (
-                <img src={logoUrl} alt={companyName || ""} className="h-8 w-auto object-contain rounded" />
+                <img src={logoUrl} alt={companyName || ""} className="h-14 md:h-16 w-auto object-contain rounded-lg" />
               ) : (
-                <div className="w-9 h-9 rounded-lg gold-gradient flex items-center justify-center">
-                  <Compass className="w-5 h-5 text-accent-foreground" />
+                <div className="w-12 h-12 rounded-xl gold-gradient flex items-center justify-center">
+                  <Compass className="w-6 h-6 text-accent-foreground" />
                 </div>
               )}
               {companyName && (
@@ -1003,10 +1054,10 @@ export default function SharedBooking() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             {logoUrl ? (
-              <img src={logoUrl} alt={companyName || ""} className="h-5 w-auto object-contain rounded" />
+              <img src={logoUrl} alt={companyName || ""} className="h-10 md:h-12 w-auto object-contain rounded-lg" />
             ) : (
-              <div className="w-6 h-6 rounded gold-gradient flex items-center justify-center">
-                <Compass className="w-3 h-3 text-accent-foreground" />
+              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
+                <Compass className="w-4 h-4 text-accent-foreground" />
               </div>
             )}
             {companyName && <span className="text-xs font-semibold text-foreground">{companyName}</span>}
@@ -1015,6 +1066,93 @@ export default function SharedBooking() {
           {company?.phone && <p className="text-[10px] text-muted-foreground">{company.phone}</p>}
         </div>
       </footer>
+      {/* ===== SUCCESS CONFIRMATION DIALOG ===== */}
+      <AnimatePresence>
+        {showSuccessDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-6"
+            onClick={() => setShowSuccessDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl max-w-sm w-full p-8 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {successFeedbackType === "approval" ? (
+                <>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: "spring", damping: 15 }}
+                    className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-5"
+                  >
+                    <CheckCircle className="w-10 h-10 text-emerald-500" />
+                  </motion.div>
+                  <h2 className="text-xl font-bold font-display text-foreground mb-2">
+                    {lang === "ar" ? "تمت الموافقة! 🎉" : "Itinerary Approved! 🎉"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {lang === "ar"
+                      ? "شكراً لتأكيدك. سيتواصل معك فريقنا قريباً لإتمام التفاصيل النهائية."
+                      : "Thank you for your confirmation. Our team has been notified and will finalize the details shortly."}
+                  </p>
+                </>
+              ) : successFeedbackType === "change_request" ? (
+                <>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: "spring", damping: 15 }}
+                    className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-5"
+                  >
+                    <RefreshCw className="w-10 h-10 text-amber-500" />
+                  </motion.div>
+                  <h2 className="text-xl font-bold font-display text-foreground mb-2">
+                    {lang === "ar" ? "تم إرسال طلب التعديل" : "Change Request Sent"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {lang === "ar"
+                      ? "تم إرسال ملاحظاتك. سيراجعها فريقنا ويتواصل معك بالتحديثات."
+                      : "Your feedback has been sent. Our team will review your request and get back to you with updates."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1, type: "spring", damping: 15 }}
+                    className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-5"
+                  >
+                    <MessageCircle className="w-10 h-10 text-blue-500" />
+                  </motion.div>
+                  <h2 className="text-xl font-bold font-display text-foreground mb-2">
+                    {lang === "ar" ? "تم إرسال تعليقك" : "Comment Sent"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {lang === "ar"
+                      ? "شكراً لمشاركتك. سيراجع فريقنا تعليقك ويرد عليك قريباً."
+                      : "Thank you for sharing your thoughts. Our team will review and respond shortly."}
+                  </p>
+                </>
+              )}
+
+              <Button
+                onClick={() => setShowSuccessDialog(false)}
+                className="mt-6 w-full gold-gradient text-accent-foreground font-semibold"
+              >
+                {lang === "ar" ? "حسناً" : "Got it"}
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

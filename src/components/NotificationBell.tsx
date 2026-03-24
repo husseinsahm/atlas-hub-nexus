@@ -25,6 +25,9 @@ const typeConfig: Record<string, { icon: typeof Bell; color: string }> = {
   follow_up_reminder: { icon: Clock, color: "text-orange-500" },
   booking_status_change: { icon: ArrowRightLeft, color: "text-purple-500" },
   mention: { icon: MessageSquare, color: "text-cyan-500" },
+  client_feedback_approval: { icon: CheckCheck, color: "text-emerald-600" },
+  client_feedback_change_request: { icon: ArrowRightLeft, color: "text-amber-600" },
+  client_feedback_comment: { icon: MessageSquare, color: "text-blue-600" },
 };
 
 function getEntityRoute(n: Notification): string | null {
