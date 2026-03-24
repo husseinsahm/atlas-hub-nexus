@@ -90,6 +90,7 @@ const TABS = [
   { value: "itinerary", label: "Itinerary", labelAr: "البرنامج", icon: Route },
   { value: "services", label: "Services", labelAr: "الخدمات", icon: Hotel },
   { value: "financials", label: "Financials", labelAr: "المالية", icon: DollarSign },
+  { value: "feedback", label: "Client Feedback", labelAr: "ملاحظات العميل", icon: CheckCircle2 },
   { value: "attachments", label: "Attachments", labelAr: "المرفقات", icon: Paperclip },
   { value: "comments", label: "Comments", labelAr: "التعليقات", icon: MessageSquare },
   { value: "timeline", label: "Timeline", labelAr: "السجل", icon: Clock },
