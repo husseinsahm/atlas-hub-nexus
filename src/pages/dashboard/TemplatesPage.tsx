@@ -184,6 +184,12 @@ export default function TemplatesPage() {
   });
 
   const handleCreate = async () => {
+    // If we have an imported itinerary with days, use it directly
+    if (importedItinerary?.days) {
+      createMutation.mutate(importedItinerary);
+      return;
+    }
+
     if (enableAI && newTemplate.title.trim()) {
       setIsGenerating(true);
       try {
@@ -218,6 +224,15 @@ export default function TemplatesPage() {
     } else {
       createMutation.mutate(undefined);
     }
+  };
+
+  const resetDialog = () => {
+    setShowNewDialog(false);
+    setNewTemplate({ title: "", description: "", total_days: 7, cities: [], trip_type: "" });
+    setEnableAI(true);
+    setImportUrl("");
+    setImportMode(false);
+    setImportedItinerary(null);
   };
 
   const deleteMutation = useMutation({
