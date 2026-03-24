@@ -147,7 +147,8 @@ function AppRoutes() {
         {/* Finance */}
         <Route path="quotations" element={<QuotationsPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="invoices" element={<PlaceholderPage />} />
+        <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="invoices/:id" element={<InvoiceDetailPage />} />
         
         {/* Analytics & Reports */}
         <Route path="analytics" element={<AnalyticsPage />} />
