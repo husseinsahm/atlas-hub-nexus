@@ -1156,6 +1156,8 @@ export default function SharedBooking() {
     </div>
   );
 }
+
+/* ====== SUB-COMPONENTS ====== */
 function MetaChip({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
   return (
     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary-foreground/15 bg-primary-foreground/5 text-xs text-primary-foreground/70">
