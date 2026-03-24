@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { runMutationWithRetry, getMutationErrorMessage } from "@/lib/supabaseMutation";
 import { LockOverlay } from "@/components/plan/LockOverlay";
 
 export default function TemplatesPage() {
