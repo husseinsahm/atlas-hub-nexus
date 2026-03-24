@@ -1003,10 +1003,10 @@ export default function SharedBooking() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             {logoUrl ? (
-              <img src={logoUrl} alt={companyName || ""} className="h-5 w-auto object-contain rounded" />
+              <img src={logoUrl} alt={companyName || ""} className="h-10 md:h-12 w-auto object-contain rounded-lg" />
             ) : (
-              <div className="w-6 h-6 rounded gold-gradient flex items-center justify-center">
-                <Compass className="w-3 h-3 text-accent-foreground" />
+              <div className="w-8 h-8 rounded-lg gold-gradient flex items-center justify-center">
+                <Compass className="w-4 h-4 text-accent-foreground" />
               </div>
             )}
             {companyName && <span className="text-xs font-semibold text-foreground">{companyName}</span>}
