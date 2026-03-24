@@ -391,29 +391,90 @@ export default function TemplatesPage() {
       )}
 
       {/* New Template Dialog */}
-      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
+      <Dialog open={showNewDialog} onOpenChange={(open) => { if (!open) resetDialog(); else setShowNewDialog(true); }}>
         <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden dark-header-dialog">
           <ModalDarkHeader
             icon={<Sparkles className="w-5 h-5 text-accent-foreground" />}
             title={isArabic ? "قالب جديد" : "New Itinerary Template"}
-            description={isArabic ? "أنشئ قالبًا جديدًا بالذكاء الاصطناعي" : "Create a template with AI assistance"}
+            description={isArabic ? "أنشئ قالبًا جديدًا أو استورد من رابط" : "Create a new template or import from URL"}
           />
 
           <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
-            {/* AI Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
-              <div className="flex items-center gap-2">
-                <Wand2 className="w-4 h-4 text-primary" />
-                <Label htmlFor="ai-toggle" className="text-sm font-medium cursor-pointer">
-                  {isArabic ? "إنشاء بالذكاء الاصطناعي" : "Generate with AI"}
-                </Label>
-              </div>
-              <Switch
-                id="ai-toggle"
-                checked={enableAI}
-                onCheckedChange={setEnableAI}
-              />
+            {/* Import from URL section */}
+            <div className="rounded-lg border border-border overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setImportMode(!importMode)}
+                className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-sm font-medium"
+              >
+                <div className="flex items-center gap-2">
+                  <Link className="w-4 h-4 text-primary" />
+                  {isArabic ? "استيراد من رابط" : "Import from URL"}
+                </div>
+                <Badge variant="secondary" className="text-[10px]">
+                  {isArabic ? "جديد" : "NEW"}
+                </Badge>
+              </button>
+
+              {importMode && (
+                <div className="p-3 border-t border-border bg-background space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    {isArabic
+                      ? "الصق رابط صفحة برنامج سياحي وسيتم استخراج المحتوى تلقائياً بالذكاء الاصطناعي"
+                      : "Paste a travel itinerary page URL and AI will extract all content automatically"}
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      value={importUrl}
+                      onChange={e => setImportUrl(e.target.value)}
+                      placeholder="https://example.com/itinerary"
+                      className="flex-1 text-xs"
+                      disabled={isImporting}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleImportFromUrl}
+                      disabled={!importUrl.trim() || isImporting}
+                      className="gap-1.5 shrink-0"
+                    >
+                      {isImporting ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      )}
+                      {isImporting
+                        ? (isArabic ? "جاري الاستخراج..." : "Extracting...")
+                        : (isArabic ? "استيراد" : "Import")}
+                    </Button>
+                  </div>
+
+                  {importedItinerary && (
+                    <div className="p-2 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                      <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                        ✓ {isArabic ? "تم الاستيراد:" : "Imported:"} {importedItinerary.title} — {importedItinerary.total_days} {isArabic ? "يوم" : "days"}, {importedItinerary.days?.length || 0} {isArabic ? "يوم مفصل" : "detailed days"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* AI Toggle */}
+            {!importedItinerary && (
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-primary" />
+                  <Label htmlFor="ai-toggle" className="text-sm font-medium cursor-pointer">
+                    {isArabic ? "إنشاء بالذكاء الاصطناعي" : "Generate with AI"}
+                  </Label>
+                </div>
+                <Switch
+                  id="ai-toggle"
+                  checked={enableAI}
+                  onCheckedChange={setEnableAI}
+                />
+              </div>
+            )}
 
             <div>
               <Label className="text-xs">{isArabic ? "اسم القالب" : "Template Name"} *</Label>
@@ -467,15 +528,23 @@ export default function TemplatesPage() {
                 placeholder={isArabic ? "أضف المدن..." : "Add cities..."}
                 className="mt-1"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {isArabic 
-                  ? "الذكاء الاصطناعي سيوزع الأيام على هذه المدن تلقائياً"
-                  : "AI will distribute days across these cities automatically"
-                }
-              </p>
             </div>
 
-            {enableAI && (
+            {importedItinerary && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-start gap-2">
+                  <Link className="w-4 h-4 text-primary mt-0.5" />
+                  <div className="text-xs text-muted-foreground">
+                    {isArabic 
+                      ? "سيتم إنشاء القالب مع جميع الأيام والأنشطة المستخرجة من الرابط."
+                      : "Template will be created with all days and activities extracted from the URL."
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!importedItinerary && enableAI && (
               <div className="p-3 rounded-lg bg-muted/50 border border-border">
                 <div className="flex items-start gap-2">
                   <Sparkles className="w-4 h-4 text-primary mt-0.5" />
@@ -491,7 +560,7 @@ export default function TemplatesPage() {
           </div>
 
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-2 bg-muted/30">
-            <Button variant="outline" onClick={() => setShowNewDialog(false)} disabled={isGenerating || createMutation.isPending}>
+            <Button variant="outline" onClick={resetDialog} disabled={isGenerating || createMutation.isPending}>
               {isArabic ? "إلغاء" : "Cancel"}
             </Button>
             <Button 
@@ -504,7 +573,7 @@ export default function TemplatesPage() {
                 isArabic ? "جاري الإنشاء بالذكاء الاصطناعي..." : "Generating with AI..."
               ) : (
                 <>
-                  {enableAI && <Sparkles className="w-4 h-4" />}
+                  {importedItinerary ? <Link className="w-4 h-4" /> : enableAI ? <Sparkles className="w-4 h-4" /> : null}
                   {isArabic ? "إنشاء القالب" : "Create Template"}
                 </>
               )}
