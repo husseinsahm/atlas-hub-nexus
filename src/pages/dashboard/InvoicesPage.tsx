@@ -482,12 +482,12 @@ export default function InvoicesPage() {
 
       {/* ─── Create Invoice Dialog ─── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Receipt className="w-4 h-4 text-accent" /> New Invoice
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-lg p-0 dark-header-dialog">
+          <ModalDarkHeader
+            icon={<Receipt className="w-5 h-5 text-accent-foreground" />}
+            title="New Invoice"
+            description="Create a new invoice for a customer or booking"
+          />
           <div className="space-y-4 py-2">
             {/* Booking selector */}
             <div>
