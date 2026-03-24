@@ -297,6 +297,7 @@ export default function SharedBooking() {
 
   const submitFeedback = useMutation({
     mutationFn: async () => {
+      // 1. Save the feedback
       const { error } = await supabase.from("booking_feedback").insert({
         booking_id: booking!.id,
         feedback_type: feedbackType,
@@ -305,11 +306,59 @@ export default function SharedBooking() {
         message: feedbackMessage.trim() || null,
       });
       if (error) throw error;
+
+      // 2. Create in-app notifications for the agency team
+      try {
+        const { data: members } = await supabase
+          .from("company_memberships")
+          .select("user_id")
+          .eq("company_id", booking!.company_id)
+          .eq("is_active", true);
+
+        const feedbackLabels: Record<string, string> = {
+          approval: "✅ Client Approved Itinerary",
+          change_request: "🔄 Client Requested Changes",
+          comment: "💬 New Client Comment",
+        };
+
+        const notificationTitle = feedbackLabels[feedbackType] || "Client Feedback";
+        const notificationMessage = `${clientName.trim()} ${
+          feedbackType === "approval"
+            ? "approved the itinerary for"
+            : feedbackType === "change_request"
+            ? "requested changes on"
+            : "commented on"
+        } "${booking!.title}"${feedbackMessage.trim() ? `: "${feedbackMessage.trim().substring(0, 100)}"` : ""}`;
+
+        if (members && members.length > 0) {
+          const notifications = members.map((m) => ({
+            user_id: m.user_id,
+            company_id: booking!.company_id,
+            type: `client_feedback_${feedbackType}`,
+            title: notificationTitle,
+            message: notificationMessage,
+            entity_type: "booking",
+            entity_id: booking!.id,
+            is_read: false,
+            is_reminder: feedbackType === "change_request",
+            metadata: {
+              client_name: clientName.trim(),
+              client_email: clientEmail.trim() || null,
+              feedback_type: feedbackType,
+              booking_title: booking!.title,
+            },
+          }));
+          await supabase.from("notifications").insert(notifications as any);
+        }
+      } catch (notifError) {
+        console.error("Failed to create notifications:", notifError);
+        // Don't fail the whole operation if notifications fail
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shared-booking-feedback", booking?.id] });
-      const msg = feedbackType === "approval" ? t.approvalSent : feedbackType === "change_request" ? t.changesSent : t.feedbackSent;
-      toast({ title: msg });
+      setSuccessFeedbackType(feedbackType);
+      setShowSuccessDialog(true);
       setFeedbackMessage("");
       setFeedbackType("comment");
       setFeedbackOpen(false);
