@@ -489,7 +489,7 @@ export default function InvoicesPage() {
             title="New Invoice"
             description="Create a new invoice for a customer or booking"
           />
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 p-6 pt-4">
             {/* Booking selector */}
             <div>
               <Label className="text-xs">Booking (optional — auto-fills customer & amount)</Label>
