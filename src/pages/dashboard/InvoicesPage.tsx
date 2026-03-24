@@ -158,7 +158,7 @@ export default function InvoicesPage() {
       const { error } = await supabase.from("invoices").insert({
         company_id: companyId,
         customer_id: formCustomerId || null,
-        booking_id: formBookingId || null,
+        booking_id: formBookingId && formBookingId !== "none" ? formBookingId : null,
         invoice_number: invoiceNumber,
         subtotal,
         tax_rate: taxRate,
@@ -497,7 +497,7 @@ export default function InvoicesPage() {
                   <SelectValue placeholder="Select booking..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {bookings.map((b: any) => (
                     <SelectItem key={b.id} value={b.id}>
                       {b.booking_number} — {b.title}
