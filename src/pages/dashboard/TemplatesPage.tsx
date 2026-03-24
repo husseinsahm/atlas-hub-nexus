@@ -330,40 +330,41 @@ export default function TemplatesPage() {
         throw new Error(isArabic ? "القالب محذوف بالفعل" : "Template already deleted");
       }
 
-      const payload = { deleted_at: new Date().toISOString() };
-      console.log("DELETE TEMPLATE PAYLOAD", payload);
+      const rpcPayload = { _template_id: id };
+      console.log("DELETE TEMPLATE RPC PAYLOAD", rpcPayload);
 
-      await runMutationWithRetry<null>(
+      const rpcResult = await runMutationWithRetry<any>(
         {
           table: "itinerary_templates",
           operation: "update",
-          payload,
+          payload: rpcPayload,
           userId: user.id,
           companyId,
           maxRetries: 3,
         },
         async (attempt) => {
-          const { error, status, statusText } = await supabase
-            .from("itinerary_templates")
-            .update(payload)
-            .eq("id", id)
-            .eq("company_id", companyId);
+          const { data, error, status, statusText } = await supabase.rpc("soft_delete_itinerary_template", rpcPayload);
 
-          console.log("DELETE TEMPLATE RESPONSE", {
+          console.log("DELETE TEMPLATE RPC RESPONSE", {
             attempt,
+            data,
             error,
             status,
             statusText,
           });
 
           return {
-            data: null,
+            data,
             error,
             status,
             statusText,
           };
         },
       );
+
+      if (!rpcResult?.ok) {
+        throw new Error(isArabic ? "تعذر حذف القالب" : "Failed to delete template");
+      }
 
       const { data: postCheck, error: postError, status: postStatus, statusText: postStatusText } = await supabase
         .from("itinerary_templates")
@@ -376,6 +377,7 @@ export default function TemplatesPage() {
         error: postError,
         status: postStatus,
         statusText: postStatusText,
+        rpcResult,
         note: "null data is expected after soft delete due SELECT policy filtering deleted rows",
       });
 
