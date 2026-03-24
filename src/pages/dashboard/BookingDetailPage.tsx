@@ -16,7 +16,7 @@ import {
   CreditCard, Plane, Hotel, Car, Eye,
   Route, Paperclip, Activity, Hash, Ticket, Stamp,
   MoreVertical, Printer, Download, Copy, Archive,
-  Link, ExternalLink, Share2, Receipt,
+  Link, ExternalLink, Share2, Receipt, ArrowRightLeft, Check,
 } from "lucide-react";
 import { NationalitySelect, CountrySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -90,6 +90,7 @@ const TABS = [
   { value: "itinerary", label: "Itinerary", labelAr: "البرنامج", icon: Route },
   { value: "services", label: "Services", labelAr: "الخدمات", icon: Hotel },
   { value: "financials", label: "Financials", labelAr: "المالية", icon: DollarSign },
+  { value: "feedback", label: "Client Feedback", labelAr: "ملاحظات العميل", icon: CheckCircle2 },
   { value: "attachments", label: "Attachments", labelAr: "المرفقات", icon: Paperclip },
   { value: "comments", label: "Comments", labelAr: "التعليقات", icon: MessageSquare },
   { value: "timeline", label: "Timeline", labelAr: "السجل", icon: Clock },
@@ -105,7 +106,10 @@ export default function BookingDetailPage() {
   const isArabic = language === "ar";
   const companyId = user?.activeMembership?.companyId;
 
-  const [activeTab, setActiveTab] = useState("summary");
+  // Read ?tab= from URL for deep-linking (e.g. from notification click)
+  const searchParams = new URLSearchParams(window.location.search);
+  const initialTab = searchParams.get("tab") || "summary";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [showTravelerDialog, setShowTravelerDialog] = useState(false);
   const [editingTraveler, setEditingTraveler] = useState<any>(null);
   const [showServiceDialog, setShowServiceDialog] = useState(false);
@@ -191,6 +195,20 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
+  // ─── Fetch client feedback ───
+  const { data: feedbackList = [], refetch: refetchFeedback } = useQuery({
+    queryKey: ["booking-feedback", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_feedback")
+        .select("*")
+        .eq("booking_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
   // ─── Fetch profiles ───
   const { data: profiles = [] } = useQuery({
     queryKey: ["company-profiles-booking", companyId],
@@ -710,6 +728,11 @@ export default function BookingDetailPage() {
               >
                 <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
                 {isArabic ? tab.labelAr : tab.label}
+                {tab.value === "feedback" && feedbackList.filter((f: any) => f.status === "pending").length > 0 && (
+                  <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {feedbackList.filter((f: any) => f.status === "pending").length}
+                  </span>
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
@@ -1147,6 +1170,103 @@ export default function BookingDetailPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* ─── TAB: Client Feedback ─── */}
+      {activeTab === "feedback" && (
+        <Card className="border-border/60 shadow-sm">
+          <CardHeader className="pb-3 bg-muted/30 border-b border-border/50">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {isArabic ? "ملاحظات العميل" : "Client Feedback"}
+              {feedbackList.length > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 h-4">{feedbackList.length}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {feedbackList.length === 0 ? (
+              <div className="py-12 text-center">
+                <CheckCircle2 className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد ملاحظات من العميل بعد" : "No client feedback yet"}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">{isArabic ? "سيظهر هنا عندما يتفاعل العميل مع الرابط المشترك" : "Feedback will appear here when clients interact with the shared link"}</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {feedbackList.map((fb: any) => {
+                  const isApproval = fb.feedback_type === "approval";
+                  const isChange = fb.feedback_type === "change_request";
+                  return (
+                    <motion.div
+                      key={fb.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={cn(
+                        "p-4 flex items-start gap-3 hover:bg-muted/30 transition-colors",
+                        isChange && "bg-amber-50/50 dark:bg-amber-950/10"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                        isApproval && "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400",
+                        isChange && "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400",
+                        !isApproval && !isChange && "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                      )}>
+                        {isApproval ? <CheckCircle2 className="w-4 h-4" /> : isChange ? <ArrowRightLeft className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-foreground">{fb.client_name}</span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] px-1.5 h-5",
+                              isApproval && "border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400",
+                              isChange && "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400",
+                              !isApproval && !isChange && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
+                            )}
+                          >
+                            {isApproval ? (isArabic ? "موافقة" : "Approved") : isChange ? (isArabic ? "طلب تعديل" : "Change Request") : (isArabic ? "تعليق" : "Comment")}
+                          </Badge>
+                          {fb.status === "pending" && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 h-5 border-orange-300 text-orange-600 dark:border-orange-700 dark:text-orange-400 animate-pulse">
+                              {isArabic ? "جديد" : "NEW"}
+                            </Badge>
+                          )}
+                        </div>
+                        {fb.message && (
+                          <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed whitespace-pre-wrap">{fb.message}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground/70">
+                          {fb.client_email && (
+                            <span className="flex items-center gap-1"><Mail className="w-2.5 h-2.5" /> {fb.client_email}</span>
+                          )}
+                          <span className="flex items-center gap-1"><Clock className="w-2.5 h-2.5" /> {format(new Date(fb.created_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                        </div>
+                        {isChange && fb.status === "pending" && (
+                          <div className="mt-3 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-[11px] gap-1"
+                              onClick={async () => {
+                                await supabase.from("booking_feedback").update({ status: "reviewed" } as any).eq("id", fb.id);
+                                refetchFeedback();
+                                toast({ title: isArabic ? "تم التأشير كمراجع" : "Marked as reviewed" });
+                              }}
+                            >
+                              <Check className="w-3 h-3" /> {isArabic ? "تمت المراجعة" : "Mark Reviewed"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* ─── TAB: Attachments ─── */}
