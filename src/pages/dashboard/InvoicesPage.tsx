@@ -585,7 +585,7 @@ export default function InvoicesPage() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6">
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={creating || !formCustomerId}>
               {creating && <Loader2 className="w-3.5 h-3.5 me-2 animate-spin" />}

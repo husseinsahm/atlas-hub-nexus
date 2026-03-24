@@ -224,8 +224,11 @@ export default function InvoiceDetailPage() {
               <CreditCard className="w-3 h-3" /> Record Payment
             </Button>
           )}
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => window.print()}>
-            <Printer className="w-3.5 h-3.5" />
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => window.print()}>
+            <Printer className="w-3 h-3" /> Print
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={handleExportPDF}>
+            <Download className="w-3 h-3" /> Export PDF
           </Button>
         </div>
       </div>
