@@ -932,7 +932,10 @@ export type Database = {
           company_id: string
           created_at: string
           default_currency: string
+          default_invoice_currency: string
           default_language: string
+          default_payment_terms: string | null
+          default_tax_rate: number
           id: string
           invoice_next_number: number
           invoice_prefix: string
@@ -952,7 +955,10 @@ export type Database = {
           company_id: string
           created_at?: string
           default_currency?: string
+          default_invoice_currency?: string
           default_language?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number
           id?: string
           invoice_next_number?: number
           invoice_prefix?: string
@@ -972,7 +978,10 @@ export type Database = {
           company_id?: string
           created_at?: string
           default_currency?: string
+          default_invoice_currency?: string
           default_language?: string
+          default_payment_terms?: string | null
+          default_tax_rate?: number
           id?: string
           invoice_next_number?: number
           invoice_prefix?: string
@@ -1427,6 +1436,103 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount_paid: number
+          booking_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string | null
+          deleted_at: string | null
+          discount_amount: number | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          metadata: Json | null
+          notes: string | null
+          status: string
+          subtotal: number
+          tax_amount: number | null
+          tax_rate: number | null
+          terms: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          booking_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          metadata?: Json | null
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          booking_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer_id?: string | null
+          deleted_at?: string | null
+          discount_amount?: number | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          metadata?: Json | null
+          notes?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itinerary_templates: {
         Row: {
           company_id: string
@@ -1833,11 +1939,12 @@ export type Database = {
       payment_records: {
         Row: {
           amount: number
-          booking_id: string
+          booking_id: string | null
           company_id: string
           created_at: string
           currency: string
           id: string
+          invoice_id: string | null
           notes: string | null
           payment_date: string
           payment_method: string
@@ -1846,11 +1953,12 @@ export type Database = {
         }
         Insert: {
           amount?: number
-          booking_id: string
+          booking_id?: string | null
           company_id: string
           created_at?: string
           currency?: string
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           payment_date?: string
           payment_method?: string
@@ -1859,11 +1967,12 @@ export type Database = {
         }
         Update: {
           amount?: number
-          booking_id?: string
+          booking_id?: string | null
           company_id?: string
           created_at?: string
           currency?: string
           id?: string
+          invoice_id?: string | null
           notes?: string | null
           payment_date?: string
           payment_method?: string
@@ -1883,6 +1992,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
         ]
@@ -2728,6 +2844,7 @@ export type Database = {
         Returns: boolean
       }
       soft_delete_customer: { Args: { _customer_id: string }; Returns: boolean }
+      soft_delete_invoice: { Args: { _invoice_id: string }; Returns: Json }
       soft_delete_lead: { Args: { _lead_id: string }; Returns: boolean }
     }
     Enums: {

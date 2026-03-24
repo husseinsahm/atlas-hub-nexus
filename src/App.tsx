@@ -27,6 +27,7 @@ import CustomersPage from "./pages/dashboard/CustomersPage";
 import CustomerDetailPage from "./pages/dashboard/CustomerDetailPage";
 import LibraryPage from "./pages/dashboard/LibraryPage";
 import TemplatesPage from "./pages/dashboard/TemplatesPage";
+import TemplateDetailPage from "./pages/dashboard/TemplateDetailPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
@@ -138,7 +139,7 @@ function AppRoutes() {
         
         {/* Product Management */}
         <Route path="templates" element={<TemplatesPage />} />
-        <Route path="templates/:id" element={<PlaceholderPage />} />
+        <Route path="templates/:id" element={<TemplateDetailPage />} />
         <Route path="library" element={<LibraryPage />} />
         
         {/* Finance */}
