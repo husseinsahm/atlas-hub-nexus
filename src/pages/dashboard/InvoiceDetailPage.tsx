@@ -171,6 +171,21 @@ export default function InvoiceDetailPage() {
   // Mark as sent
   const markSent = () => updateInvoice.mutate({ status: "sent" });
 
+  // Export PDF
+  const handleExportPDF = async () => {
+    const el = document.getElementById("invoice-print");
+    if (!el) return;
+    const html2canvas = (await import("html2canvas")).default;
+    const { jsPDF } = await import("jspdf");
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = (canvas.height * pdfW) / canvas.width;
+    pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+    pdf.save(`${invoice?.invoice_number || "invoice"}.pdf`);
+  };
+
   if (isLoading) return <DetailPageLoadingState />;
   if (!invoice) {
     return (
