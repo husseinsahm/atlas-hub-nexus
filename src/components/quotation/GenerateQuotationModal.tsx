@@ -232,6 +232,7 @@ export function GenerateQuotationModal({
           customer_id: resolvedCustomerId,
           lead_id: resolvedLeadId,
           trip_id: tripId || booking?.trip_id || null,
+          booking_id: bookingId || null,
           status: "draft",
           currency,
           subtotal,

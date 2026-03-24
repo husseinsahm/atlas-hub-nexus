@@ -463,7 +463,7 @@ export default function QuotationDetailPage() {
                     )}
                   >
                     <button
-                      className="w-full flex items-center gap-3 p-3 text-start hover:bg-muted/30 transition-colors"
+                      className="w-full flex items-center gap-3 p-3 text-start hover:bg-muted/30 transition-colors print:pointer-events-none"
                       onClick={() => setExpandedDay(isOpen ? null : idx)}
                     >
                       <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
@@ -479,42 +479,46 @@ export default function QuotationDetailPage() {
                         </p>
                       </div>
                       {items.length > 0 && (
-                        isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        <span className="print:hidden">
+                          {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                        </span>
                       )}
                     </button>
                     
-                    {isOpen && (
-                      <div className="px-3 pb-3 space-y-2">
-                        {day.description && (
-                          <p className="text-xs text-muted-foreground px-1 pb-2 border-b border-border">{day.description}</p>
-                        )}
-                        {day.pickup_location && (
-                          <p className="text-[11px] text-muted-foreground px-1">📍 Pickup: {day.pickup_location}</p>
-                        )}
-                        {items.map((item: any, iIdx: number) => {
-                          const ItemIcon = CATEGORY_ICONS[item.category] || FileText;
-                          return (
-                            <div key={iIdx} className="flex items-start gap-2 p-2 bg-card rounded-md border border-border">
-                              <ItemIcon className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground">{item.custom_title || item.title}</p>
-                                {item.custom_description && (
-                                  <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.custom_description}</p>
-                                )}
-                                <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                                  {item.start_time && <span>⏰ {item.start_time}</span>}
-                                  {item.duration_minutes && <span>{item.duration_minutes}min</span>}
-                                  {item.quantity > 1 && <span>×{item.quantity}</span>}
-                                </div>
+                    {/* Show content when expanded OR when printing/exporting (always visible in print) */}
+                    <div className={cn(
+                      "px-3 pb-3 space-y-2",
+                      !isOpen && "hidden print:block"
+                    )}>
+                      {day.description && (
+                        <p className="text-xs text-muted-foreground px-1 pb-2 border-b border-border">{day.description}</p>
+                      )}
+                      {day.pickup_location && (
+                        <p className="text-[11px] text-muted-foreground px-1">📍 Pickup: {day.pickup_location}</p>
+                      )}
+                      {items.map((item: any, iIdx: number) => {
+                        const ItemIcon = CATEGORY_ICONS[item.category] || FileText;
+                        return (
+                          <div key={iIdx} className="flex items-start gap-2 p-2 bg-card rounded-md border border-border">
+                            <ItemIcon className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-foreground">{item.custom_title || item.title}</p>
+                              {item.custom_description && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{item.custom_description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+                                {item.start_time && <span>⏰ {item.start_time}</span>}
+                                {item.duration_minutes && <span>{item.duration_minutes}min</span>}
+                                {item.quantity > 1 && <span>×{item.quantity}</span>}
                               </div>
                             </div>
-                          );
-                        })}
-                        {day.dropoff_location && (
-                          <p className="text-[11px] text-muted-foreground px-1 pt-1 border-t border-border">🏁 Drop-off: {day.dropoff_location}</p>
-                        )}
-                      </div>
-                    )}
+                          </div>
+                        );
+                      })}
+                      {day.dropoff_location && (
+                        <p className="text-[11px] text-muted-foreground px-1 pt-1 border-t border-border">🏁 Drop-off: {day.dropoff_location}</p>
+                      )}
+                    </div>
                   </div>
                 );
               })}
