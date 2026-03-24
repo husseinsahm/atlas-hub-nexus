@@ -306,8 +306,21 @@ export default function QuotationDetailPage() {
               </Button>
             </>
           ) : null}
+          {relatedBooking && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs gap-1.5"
+              onClick={() => navigate(`/dashboard/bookings/${relatedBooking.id}`)}
+            >
+              <Briefcase className="w-3.5 h-3.5" /> {relatedBooking.booking_number}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handleExportPDF} disabled={exporting}>
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Export PDF
+          </Button>
           <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handlePrint}>
-            <Printer className="w-3.5 h-3.5" /> Print / PDF
+            <Printer className="w-3.5 h-3.5" /> Print
           </Button>
           <Select
             value={quotation.status}
