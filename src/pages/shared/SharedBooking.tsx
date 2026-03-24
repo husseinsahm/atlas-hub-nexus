@@ -124,6 +124,8 @@ export default function SharedBooking() {
   const [passwordError, setPasswordError] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successFeedbackType, setSuccessFeedbackType] = useState<string>("");
   
   const isRtl = LANGUAGE_INFO[lang]?.rtl ?? false;
 
