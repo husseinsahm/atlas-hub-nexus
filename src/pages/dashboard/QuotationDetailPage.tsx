@@ -109,20 +109,34 @@ export default function QuotationDetailPage() {
     enabled: !!quotation?.company_id,
   });
 
-  // Fetch related booking via trip_id
+  // Fetch related booking - try booking_id first, then trip_id
   const { data: relatedBooking } = useQuery({
-    queryKey: ["quotation-booking", quotation?.trip_id],
+    queryKey: ["quotation-booking", quotation?.booking_id, quotation?.trip_id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("bookings")
-        .select("id, booking_number, title")
-        .eq("trip_id", quotation!.trip_id!)
-        .is("deleted_at", null)
-        .limit(1)
-        .maybeSingle();
-      return data;
+      // Direct booking_id link
+      if (quotation!.booking_id) {
+        const { data } = await supabase
+          .from("bookings")
+          .select("id, booking_number, title")
+          .eq("id", quotation!.booking_id)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (data) return data;
+      }
+      // Fallback: match by trip_id
+      if (quotation!.trip_id) {
+        const { data } = await supabase
+          .from("bookings")
+          .select("id, booking_number, title")
+          .eq("trip_id", quotation!.trip_id)
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle();
+        return data;
+      }
+      return null;
     },
-    enabled: !!quotation?.trip_id,
+    enabled: !!quotation && !!(quotation.booking_id || quotation.trip_id),
   });
 
   const updateQuotation = useMutation({
