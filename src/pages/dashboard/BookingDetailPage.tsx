@@ -192,6 +192,20 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
+  // ─── Fetch client feedback ───
+  const { data: feedbackList = [], refetch: refetchFeedback } = useQuery({
+    queryKey: ["booking-feedback", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("booking_feedback")
+        .select("*")
+        .eq("booking_id", id!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
   // ─── Fetch profiles ───
   const { data: profiles = [] } = useQuery({
     queryKey: ["company-profiles-booking", companyId],
