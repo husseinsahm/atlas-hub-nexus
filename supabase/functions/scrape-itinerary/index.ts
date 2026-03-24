@@ -37,6 +37,40 @@ Deno.serve(async (req) => {
 
     const html = await pageResponse.text();
 
+    // Extract image URLs from the HTML before stripping tags
+    const imageUrls: string[] = [];
+    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    let imgMatch;
+    while ((imgMatch = imgRegex.exec(html)) !== null) {
+      let src = imgMatch[1];
+      // Skip tiny icons, trackers, base64
+      if (src.startsWith("data:")) continue;
+      if (src.includes("pixel") || src.includes("tracker") || src.includes("favicon")) continue;
+      if (src.includes(".svg") || src.includes("1x1")) continue;
+      // Resolve relative URLs
+      if (src.startsWith("//")) src = "https:" + src;
+      else if (src.startsWith("/")) {
+        try {
+          const u = new URL(url);
+          src = u.origin + src;
+        } catch { continue; }
+      }
+      // Only keep likely gallery/content images
+      if (src.match(/\.(jpg|jpeg|png|webp)/i)) {
+        imageUrls.push(src);
+      }
+    }
+
+    // Also extract from og:image and meta tags
+    const ogRegex = /<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']+)["']/gi;
+    let ogMatch;
+    while ((ogMatch = ogRegex.exec(html)) !== null) {
+      imageUrls.push(ogMatch[1]);
+    }
+
+    // Deduplicate
+    const uniqueImages = [...new Set(imageUrls)];
+
     // Strip scripts/styles, keep text
     const textContent = html
       .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -44,7 +78,7 @@ Deno.serve(async (req) => {
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .substring(0, 15000); // limit for AI context
+      .substring(0, 20000); // slightly larger limit for more context
 
     // Step 2: Use AI to extract structured itinerary
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -65,7 +99,24 @@ Return ONLY valid JSON with this exact structure:
   "description": "Brief trip description",
   "total_days": <number>,
   "destinations": ["City 1", "City 2"],
-  "trip_type": "type of trip (Family, Adventure, Cultural, etc.)",
+  "trip_type": "type of trip (Family, Adventure, Cultural, Cruise, etc.)",
+  "options": [
+    {
+      "title": "Option name e.g. 3 Nights From Aswan to Esna",
+      "duration_nights": 3,
+      "departure_from": "Aswan",
+      "description": "Brief description of this option"
+    }
+  ],
+  "inclusions": ["Included item 1", "Included item 2"],
+  "exclusions": ["Excluded item 1", "Excluded item 2"],
+  "availability": [
+    {
+      "day_of_week": "Monday",
+      "departure_from": "Esna",
+      "notes": "optional note"
+    }
+  ],
   "days": [
     {
       "day_number": 1,
@@ -74,7 +125,7 @@ Return ONLY valid JSON with this exact structure:
       "city": "City name",
       "items": [
         {
-          "category": "activity|hotel|transfer|meal|flight|cruise",
+          "category": "activity|hotel|transport|meal|flight|cruise",
           "title": "Item title",
           "description": "Brief description"
         }
@@ -85,8 +136,11 @@ Return ONLY valid JSON with this exact structure:
 
 Rules:
 - Extract ALL days mentioned in the itinerary
-- Categorize items correctly: meals → "meal", transport/transfers → "transfer", sightseeing/visits → "activity", hotels/accommodation → "hotel"
+- Categorize items correctly: meals → "meal", transport/transfers → "transport", sightseeing/visits → "activity", hotels/accommodation → "hotel", cruises/sailing → "cruise"
 - If a city is mentioned for a day, include it
+- Extract "options" if the page offers multiple variants (e.g. different durations, different departure points). If there's only one option, return empty array [].
+- Extract "inclusions" (what's included in the price) and "exclusions" (what's not included). Return empty arrays if not found.
+- Extract "availability" schedule if mentioned (departure days). Return empty array if not found.
 - Return titles ${isArabic ? "in Arabic" : "in the original language of the content, or English if unclear"}
 - If you cannot find itinerary data, return {"error": "No itinerary found in this page"}`;
 
@@ -138,7 +192,15 @@ Rules:
       );
     }
 
-    console.log("Extracted itinerary:", itinerary.title, "-", itinerary.total_days, "days");
+    // Attach gallery images found in HTML
+    itinerary.gallery_images = uniqueImages.slice(0, 30); // cap at 30
+
+    console.log("Extracted itinerary:", itinerary.title, "-", itinerary.total_days, "days",
+      "options:", itinerary.options?.length || 0,
+      "inclusions:", itinerary.inclusions?.length || 0,
+      "exclusions:", itinerary.exclusions?.length || 0,
+      "gallery:", itinerary.gallery_images?.length || 0,
+    );
 
     return new Response(
       JSON.stringify({ itinerary }),
