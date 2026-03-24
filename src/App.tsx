@@ -139,7 +139,7 @@ function AppRoutes() {
         
         {/* Product Management */}
         <Route path="templates" element={<TemplatesPage />} />
-        <Route path="templates/:id" element={<PlaceholderPage />} />
+        <Route path="templates/:id" element={<TemplateDetailPage />} />
         <Route path="library" element={<LibraryPage />} />
         
         {/* Finance */}
