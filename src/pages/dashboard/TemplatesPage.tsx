@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   Search, Plus, Calendar, MapPin, Loader2, FileText, 
   ChevronRight, Copy, Trash2, Edit, MoreVertical, Eye,
-  Sparkles, Wand2, Globe,
+  Sparkles, Wand2, Globe, Link, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
