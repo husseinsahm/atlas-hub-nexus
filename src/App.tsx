@@ -31,6 +31,8 @@ import TemplateDetailPage from "./pages/dashboard/TemplateDetailPage";
 import BookingsPage from "./pages/dashboard/BookingsPage";
 import BookingDetailPage from "./pages/dashboard/BookingDetailPage";
 import QuotationsPage from "./pages/dashboard/QuotationsPage";
+import InvoicesPage from "./pages/dashboard/InvoicesPage";
+import InvoiceDetailPage from "./pages/dashboard/InvoiceDetailPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
@@ -145,7 +147,8 @@ function AppRoutes() {
         {/* Finance */}
         <Route path="quotations" element={<QuotationsPage />} />
         <Route path="quotations/:id" element={<QuotationDetailPage />} />
-        <Route path="invoices" element={<PlaceholderPage />} />
+        <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="invoices/:id" element={<InvoiceDetailPage />} />
         
         {/* Analytics & Reports */}
         <Route path="analytics" element={<AnalyticsPage />} />
