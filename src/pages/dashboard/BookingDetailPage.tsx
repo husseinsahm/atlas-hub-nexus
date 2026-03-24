@@ -693,6 +693,17 @@ export default function BookingDetailPage() {
               <Badge className={cn("border-0 text-[10px] font-semibold", sc.pillBg, sc.pillText)}>
                 {isArabic ? sc.labelAr : sc.label}
               </Badge>
+              {relatedQuotations.length > 0 && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] cursor-pointer hover:bg-accent/10 transition-colors gap-1"
+                  onClick={() => navigate(`/dashboard/quotations/${relatedQuotations[0].id}`)}
+                >
+                  <Receipt className="w-3 h-3" />
+                  {relatedQuotations[0].quotation_number}
+                  {relatedQuotations.length > 1 && ` +${relatedQuotations.length - 1}`}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
               {customer?.phone && (
