@@ -247,8 +247,19 @@ export default function BookingDetailPage() {
 
   // ─── Fetch related quotations ───
   const { data: relatedQuotations = [] } = useQuery({
-    queryKey: ["booking-quotations", booking?.trip_id, booking?.company_id],
+    queryKey: ["booking-quotations", id, booking?.trip_id, booking?.company_id],
     queryFn: async () => {
+      // First try direct booking_id link
+      const { data: directMatch } = await supabase
+        .from("quotations")
+        .select("id, quotation_number, status, total_amount, currency")
+        .eq("booking_id", id!)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      
+      if (directMatch && directMatch.length > 0) return directMatch;
+
+      // Fallback: match by trip_id or customer_id
       let query = supabase
         .from("quotations")
         .select("id, quotation_number, status, total_amount, currency")
@@ -267,7 +278,7 @@ export default function BookingDetailPage() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!booking && !!(booking.trip_id || booking.customer_id),
+    enabled: !!booking && !!id,
   });
 
   const getProfileName = useCallback((userId: string | null) => {
