@@ -245,6 +245,31 @@ export default function BookingDetailPage() {
     enabled: !!id,
   });
 
+  // ─── Fetch related quotations ───
+  const { data: relatedQuotations = [] } = useQuery({
+    queryKey: ["booking-quotations", booking?.trip_id, booking?.company_id],
+    queryFn: async () => {
+      let query = supabase
+        .from("quotations")
+        .select("id, quotation_number, status, total_amount, currency")
+        .eq("company_id", booking!.company_id)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      
+      if (booking!.trip_id) {
+        query = query.eq("trip_id", booking!.trip_id);
+      } else if (booking!.customer_id) {
+        query = query.eq("customer_id", booking!.customer_id);
+      } else {
+        return [];
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!booking && !!(booking.trip_id || booking.customer_id),
+  });
+
   const getProfileName = useCallback((userId: string | null) => {
     if (!userId) return "System";
     return profiles.find(p => p.id === userId)?.full_name || "Team member";
