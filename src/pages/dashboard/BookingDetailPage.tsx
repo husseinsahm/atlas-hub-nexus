@@ -728,6 +728,11 @@ export default function BookingDetailPage() {
               >
                 <tab.icon className={cn("w-3.5 h-3.5", isActive && "text-accent")} />
                 {isArabic ? tab.labelAr : tab.label}
+                {tab.value === "feedback" && feedbackList.filter((f: any) => f.status === "pending").length > 0 && (
+                  <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {feedbackList.filter((f: any) => f.status === "pending").length}
+                  </span>
+                )}
                 {isActive && (
                   <motion.div
                     layoutId="activeBookingTab"
