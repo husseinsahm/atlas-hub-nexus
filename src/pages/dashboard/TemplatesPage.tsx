@@ -293,11 +293,31 @@ export default function TemplatesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await supabase.from("itinerary_templates").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+      console.log("DELETE TEMPLATE START", { id, companyId, userId: user?.id });
+      const { data, error, status, statusText } = await supabase
+        .from("itinerary_templates")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("company_id", companyId!)
+        .select("id, deleted_at");
+      console.log("DELETE TEMPLATE RESPONSE", { data, error, status, statusText });
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("No rows updated — possible permission issue");
+      }
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["itinerary-templates"] });
       toast({ title: isArabic ? "تم حذف القالب" : "Template deleted" });
+    },
+    onError: (err: any) => {
+      console.error("DELETE TEMPLATE ERROR", err);
+      toast({
+        title: isArabic ? "فشل الحذف" : "Delete failed",
+        description: err?.message || "Unknown error",
+        variant: "destructive",
+      });
     },
   });
 
