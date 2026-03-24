@@ -162,7 +162,20 @@ export default function QuotationDetailPage() {
     const el = printRef.current;
     if (!el) return;
     setExporting(true);
+    
+    // Temporarily expand all days for PDF capture
+    const prevExpanded = expandedDay;
+    // Force all hidden day-content blocks visible
+    const hiddenBlocks = el.querySelectorAll('.hidden.print\\:block');
+    hiddenBlocks.forEach(block => block.classList.remove('hidden'));
+    // Hide chevron icons
+    const chevrons = el.querySelectorAll('.print\\:hidden');
+    chevrons.forEach(ch => (ch as HTMLElement).style.display = 'none');
+    
     try {
+      // Small delay to let DOM update
+      await new Promise(r => setTimeout(r, 100));
+      
       const html2canvas = (await import("html2canvas")).default;
       const { jsPDF } = await import("jspdf");
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
@@ -186,9 +199,16 @@ export default function QuotationDetailPage() {
     } catch (e: any) {
       toast({ title: "Export failed", description: e.message, variant: "destructive" });
     } finally {
+      // Restore collapsed state
+      hiddenBlocks.forEach(block => {
+        if (prevExpanded === null || !block.closest(`[data-day-idx="${prevExpanded}"]`)) {
+          block.classList.add('hidden');
+        }
+      });
+      chevrons.forEach(ch => (ch as HTMLElement).style.display = '');
       setExporting(false);
     }
-  }, [quotation, isArabic, toast]);
+  }, [quotation, isArabic, toast, expandedDay]);
 
   const saveTextField = useCallback((field: string, value: string | null) => {
     if (value !== null && value !== (quotation?.[field] || "")) {
