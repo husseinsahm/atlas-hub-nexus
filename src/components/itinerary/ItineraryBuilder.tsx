@@ -623,6 +623,137 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         </div>
         </>
       )}
+
+      {/* ─── Template Import Dialog ─── */}
+      <Dialog open={showTemplateImport} onOpenChange={setShowTemplateImport}>
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <BookOpen className="w-4 h-4 text-accent" />
+              {isArabic ? "استيراد من قالب" : "Import from Template"}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground -mt-2">
+            {isArabic
+              ? "اختر قالباً لاستيراد أيامه وأنشطته إلى هذا الحجز"
+              : "Select a template to import its days and activities into this booking"}
+          </p>
+          <div className="flex-1 overflow-y-auto space-y-2 mt-2">
+            {templates.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {isArabic ? "لا توجد قوالب" : "No templates available"}
+                </p>
+              </div>
+            ) : (
+              templates.map((t: any) => {
+                const dayCount = t.template_days?.length || t.total_days || 0;
+                const hasOptions = t.template_days?.some((d: any) => d.option_name);
+                return (
+                  <Card
+                    key={t.id}
+                    className="border-border/60 hover:border-accent/40 hover:shadow-sm transition-all cursor-pointer group"
+                    onClick={() => importTemplate(t)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center shrink-0">
+                        <Route className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                          {t.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                          <span>{dayCount} {isArabic ? "يوم" : "days"}</span>
+                          {t.destinations && (
+                            <span className="flex items-center gap-0.5">
+                              <MapPin className="w-2.5 h-2.5" />
+                              {Array.isArray(t.destinations) ? t.destinations.join(", ") : String(t.destinations)}
+                            </span>
+                          )}
+                          {hasOptions && (
+                            <Badge variant="secondary" className="text-[8px]">
+                              {isArabic ? "خيارات متعددة" : "Multiple options"}
+                            </Badge>
+                          )}
+                        </div>
+                        {t.description && (
+                          <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">{t.description}</p>
+                        )}
+                      </div>
+                      <Plus className="w-4 h-4 text-muted-foreground group-hover:text-accent shrink-0" />
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── Library Picker Dialog ─── */}
+      <Dialog open={!!showLibraryPicker} onOpenChange={(open) => { if (!open) setShowLibraryPicker(null); }}>
+        <DialogContent className="max-w-lg max-h-[70vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <BookOpen className="w-4 h-4 text-accent" />
+              {isArabic ? "اختر من المكتبة" : "Pick from Library"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              value={librarySearch}
+              onChange={e => setLibrarySearch(e.target.value)}
+              placeholder={isArabic ? "ابحث عن خدمة..." : "Search services..."}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-1.5 mt-2">
+            {filteredLibrary.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-8">
+                {isArabic ? "لا توجد نتائج" : "No items found"}
+              </p>
+            ) : (
+              filteredLibrary.map((item: any) => (
+                <button
+                  key={item.id}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-accent/40 hover:bg-muted/30 transition-all text-start"
+                  onClick={() => {
+                    if (showLibraryPicker) {
+                      addDayItem.mutate({
+                        dayId: showLibraryPicker,
+                        category: item.category || "activity",
+                        title: item.title,
+                        libraryItemId: item.id,
+                        description: item.description || undefined,
+                        durationMinutes: item.duration_minutes || undefined,
+                      });
+                      setShowLibraryPicker(null);
+                      setLibrarySearch("");
+                    }
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    {item.category === "hotel" ? <Hotel className="w-4 h-4 text-blue-500" /> :
+                     item.category === "transfer" ? <Car className="w-4 h-4 text-amber-500" /> :
+                     <Activity className="w-4 h-4 text-emerald-500" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-foreground truncate">{item.title}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <Badge variant="outline" className="text-[8px] capitalize">{item.category}</Badge>
+                      {item.city && <span>{item.city}</span>}
+                    </div>
+                  </div>
+                  <Plus className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
