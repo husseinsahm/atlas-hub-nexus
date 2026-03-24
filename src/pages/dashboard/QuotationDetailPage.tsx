@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +10,10 @@ import {
   ArrowLeft, Loader2, FileText, Calendar, DollarSign,
   Printer, Send, CheckCircle2, XCircle, Clock, Eye,
   Pencil, Save, User, MapPin, Phone, Mail,
-  Building2, Globe, AlertCircle, Receipt,
+  Building2, Globe, AlertCircle, Receipt, Download,
   ChevronDown, ChevronUp, Hotel, Car, Landmark,
   Utensils, UserCheck, Ticket, Plane, Activity,
-  MessageSquare, RefreshCw, Copy, ExternalLink,
+  MessageSquare, RefreshCw, Copy, ExternalLink, Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +109,22 @@ export default function QuotationDetailPage() {
     enabled: !!quotation?.company_id,
   });
 
+  // Fetch related booking via trip_id
+  const { data: relatedBooking } = useQuery({
+    queryKey: ["quotation-booking", quotation?.trip_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("bookings")
+        .select("id, booking_number, title")
+        .eq("trip_id", quotation!.trip_id!)
+        .is("deleted_at", null)
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!quotation?.trip_id,
+  });
+
   const updateQuotation = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
       const { error } = await supabase.from("quotations").update(updates).eq("id", id!);
@@ -126,6 +142,39 @@ export default function QuotationDetailPage() {
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
+
+  const [exporting, setExporting] = useState(false);
+  const handleExportPDF = useCallback(async () => {
+    const el = printRef.current;
+    if (!el) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfW = pdf.internal.pageSize.getWidth();
+      const pdfH = (canvas.height * pdfW) / canvas.width;
+      let position = 0;
+      const pageH = pdf.internal.pageSize.getHeight();
+      if (pdfH <= pageH) {
+        pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+      } else {
+        while (position < pdfH) {
+          pdf.addImage(imgData, "PNG", 0, -position, pdfW, pdfH);
+          position += pageH;
+          if (position < pdfH) pdf.addPage();
+        }
+      }
+      pdf.save(`${quotation?.quotation_number || "quotation"}.pdf`);
+      toast({ title: isArabic ? "تم التصدير" : "PDF exported" });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message, variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }, [quotation, isArabic, toast]);
 
   const saveTextField = useCallback((field: string, value: string | null) => {
     if (value !== null && value !== (quotation?.[field] || "")) {
@@ -257,8 +306,21 @@ export default function QuotationDetailPage() {
               </Button>
             </>
           ) : null}
+          {relatedBooking && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs gap-1.5"
+              onClick={() => navigate(`/dashboard/bookings/${relatedBooking.id}`)}
+            >
+              <Briefcase className="w-3.5 h-3.5" /> {relatedBooking.booking_number}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handleExportPDF} disabled={exporting}>
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Export PDF
+          </Button>
           <Button size="sm" variant="outline" className="text-xs gap-1.5" onClick={handlePrint}>
-            <Printer className="w-3.5 h-3.5" /> Print / PDF
+            <Printer className="w-3.5 h-3.5" /> Print
           </Button>
           <Select
             value={quotation.status}
