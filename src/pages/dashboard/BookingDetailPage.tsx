@@ -694,6 +694,10 @@ export default function BookingDetailPage() {
             {isArabic ? "الحجوزات" : "Bookings"}
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Live presence */}
+            {presenceMembers.length > 0 && (
+              <PresenceBar members={presenceMembers} currentUserId={user?.id} isArabic={isArabic} />
+            )}
             {/* Share buttons */}
             <Button
               size="sm"
