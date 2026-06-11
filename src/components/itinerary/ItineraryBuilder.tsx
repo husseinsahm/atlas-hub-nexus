@@ -658,6 +658,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
       )}
       </div>
 
+      <ItineraryMapView open={showMap} onOpenChange={setShowMap} itineraryDays={itineraryDays} isArabic={isArabic} />
+
 
 
       {/* ─── Template Import Dialog ─── */}
