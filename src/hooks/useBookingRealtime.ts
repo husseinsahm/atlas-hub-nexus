@@ -65,8 +65,8 @@ export function useBookingRealtime(bookingId: string | undefined) {
         if (status === "SUBSCRIBED") {
           await channel.track({
             user_id: user.id,
-            full_name: user.fullName || user.email,
-            avatar_url: user.avatarUrl,
+            full_name: user.profile?.fullName || user.email,
+            avatar_url: user.profile?.avatarUrl,
             email: user.email,
             online_at: new Date().toISOString(),
           });
