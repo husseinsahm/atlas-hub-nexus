@@ -9,6 +9,7 @@ import { format, addDays, startOfDay, endOfDay, isSameDay, parseISO, differenceI
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Plus, AlertTriangle,
   Bus, Users, Loader2, Clock, MapPin, Trash2, ExternalLink, Compass,
+  Fuel, FileSignature, FileText, Gauge, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
