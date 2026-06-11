@@ -815,6 +815,41 @@ export default function SharedBooking() {
                               })}
                             </div>
                           )}
+
+                          {/* Per-day approval / change request buttons */}
+                          <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-muted-foreground me-auto">
+                              {lang === "ar" ? `يومك رقم ${day.day_number} — رأيك يهمنا` : `Your feedback on day ${day.day_number}`}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFeedbackDayId(day.id);
+                                setFeedbackType("approval");
+                                setFeedbackOpen(true);
+                              }}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 me-1.5" />
+                              {lang === "ar" ? "موافق على هذا اليوم" : "Approve this day"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-amber-500/40 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFeedbackDayId(day.id);
+                                setFeedbackType("change_request");
+                                setFeedbackOpen(true);
+                              }}
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 me-1.5" />
+                              {lang === "ar" ? "طلب تعديل" : "Request changes"}
+                            </Button>
+                          </div>
                         </div>
                       </motion.div>
                     )}
