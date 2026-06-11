@@ -56,7 +56,7 @@ interface Driver {
   id: string; full_name: string; phone: string | null; email: string | null;
   license_number: string | null; license_expiry: string | null;
   status: DriverStatus; rating: number; total_trips: number; avatar_url: string | null;
-  daily_rate: number; currency: string;
+  daily_rate: number; currency: string; share_token: string | null;
 }
 
 export default function FleetPage() {
