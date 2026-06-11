@@ -20,6 +20,7 @@ import {
   Check, X, Zap, Shield, BarChart3, Globe, Mail, Phone, Star,
   FileText, Download, AlertTriangle, Clock, ChevronDown, Loader2,
   Receipt, HelpCircle, Minus, Lock, Rocket, Building, Headphones,
+  Send, Eye, CheckCircle2, PartyPopper,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -362,27 +363,121 @@ export default function BillingPage() {
 
         {/* ─── Overview Tab ─── */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Pending Requests Banner */}
-          {pendingRequests.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 flex items-center gap-4"
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">
-                  Plan change request pending
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Your request to switch to <strong>{(pendingRequests[0] as any)?.plans?.name}</strong> is awaiting admin approval.
-                </p>
-              </div>
-              <Badge variant="secondary" className="shrink-0 text-xs">Pending</Badge>
-            </motion.div>
-          )}
+          {/* Pending Requests Banner — full status cycle */}
+          {pendingRequests.length > 0 && (() => {
+            const req: any = pendingRequests[0];
+            const submittedAt = req?.created_at ? new Date(req.created_at) : null;
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 sm:p-5 rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/10 space-y-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center shrink-0">
+                    <Clock className="w-5 h-5 text-blue-600 animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-foreground">
+                        Switching to {req?.plans?.name}
+                      </p>
+                      <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">Awaiting admin</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Submitted {submittedAt ? submittedAt.toLocaleString() : "just now"} · Our team usually reviews within a few hours. You'll be notified by email and your plan will activate automatically.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Cycle stepper */}
+                <div className="flex items-center gap-1 sm:gap-2 px-1">
+                  {[
+                    { label: "Submitted", icon: Send, done: true },
+                    { label: "In Review", icon: Eye, active: true },
+                    { label: "Approved", icon: CheckCircle2 },
+                    { label: "Plan Active", icon: PartyPopper },
+                  ].map((step, i, arr) => {
+                    const Icon = step.icon;
+                    return (
+                      <div key={step.label} className="flex items-center flex-1 min-w-0">
+                        <div className={cn(
+                          "flex flex-col items-center gap-1 flex-1 min-w-0",
+                        )}>
+                          <div className={cn(
+                            "w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0",
+                            step.done && "bg-emerald-500 text-white shadow-sm",
+                            step.active && "bg-blue-600 text-white ring-4 ring-blue-200 dark:ring-blue-900/50",
+                            !step.done && !step.active && "bg-muted text-muted-foreground/50",
+                          )}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className={cn(
+                            "text-[10px] font-medium truncate max-w-full text-center",
+                            (step.done || step.active) ? "text-foreground" : "text-muted-foreground/60",
+                          )}>{step.label}</span>
+                        </div>
+                        {i < arr.length - 1 && (
+                          <div className={cn(
+                            "h-0.5 flex-1 mx-1 -mt-4 rounded-full transition-colors",
+                            step.done ? "bg-emerald-500" : "bg-muted",
+                          )} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })()}
+
+          {/* Recently approved/rejected banner */}
+          {recentReviewed && pendingRequests.length === 0 && (() => {
+            const r: any = recentReviewed;
+            const approved = r.status === "approved";
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                  "p-4 rounded-xl border flex items-center gap-4",
+                  approved
+                    ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20"
+                    : "border-destructive/30 bg-destructive/5",
+                )}
+              >
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                  approved ? "bg-emerald-100 dark:bg-emerald-900/50" : "bg-destructive/10",
+                )}>
+                  {approved
+                    ? <PartyPopper className="w-5 h-5 text-emerald-600" />
+                    : <X className="w-5 h-5 text-destructive" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {approved
+                      ? `Your plan was upgraded to ${r.plans?.name} 🎉`
+                      : `Your request for ${r.plans?.name} was declined`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {approved
+                      ? "All features are now active on your account."
+                      : (r.admin_notes || "Reach out to the admin for details.")}
+                  </p>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "shrink-0 text-xs",
+                    approved && "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+                  )}
+                >
+                  {approved ? "Approved" : "Rejected"}
+                </Badge>
+              </motion.div>
+            );
+          })()}
 
           {/* Trial Banner */}
           {limits.isTrialing && limits.trialDaysRemaining !== null && (
