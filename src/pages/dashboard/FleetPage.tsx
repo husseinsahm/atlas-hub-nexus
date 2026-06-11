@@ -724,3 +724,538 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+// ============== MAINTENANCE TAB ==============
+function MaintenanceTab({ companyId, vehicles, search, onEdit }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["fleet-maintenance", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vehicle_maintenance")
+        .select("*, vehicles(name, plate_number)")
+        .eq("company_id", companyId).order("service_date", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("vehicle_maintenance").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-maintenance"] }); toast({ title: "Removed" }); },
+  });
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r: any) =>
+      r.vehicles?.name?.toLowerCase().includes(q) ||
+      r.maintenance_type?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q)
+    );
+  }, [rows, search]);
+
+  if (isLoading) return <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto my-20" />;
+  if (filtered.length === 0) return (
+    <div className="text-center py-20">
+      <Wrench className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">No maintenance records yet</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-2">
+      {filtered.map((m: any) => {
+        const nextDays = m.next_service_date ? differenceInDays(parseISO(m.next_service_date), new Date()) : null;
+        return (
+          <Card key={m.id} className="hover:shadow-md transition">
+            <CardContent className="p-4 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
+                <Wrench className="w-5 h-5 text-amber-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-sm">{m.maintenance_type}</span>
+                  <Badge className="bg-slate-100 text-slate-700 border-0 text-[10px]">
+                    {m.vehicles?.name} {m.vehicles?.plate_number && `· ${m.vehicles.plate_number}`}
+                  </Badge>
+                  {nextDays !== null && nextDays <= 30 && (
+                    <Badge className={cn("border-0 text-[10px]",
+                      nextDays < 0 ? "bg-red-100 text-red-700" :
+                      nextDays <= 7 ? "bg-orange-100 text-orange-700" : "bg-amber-100 text-amber-700")}>
+                      Next: {nextDays < 0 ? `${Math.abs(nextDays)}d overdue` : `in ${nextDays}d`}
+                    </Badge>
+                  )}
+                </div>
+                {m.description && <p className="text-xs text-muted-foreground mt-1">{m.description}</p>}
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <span>{format(parseISO(m.service_date), "MMM d, yyyy")}</span>
+                  {m.mileage_km && <span>{Math.round(m.mileage_km).toLocaleString()} km</span>}
+                  {m.cost > 0 && <span className="font-medium text-foreground">{m.cost} {m.currency}</span>}
+                  {m.provider && <span>by {m.provider}</span>}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button size="icon" variant="ghost" onClick={() => onEdit(m)}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="text-destructive" onClick={() => del.mutate(m.id)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============== DOCUMENTS TAB ==============
+function DocumentsTab({ companyId, vehicles, search, onEdit }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["fleet-documents", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vehicle_documents")
+        .select("*, vehicles(name, plate_number)")
+        .eq("company_id", companyId).order("expiry_date", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("vehicle_documents").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-documents"] }); qc.invalidateQueries({ queryKey: ["fleet-alerts"] }); toast({ title: "Removed" }); },
+  });
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r: any) =>
+      r.vehicles?.name?.toLowerCase().includes(q) ||
+      r.doc_type?.toLowerCase().includes(q)
+    );
+  }, [rows, search]);
+
+  if (isLoading) return <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto my-20" />;
+  if (filtered.length === 0) return (
+    <div className="text-center py-20">
+      <BadgeCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+      <p className="text-sm text-muted-foreground">No documents yet</p>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {filtered.map((d: any) => {
+        const days = d.expiry_date ? differenceInDays(parseISO(d.expiry_date), new Date()) : null;
+        const tone = days === null ? "slate" : days < 0 ? "red" : days <= 7 ? "orange" : days <= 30 ? "amber" : "emerald";
+        const toneClass: Record<string, string> = {
+          slate: "bg-slate-50 text-slate-700 border-slate-200",
+          red: "bg-red-50 text-red-700 border-red-200",
+          orange: "bg-orange-50 text-orange-700 border-orange-200",
+          amber: "bg-amber-50 text-amber-700 border-amber-200",
+          emerald: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        };
+        return (
+          <Card key={d.id} className={cn("border-l-4", toneClass[tone].replace("bg-", "border-l-"))}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground">{d.vehicles?.name} {d.vehicles?.plate_number && `· ${d.vehicles.plate_number}`}</div>
+                  <h4 className="font-semibold text-sm mt-0.5">{d.doc_type}</h4>
+                  {d.doc_number && <p className="text-xs text-muted-foreground font-mono">#{d.doc_number}</p>}
+                </div>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => onEdit(d)}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => del.mutate(d.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+              {d.expiry_date && (
+                <div className={cn("mt-3 px-2 py-1.5 rounded text-xs flex items-center justify-between", toneClass[tone])}>
+                  <span>Expires {format(parseISO(d.expiry_date), "MMM d, yyyy")}</span>
+                  <span className="font-bold">
+                    {days! < 0 ? `${Math.abs(days!)}d overdue` : `${days}d left`}
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============== EXPENSES TAB ==============
+function ExpensesTab({ companyId, vehicles, search, onEdit }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["fleet-expenses", companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vehicle_expenses")
+        .select("*, vehicles(name, plate_number), bookings(booking_number)")
+        .eq("company_id", companyId).order("expense_date", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!companyId,
+  });
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("vehicle_expenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-expenses"] }); toast({ title: "Removed" }); },
+  });
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r: any) =>
+      r.vehicles?.name?.toLowerCase().includes(q) ||
+      r.expense_type?.toLowerCase().includes(q) ||
+      r.description?.toLowerCase().includes(q)
+    );
+  }, [rows, search]);
+
+  const total = useMemo(() => filtered.reduce((s: number, r: any) => s + (r.amount || 0), 0), [filtered]);
+
+  if (isLoading) return <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto my-20" />;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between bg-card border border-border rounded-lg p-3 text-sm">
+        <span className="text-muted-foreground">Total ({filtered.length} entries)</span>
+        <span className="font-bold text-base">{total.toLocaleString()} {filtered[0]?.currency || "USD"}</span>
+      </div>
+      {filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <Fuel className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">No expenses yet</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((e: any) => (
+            <Card key={e.id} className="hover:shadow-md transition">
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <Fuel className="w-4 h-4 text-blue-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-sm capitalize">{e.expense_type}</span>
+                    <Badge className="bg-slate-100 text-slate-700 border-0 text-[10px]">
+                      {e.vehicles?.name}
+                    </Badge>
+                    {e.bookings?.booking_number && (
+                      <Badge className="bg-blue-50 text-blue-700 border-0 text-[10px]">{e.bookings.booking_number}</Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {format(parseISO(e.expense_date), "MMM d, yyyy")}
+                    {e.description && ` · ${e.description}`}
+                  </div>
+                </div>
+                <span className="font-bold text-sm">{e.amount} {e.currency}</span>
+                <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" onClick={() => onEdit(e)}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => del.mutate(e.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============== DIALOGS ==============
+function MaintenanceDialog({ open, initial, vehicles, companyId, userId, onClose }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [f, setF] = useState<any>({});
+  useMemo(() => { if (open) setF(initial || { service_date: format(new Date(), "yyyy-MM-dd"), status: "completed", currency: "USD" }); }, [open, initial]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        company_id: companyId,
+        vehicle_id: f.vehicle_id,
+        maintenance_type: f.maintenance_type,
+        description: f.description || null,
+        service_date: f.service_date,
+        mileage_km: f.mileage_km ? parseFloat(f.mileage_km) : null,
+        cost: f.cost ? parseFloat(f.cost) : 0,
+        currency: f.currency || "USD",
+        next_service_date: f.next_service_date || null,
+        next_service_mileage_km: f.next_service_mileage_km ? parseFloat(f.next_service_mileage_km) : null,
+        provider: f.provider || null,
+        status: f.status || "completed",
+        notes: f.notes || null,
+      };
+      if (f.id) {
+        const { error } = await supabase.from("vehicle_maintenance").update(payload).eq("id", f.id);
+        if (error) throw error;
+      } else {
+        payload.created_by = userId;
+        const { error } = await supabase.from("vehicle_maintenance").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-maintenance"] }); toast({ title: "Saved" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-accent" /> {f.id ? "Edit Maintenance" : "Log Maintenance"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <Field label="Vehicle *">
+            <Select value={f.vehicle_id || ""} onValueChange={v => setF({ ...f, vehicle_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+              <SelectContent>{vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Type *"><Input value={f.maintenance_type || ""} onChange={e => setF({ ...f, maintenance_type: e.target.value })} placeholder="Oil change, brakes..." /></Field>
+            <Field label="Service Date *"><Input type="date" value={f.service_date || ""} onChange={e => setF({ ...f, service_date: e.target.value })} /></Field>
+          </div>
+          <Field label="Description"><Textarea rows={2} value={f.description || ""} onChange={e => setF({ ...f, description: e.target.value })} /></Field>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Mileage (km)"><Input type="number" value={f.mileage_km || ""} onChange={e => setF({ ...f, mileage_km: e.target.value })} /></Field>
+            <Field label="Cost"><Input type="number" value={f.cost || ""} onChange={e => setF({ ...f, cost: e.target.value })} /></Field>
+            <Field label="Currency">
+              <Select value={f.currency || "USD"} onValueChange={v => setF({ ...f, currency: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["USD","EUR","GBP","AED","SAR","EGP","TRY"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Next Service Date"><Input type="date" value={f.next_service_date || ""} onChange={e => setF({ ...f, next_service_date: e.target.value })} /></Field>
+            <Field label="Next at (km)"><Input type="number" value={f.next_service_mileage_km || ""} onChange={e => setF({ ...f, next_service_mileage_km: e.target.value })} /></Field>
+          </div>
+          <Field label="Provider"><Input value={f.provider || ""} onChange={e => setF({ ...f, provider: e.target.value })} placeholder="Garage / workshop" /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button className="gold-gradient text-accent-foreground" disabled={!f.vehicle_id || !f.maintenance_type || !f.service_date || save.isPending} onClick={() => save.mutate()}>
+            {save.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocumentDialog({ open, initial, vehicles, companyId, userId, onClose }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [f, setF] = useState<any>({});
+  useMemo(() => { if (open) setF(initial || {}); }, [open, initial]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        company_id: companyId,
+        vehicle_id: f.vehicle_id,
+        doc_type: f.doc_type,
+        doc_number: f.doc_number || null,
+        issue_date: f.issue_date || null,
+        expiry_date: f.expiry_date || null,
+        file_url: f.file_url || null,
+        notes: f.notes || null,
+      };
+      if (f.id) {
+        const { error } = await supabase.from("vehicle_documents").update(payload).eq("id", f.id);
+        if (error) throw error;
+      } else {
+        payload.created_by = userId;
+        const { error } = await supabase.from("vehicle_documents").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-documents"] }); qc.invalidateQueries({ queryKey: ["fleet-alerts"] }); toast({ title: "Saved" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <BadgeCheck className="w-5 h-5 text-accent" /> {f.id ? "Edit Document" : "Add Document"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <Field label="Vehicle *">
+            <Select value={f.vehicle_id || ""} onValueChange={v => setF({ ...f, vehicle_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+              <SelectContent>{vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Document Type *">
+              <Select value={f.doc_type || ""} onValueChange={v => setF({ ...f, doc_type: v })}>
+                <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Registration">Registration</SelectItem>
+                  <SelectItem value="Insurance">Insurance</SelectItem>
+                  <SelectItem value="Inspection">Inspection</SelectItem>
+                  <SelectItem value="Permit">Operating Permit</SelectItem>
+                  <SelectItem value="License">License</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Document Number"><Input value={f.doc_number || ""} onChange={e => setF({ ...f, doc_number: e.target.value })} /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Issue Date"><Input type="date" value={f.issue_date || ""} onChange={e => setF({ ...f, issue_date: e.target.value })} /></Field>
+            <Field label="Expiry Date"><Input type="date" value={f.expiry_date || ""} onChange={e => setF({ ...f, expiry_date: e.target.value })} /></Field>
+          </div>
+          <Field label="File URL"><Input value={f.file_url || ""} onChange={e => setF({ ...f, file_url: e.target.value })} placeholder="Link to scan/PDF" /></Field>
+          <Field label="Notes"><Textarea rows={2} value={f.notes || ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button className="gold-gradient text-accent-foreground" disabled={!f.vehicle_id || !f.doc_type || save.isPending} onClick={() => save.mutate()}>
+            {save.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ExpenseDialog({ open, initial, vehicles, companyId, userId, onClose }: any) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [f, setF] = useState<any>({});
+  useMemo(() => { if (open) setF(initial || { expense_date: format(new Date(), "yyyy-MM-dd"), expense_type: "fuel", currency: "USD" }); }, [open, initial]);
+
+  // load bookings (lightweight)
+  const { data: bookings = [] } = useQuery({
+    queryKey: ["exp-bookings", companyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("bookings").select("id, booking_number, title")
+        .eq("company_id", companyId).is("deleted_at", null).order("created_at", { ascending: false }).limit(50);
+      return data || [];
+    },
+    enabled: !!companyId && open,
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        company_id: companyId,
+        vehicle_id: f.vehicle_id,
+        booking_id: f.booking_id || null,
+        expense_type: f.expense_type,
+        description: f.description || null,
+        expense_date: f.expense_date,
+        amount: parseFloat(f.amount) || 0,
+        currency: f.currency || "USD",
+        notes: f.notes || null,
+      };
+      if (f.id) {
+        const { error } = await supabase.from("vehicle_expenses").update(payload).eq("id", f.id);
+        if (error) throw error;
+      } else {
+        payload.created_by = userId;
+        const { error } = await supabase.from("vehicle_expenses").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["fleet-expenses"] }); toast({ title: "Saved" }); onClose(); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Fuel className="w-5 h-5 text-accent" /> {f.id ? "Edit Expense" : "Log Expense"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <Field label="Vehicle *">
+            <Select value={f.vehicle_id || ""} onValueChange={v => setF({ ...f, vehicle_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Choose..." /></SelectTrigger>
+              <SelectContent>{vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Type *">
+              <Select value={f.expense_type || "fuel"} onValueChange={v => setF({ ...f, expense_type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fuel">Fuel</SelectItem>
+                  <SelectItem value="toll">Toll</SelectItem>
+                  <SelectItem value="parking">Parking</SelectItem>
+                  <SelectItem value="fine">Fine</SelectItem>
+                  <SelectItem value="cleaning">Cleaning</SelectItem>
+                  <SelectItem value="repair">Repair</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Date *"><Input type="date" value={f.expense_date || ""} onChange={e => setF({ ...f, expense_date: e.target.value })} /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Amount *"><Input type="number" value={f.amount || ""} onChange={e => setF({ ...f, amount: e.target.value })} /></Field>
+            <Field label="Currency">
+              <Select value={f.currency || "USD"} onValueChange={v => setF({ ...f, currency: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["USD","EUR","GBP","AED","SAR","EGP","TRY"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </Field>
+          </div>
+          <Field label="Linked Booking (optional)">
+            <Select value={f.booking_id || "_"} onValueChange={v => setF({ ...f, booking_id: v === "_" ? null : v })}>
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_">— None —</SelectItem>
+                {bookings.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.booking_number} — {b.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Description"><Input value={f.description || ""} onChange={e => setF({ ...f, description: e.target.value })} /></Field>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button className="gold-gradient text-accent-foreground" disabled={!f.vehicle_id || !f.amount || save.isPending} onClick={() => save.mutate()}>
+            {save.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
