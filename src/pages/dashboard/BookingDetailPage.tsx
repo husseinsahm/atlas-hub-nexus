@@ -63,6 +63,9 @@ import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 import { PricingStudio } from "@/components/booking/PricingStudio";
 import { PresenceBar } from "@/components/booking/PresenceBar";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
+import { SaveAsRecipeDialog } from "@/components/recipes/SaveAsRecipeDialog";
+import { RecipeLibraryDialog } from "@/components/recipes/RecipeLibraryDialog";
+import { BookOpen, Library } from "lucide-react";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -123,6 +126,8 @@ export default function BookingDetailPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showSaveRecipe, setShowSaveRecipe] = useState(false);
+  const [showRecipeLibrary, setShowRecipeLibrary] = useState(false);
 
   // ─── Realtime presence & cache sync ───
   const { members: presenceMembers } = useBookingRealtime(id);
