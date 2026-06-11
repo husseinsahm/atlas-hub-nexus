@@ -747,10 +747,24 @@ export default function BookingDetailPage() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
-                <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={generateInvoice}>
+                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowQuotationModal(true)}>
-                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                  <FileText className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={goToPayments}>
+                  <CreditCard className="w-4 h-4 me-2" />{isArabic ? "إضافة دفعة" : "Add Payment"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => duplicateBooking.mutate()} disabled={duplicateBooking.isPending}>
+                  <Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ الحجز" : "Duplicate Booking"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
