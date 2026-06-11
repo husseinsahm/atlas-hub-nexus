@@ -39,6 +39,7 @@ import FleetPage from "./pages/dashboard/FleetPage";
 import DispatchPage from "./pages/dashboard/DispatchPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import SharedBooking from "./pages/shared/SharedBooking";
+import DriverPortal from "./pages/shared/DriverPortal";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import TasksPage from "./pages/dashboard/TasksPage";
