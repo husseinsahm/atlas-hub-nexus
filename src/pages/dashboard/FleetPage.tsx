@@ -62,6 +62,7 @@ interface Driver {
 
 export default function FleetPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const qc = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
