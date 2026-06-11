@@ -643,18 +643,14 @@ export default function BillingPage() {
                           </Button>
                         );
                       }
-                      return tier.slug === "enterprise" ? (
-                        <Button variant="outline" className="w-full gap-2">
-                          <Phone className="w-4 h-4" /> Contact Sales
-                        </Button>
-                      ) : action === "current" ? (
+                      return action === "current" ? (
                         <Button disabled className="w-full">Current Plan</Button>
                       ) : action === "upgrade" ? (
                         <Button
                           className="w-full bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
                           onClick={() => setUpgradeDialog(tier.slug)}
                         >
-                          <Sparkles className="w-4 h-4" /> Upgrade
+                          <Sparkles className="w-4 h-4" /> Upgrade to Pro
                         </Button>
                       ) : (
                         <Button
