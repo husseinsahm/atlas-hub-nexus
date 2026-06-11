@@ -81,19 +81,40 @@ export default function SubscriptionManagement() {
 
   const approveRequest = useMutation({
     mutationFn: async ({ request, approved }: { request: any; approved: boolean }) => {
-      // Update the request status
+      const { data: authData } = await supabase.auth.getUser();
+      const reviewerId = authData?.user?.id ?? null;
+
+      // Resolve subscription — fall back to company's active subscription if missing on the request
+      let subscriptionId: string | null = request.subscription_id ?? null;
+      if (approved && !subscriptionId) {
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("company_id", request.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        subscriptionId = sub?.id ?? null;
+      }
+
+      // Update the request status (and backfill subscription_id if we just resolved it)
       const { error: reqError } = await supabase
         .from("upgrade_requests")
         .update({
           status: approved ? "approved" : "rejected",
           admin_notes: reviewNotes || null,
           reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewerId,
+          subscription_id: subscriptionId,
         })
         .eq("id", request.id);
       if (reqError) throw reqError;
 
-      // If approved, actually update the subscription
-      if (approved && request.subscription_id) {
+      if (approved) {
+        if (!subscriptionId) {
+          throw new Error("No subscription found for this company. Cannot apply plan change.");
+        }
+
         const now = new Date();
         const periodEnd = request.requested_billing_cycle === "yearly"
           ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
@@ -111,10 +132,12 @@ export default function SubscriptionManagement() {
             billing_cycle: request.requested_billing_cycle,
             current_period_start: now.toISOString(),
             current_period_end: periodEnd.toISOString(),
+            trial_starts_at: null,
             trial_ends_at: null,
             canceled_at: null,
+            payment_status: "paid",
           })
-          .eq("id", request.subscription_id);
+          .eq("id", subscriptionId);
         if (subError) throw subError;
 
         // Insert billing history
@@ -125,10 +148,10 @@ export default function SubscriptionManagement() {
           currency: "USD",
           status: "paid",
           description: `Plan changed to ${targetPlan?.name} - ${request.requested_billing_cycle === "yearly" ? "Annual" : "Monthly"} (Admin approved)`,
-          subscription_id: request.subscription_id,
+          subscription_id: subscriptionId,
         });
 
-        // Send notification email
+        // Send notification email (non-blocking)
         supabase.functions.invoke("subscription-emails", {
           body: {
             type: "upgrade",
