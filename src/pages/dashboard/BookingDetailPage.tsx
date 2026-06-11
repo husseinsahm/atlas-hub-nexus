@@ -61,6 +61,8 @@ import { TravelersTab as PremiumTravelersTab } from "@/components/booking/Travel
 import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
 import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 import { PricingStudio } from "@/components/booking/PricingStudio";
+import { PresenceBar } from "@/components/booking/PresenceBar";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -121,6 +123,11 @@ export default function BookingDetailPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+
+  // ─── Realtime presence & cache sync ───
+  const { members: presenceMembers } = useBookingRealtime(id);
+
+
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
@@ -687,6 +694,10 @@ export default function BookingDetailPage() {
             {isArabic ? "الحجوزات" : "Bookings"}
           </Button>
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Live presence */}
+            {presenceMembers.length > 0 && (
+              <PresenceBar members={presenceMembers} currentUserId={user?.id} isArabic={isArabic} />
+            )}
             {/* Share buttons */}
             <Button
               size="sm"
