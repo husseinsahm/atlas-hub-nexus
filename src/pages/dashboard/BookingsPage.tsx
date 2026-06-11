@@ -1081,6 +1081,8 @@ export default function BookingsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RecipeLibraryDialog open={showRecipeLibrary} onOpenChange={setShowRecipeLibrary} />
     </div>
   );
 }
