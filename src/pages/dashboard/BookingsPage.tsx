@@ -12,8 +12,9 @@ import {
   Loader2, Briefcase, ChevronRight, Clock, Plane, X,
   User, Phone, Mail, Globe, MapPin, ArrowUpDown, ArrowDown, ArrowUp,
   MoreHorizontal, Trash2, UserCheck, Download, CheckSquare,
-  ChevronLeft, ChevronsLeft, ChevronsRight,
+  ChevronLeft, ChevronsLeft, ChevronsRight, Library,
 } from "lucide-react";
+import { RecipeLibraryDialog } from "@/components/recipes/RecipeLibraryDialog";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { NoBookingsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
