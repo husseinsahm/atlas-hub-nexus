@@ -1542,6 +1542,14 @@ export default function BookingDetailPage() {
         customerId={booking?.customer_id || undefined}
         leadId={booking?.lead_id || undefined}
       />
+
+      <PricingStudio
+        open={showPricing}
+        onOpenChange={setShowPricing}
+        booking={booking}
+        servicesCost={servicesActiveCost || 0}
+        isArabic={isArabic}
+      />
     </div>
   );
 }
