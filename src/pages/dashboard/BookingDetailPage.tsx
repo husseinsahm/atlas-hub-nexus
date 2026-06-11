@@ -1447,14 +1447,13 @@ export default function BookingDetailPage() {
         </Card>
       )}
 
-      {/* ─── TAB: Timeline ─── */}
+      {/* ─── TAB: Timeline (unified) ─── */}
       {activeTab === "timeline" && (
-        <TimelineTab
-          activities={activities}
+        <UnifiedTimeline
+          bookingId={booking.id}
+          companyId={booking.company_id}
           isArabic={isArabic}
           getProfileName={getProfileName}
-          onAddComment={(text: string) => addComment.mutate(text)}
-          isAddingComment={addComment.isPending}
         />
       )}
 
