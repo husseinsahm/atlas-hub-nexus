@@ -505,7 +505,15 @@ function LogDialog({ open, type, trip, token, driverId, companyId, onClose, onSa
               <div className="space-y-1.5">
                 <Label className="text-xs">Customer Signature</Label>
                 <div className="rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/30">
-                  <canvas ref={sigRef} width={400} height={160} className="w-full h-40 touch-none rounded-lg" />
+                  <canvas
+                    ref={sigRef}
+                    className="block w-full h-40 touch-none rounded-lg cursor-crosshair bg-white"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
+                    onPointerLeave={onPointerUp}
+                  />
                 </div>
                 <div className="flex justify-between items-center">
                   <Button type="button" variant="ghost" size="sm" onClick={clearSig}>Clear</Button>
