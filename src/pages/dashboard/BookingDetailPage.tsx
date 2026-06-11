@@ -66,6 +66,7 @@ import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 import { SaveAsRecipeDialog } from "@/components/recipes/SaveAsRecipeDialog";
 import { RecipeLibraryDialog } from "@/components/recipes/RecipeLibraryDialog";
 import { BookOpen, Library } from "lucide-react";
+import { runAutomations } from "@/lib/automations";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -305,6 +306,7 @@ export default function BookingDetailPage() {
   // ─── Mutations ───
   const updateBooking = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
+      const previousStatus = booking?.status;
       const { error } = await supabase.from("bookings").update(updates).eq("id", id!);
       if (error) throw error;
       if (updates.status && booking) {
@@ -328,6 +330,13 @@ export default function BookingDetailPage() {
             entityId: id!,
           });
         }
+        // Fire-and-forget automation engine
+        runAutomations({
+          event: "booking_status_changed",
+          booking: { ...booking, ...updates } as any,
+          payload: { from_status: previousStatus, to_status: updates.status },
+          actorUserId: user?.id,
+        });
       }
     },
     onSuccess: () => {
