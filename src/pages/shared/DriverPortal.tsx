@@ -385,41 +385,63 @@ function LogDialog({ open, type, trip, token, driverId, companyId, onClose, onSa
 
   // Signature canvas drawing
   useEffect(() => {
+    if (!open || type !== "complete") return;
     const canvas = sigRef.current;
-    if (!canvas || type !== "complete") return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
+    if (!canvas) return;
 
-    const getPos = (e: any) => {
+    // Wait a tick so the canvas has been laid out inside the dialog
+    const setup = () => {
       const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      return { x, y };
-    };
-    const start = (e: any) => { e.preventDefault(); drawing.current = true; const { x, y } = getPos(e); ctx.beginPath(); ctx.moveTo(x, y); };
-    const move = (e: any) => { if (!drawing.current) return; e.preventDefault(); const { x, y } = getPos(e); ctx.lineTo(x, y); ctx.stroke(); };
-    const end = () => { drawing.current = false; };
+      if (rect.width === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.scale(dpr, dpr);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
 
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    canvas.addEventListener("mouseup", end);
-    canvas.addEventListener("mouseleave", end);
-    canvas.addEventListener("touchstart", start);
-    canvas.addEventListener("touchmove", move);
-    canvas.addEventListener("touchend", end);
+      const getPos = (e: any) => {
+        const r = canvas.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: cx - r.left, y: cy - r.top };
+      };
+      const start = (e: any) => { e.preventDefault(); drawing.current = true; const { x, y } = getPos(e); ctx.beginPath(); ctx.moveTo(x, y); };
+      const move = (e: any) => { if (!drawing.current) return; e.preventDefault(); const { x, y } = getPos(e); ctx.lineTo(x, y); ctx.stroke(); };
+      const end = () => { drawing.current = false; };
+
+      const opts: any = { passive: false };
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      canvas.addEventListener("mouseup", end);
+      canvas.addEventListener("mouseleave", end);
+      canvas.addEventListener("touchstart", start, opts);
+      canvas.addEventListener("touchmove", move, opts);
+      canvas.addEventListener("touchend", end);
+
+      cleanup = () => {
+        canvas.removeEventListener("mousedown", start);
+        canvas.removeEventListener("mousemove", move);
+        canvas.removeEventListener("mouseup", end);
+        canvas.removeEventListener("mouseleave", end);
+        canvas.removeEventListener("touchstart", start);
+        canvas.removeEventListener("touchmove", move);
+        canvas.removeEventListener("touchend", end);
+      };
+    };
+
+    let cleanup: (() => void) | undefined;
+    const raf = requestAnimationFrame(setup);
     return () => {
-      canvas.removeEventListener("mousedown", start);
-      canvas.removeEventListener("mousemove", move);
-      canvas.removeEventListener("mouseup", end);
-      canvas.removeEventListener("mouseleave", end);
-      canvas.removeEventListener("touchstart", start);
-      canvas.removeEventListener("touchmove", move);
-      canvas.removeEventListener("touchend", end);
+      cancelAnimationFrame(raf);
+      cleanup?.();
     };
   }, [open, type]);
+
 
   const clearSig = () => {
     const c = sigRef.current;
