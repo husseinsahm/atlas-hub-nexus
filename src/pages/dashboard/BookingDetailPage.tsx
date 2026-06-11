@@ -124,6 +124,11 @@ export default function BookingDetailPage() {
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
 
+  // ─── Realtime presence & cache sync ───
+  const { members: presenceMembers } = useBookingRealtime(id);
+
+
+
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
     queryKey: ["booking", id],
