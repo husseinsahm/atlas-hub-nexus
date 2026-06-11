@@ -35,6 +35,8 @@ import InvoicesPage from "./pages/dashboard/InvoicesPage";
 import InvoiceDetailPage from "./pages/dashboard/InvoiceDetailPage";
 import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
+import FleetPage from "./pages/dashboard/FleetPage";
+import DispatchPage from "./pages/dashboard/DispatchPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import SharedBooking from "./pages/shared/SharedBooking";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
