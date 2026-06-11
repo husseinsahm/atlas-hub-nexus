@@ -639,6 +639,13 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         </div>
         </>
       )}
+      </div>
+      {showPreview && (
+        <SplitViewPreview booking={booking} itineraryDays={itineraryDays} isArabic={isArabic} />
+      )}
+      </div>
+
+
 
       {/* ─── Template Import Dialog ─── */}
       <Dialog open={showTemplateImport} onOpenChange={setShowTemplateImport}>
