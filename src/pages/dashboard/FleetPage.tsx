@@ -239,36 +239,36 @@ export default function FleetPage() {
             <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center">
               <Bus className="w-5 h-5 text-accent-foreground" />
             </div>
-            Fleet Management
+            {t("fleet.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage vehicles, drivers, maintenance and documents
+            {t("fleet.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           {tab === "vehicles" && (
             <Button onClick={() => setVehicleDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> New Vehicle
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.newVehicle")}
             </Button>
           )}
           {tab === "drivers" && (
             <Button onClick={() => setDriverDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> New Driver
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.newDriver")}
             </Button>
           )}
           {tab === "maintenance" && (
             <Button onClick={() => setMaintDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Log Maintenance
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.logMaintenance")}
             </Button>
           )}
           {tab === "documents" && (
             <Button onClick={() => setDocDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Add Document
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.addDocument")}
             </Button>
           )}
           {tab === "expenses" && (
             <Button onClick={() => setExpDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Log Expense
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.logExpense")}
             </Button>
           )}
         </div>
