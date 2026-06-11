@@ -25,7 +25,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SplitViewPreview } from "@/components/itinerary/SplitViewPreview";
-import { Columns2 } from "lucide-react";
+import { ItineraryMapView } from "@/components/itinerary/ItineraryMapView";
+import { Columns2, Map as MapIcon } from "lucide-react";
 
 interface ItineraryDay {
   id: string;
@@ -102,6 +103,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [librarySearch, setLibrarySearch] = useState("");
   const [showTemplateImport, setShowTemplateImport] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   // Fetch library items for the company
   const { data: libraryItems = [] } = useQuery({
