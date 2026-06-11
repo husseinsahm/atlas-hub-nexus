@@ -25,6 +25,7 @@ import {
   ClipboardList,
   Bus,
   CalendarClock,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
