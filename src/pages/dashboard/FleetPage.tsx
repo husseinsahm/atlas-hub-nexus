@@ -316,15 +316,15 @@ export default function FleetPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <TabsList>
-            <TabsTrigger value="vehicles"><Bus className="w-4 h-4 mr-2" />Vehicles</TabsTrigger>
-            <TabsTrigger value="drivers"><Users className="w-4 h-4 mr-2" />Drivers</TabsTrigger>
-            <TabsTrigger value="maintenance"><Wrench className="w-4 h-4 mr-2" />Maintenance</TabsTrigger>
-            <TabsTrigger value="documents"><BadgeCheck className="w-4 h-4 mr-2" />Documents</TabsTrigger>
-            <TabsTrigger value="expenses"><Fuel className="w-4 h-4 mr-2" />Expenses</TabsTrigger>
+            <TabsTrigger value="vehicles"><Bus className="w-4 h-4 mr-2" />{t("fleet.tab.vehicles")}</TabsTrigger>
+            <TabsTrigger value="drivers"><Users className="w-4 h-4 mr-2" />{t("fleet.tab.drivers")}</TabsTrigger>
+            <TabsTrigger value="maintenance"><Wrench className="w-4 h-4 mr-2" />{t("fleet.tab.maintenance")}</TabsTrigger>
+            <TabsTrigger value="documents"><BadgeCheck className="w-4 h-4 mr-2" />{t("fleet.tab.documents")}</TabsTrigger>
+            <TabsTrigger value="expenses"><Fuel className="w-4 h-4 mr-2" />{t("fleet.tab.expenses")}</TabsTrigger>
           </TabsList>
           <div className="relative max-w-xs w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+            <Input placeholder={t("fleet.search")} value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
         </div>
 
