@@ -387,6 +387,91 @@ export type Database = {
           },
         ]
       }
+      booking_recipes: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          destination: string | null
+          duration_days: number | null
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          name: string
+          parent_id: string | null
+          source_booking_id: string | null
+          structure: Json
+          tags: string[] | null
+          updated_at: string
+          usage_count: number
+          version: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          destination?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          name: string
+          parent_id?: string | null
+          source_booking_id?: string | null
+          structure?: Json
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number
+          version?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          destination?: string | null
+          duration_days?: number | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          name?: string
+          parent_id?: string | null
+          source_booking_id?: string | null
+          structure?: Json
+          tags?: string[] | null
+          updated_at?: string
+          usage_count?: number
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_recipes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recipes_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "booking_recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_recipes_source_booking_id_fkey"
+            columns: ["source_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_services: {
         Row: {
           booking_id: string
