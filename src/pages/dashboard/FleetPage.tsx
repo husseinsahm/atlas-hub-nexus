@@ -69,6 +69,9 @@ export default function FleetPage() {
   const [search, setSearch] = useState("");
   const [vehicleDialog, setVehicleDialog] = useState<{ open: boolean; data?: Partial<Vehicle> }>({ open: false });
   const [driverDialog, setDriverDialog] = useState<{ open: boolean; data?: Partial<Driver> }>({ open: false });
+  const [maintDialog, setMaintDialog] = useState<{ open: boolean; data?: any }>({ open: false });
+  const [docDialog, setDocDialog] = useState<{ open: boolean; data?: any }>({ open: false });
+  const [expDialog, setExpDialog] = useState<{ open: boolean; data?: any }>({ open: false });
 
   const { data: vehicles = [], isLoading: loadV } = useQuery({
     queryKey: ["fleet-vehicles", companyId],
