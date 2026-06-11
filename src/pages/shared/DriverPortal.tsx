@@ -383,70 +383,58 @@ function LogDialog({ open, type, trip, token, driverId, companyId, onClose, onSa
     if (open) setForm({});
   }, [open, type]);
 
-  // Signature canvas drawing
-  useEffect(() => {
-    if (!open || type !== "complete") return;
-    const canvas = sigRef.current;
-    if (!canvas) return;
+  // Signature drawing via pointer events (works for mouse + touch + pen)
+  const getCtx = () => {
+    const c = sigRef.current;
+    if (!c) return null;
+    // Lazy-size the backing store once to match displayed size
+    const rect = c.getBoundingClientRect();
+    if (c.width !== Math.floor(rect.width) || c.height !== Math.floor(rect.height)) {
+      c.width = Math.floor(rect.width);
+      c.height = Math.floor(rect.height);
+    }
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    return ctx;
+  };
 
-    // Wait a tick so the canvas has been laid out inside the dialog
-    const setup = () => {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0) return;
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(rect.width * dpr);
-      canvas.height = Math.floor(rect.height * dpr);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.scale(dpr, dpr);
-      ctx.strokeStyle = "#000";
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      const getPos = (e: any) => {
-        const r = canvas.getBoundingClientRect();
-        const cx = e.touches ? e.touches[0].clientX : e.clientX;
-        const cy = e.touches ? e.touches[0].clientY : e.clientY;
-        return { x: cx - r.left, y: cy - r.top };
-      };
-      const start = (e: any) => { e.preventDefault(); drawing.current = true; const { x, y } = getPos(e); ctx.beginPath(); ctx.moveTo(x, y); };
-      const move = (e: any) => { if (!drawing.current) return; e.preventDefault(); const { x, y } = getPos(e); ctx.lineTo(x, y); ctx.stroke(); };
-      const end = () => { drawing.current = false; };
-
-      const opts: any = { passive: false };
-      canvas.addEventListener("mousedown", start);
-      canvas.addEventListener("mousemove", move);
-      canvas.addEventListener("mouseup", end);
-      canvas.addEventListener("mouseleave", end);
-      canvas.addEventListener("touchstart", start, opts);
-      canvas.addEventListener("touchmove", move, opts);
-      canvas.addEventListener("touchend", end);
-
-      cleanup = () => {
-        canvas.removeEventListener("mousedown", start);
-        canvas.removeEventListener("mousemove", move);
-        canvas.removeEventListener("mouseup", end);
-        canvas.removeEventListener("mouseleave", end);
-        canvas.removeEventListener("touchstart", start);
-        canvas.removeEventListener("touchmove", move);
-        canvas.removeEventListener("touchend", end);
-      };
+  const pointerPos = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const c = sigRef.current!;
+    const rect = c.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) * c.width) / rect.width,
+      y: ((e.clientY - rect.top) * c.height) / rect.height,
     };
+  };
 
-    let cleanup: (() => void) | undefined;
-    const raf = requestAnimationFrame(setup);
-    return () => {
-      cancelAnimationFrame(raf);
-      cleanup?.();
-    };
-  }, [open, type]);
-
+  const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const ctx = getCtx();
+    if (!ctx) return;
+    (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
+    drawing.current = true;
+    const { x, y } = pointerPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawing.current) return;
+    const ctx = sigRef.current?.getContext("2d");
+    if (!ctx) return;
+    const { x, y } = pointerPos(e);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+  const onPointerUp = () => { drawing.current = false; };
 
   const clearSig = () => {
     const c = sigRef.current;
     if (c) c.getContext("2d")?.clearRect(0, 0, c.width, c.height);
   };
+
 
   const save = useMutation({
     mutationFn: async () => {
