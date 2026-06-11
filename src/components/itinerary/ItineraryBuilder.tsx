@@ -24,6 +24,8 @@ import { MultiCityAutocomplete } from "@/components/ui/multi-city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SplitViewPreview } from "@/components/itinerary/SplitViewPreview";
+import { Columns2 } from "lucide-react";
 
 interface ItineraryDay {
   id: string;
@@ -99,6 +101,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [showLibraryPicker, setShowLibraryPicker] = useState<string | null>(null); // dayId or null
   const [librarySearch, setLibrarySearch] = useState("");
   const [showTemplateImport, setShowTemplateImport] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Fetch library items for the company
   const { data: libraryItems = [] } = useQuery({
@@ -416,6 +419,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
 
   return (
     <div className="space-y-4">
+      <div className={showPreview ? "grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-4" : ""}>
+      <div className="space-y-4 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -433,6 +438,17 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {itineraryDays.length > 0 && (
+            <Button
+              size="sm"
+              variant={showPreview ? "default" : "outline"}
+              className="text-[11px] gap-1.5 h-8"
+              onClick={() => setShowPreview(v => !v)}
+            >
+              <Columns2 className="w-3.5 h-3.5" />
+              {isArabic ? "معاينة" : "Preview"}
+            </Button>
+          )}
           {itineraryDays.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -623,6 +639,13 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         </div>
         </>
       )}
+      </div>
+      {showPreview && (
+        <SplitViewPreview booking={booking} itineraryDays={itineraryDays} isArabic={isArabic} />
+      )}
+      </div>
+
+
 
       {/* ─── Template Import Dialog ─── */}
       <Dialog open={showTemplateImport} onOpenChange={setShowTemplateImport}>
