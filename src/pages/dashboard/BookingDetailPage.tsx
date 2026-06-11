@@ -1579,9 +1579,6 @@ export default function BookingDetailPage() {
     </div>
   );
 }
-    </div>
-  );
-}
 
 // ─── Sub-Components ───
 
