@@ -61,6 +61,8 @@ import { TravelersTab as PremiumTravelersTab } from "@/components/booking/Travel
 import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
 import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 import { PricingStudio } from "@/components/booking/PricingStudio";
+import { PresenceBar } from "@/components/booking/PresenceBar";
+import { useBookingRealtime } from "@/hooks/useBookingRealtime";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
