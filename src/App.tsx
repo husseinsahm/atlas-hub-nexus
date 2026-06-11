@@ -108,6 +108,7 @@ function AppRoutes() {
       {/* Shared trip - public, token-based */}
       <Route path="/trip/:token" element={<SharedTrip />} />
       <Route path="/booking/:token" element={<SharedBooking />} />
+      <Route path="/driver/:token" element={<DriverPortal />} />
 
       {/* Super Admin Panel */}
       <Route path="/admin" element={<SuperAdminRoute><AdminLayout /></SuperAdminRoute>}>
