@@ -54,7 +54,7 @@ export default function OperationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("upcoming");
-  const [activeTab, setActiveTab] = useState("bookings");
+  const [activeTab, setActiveTab] = useState("today");
 
   // Fetch confirmed/in_operation bookings
   const { data: bookings = [], isLoading } = useQuery({
