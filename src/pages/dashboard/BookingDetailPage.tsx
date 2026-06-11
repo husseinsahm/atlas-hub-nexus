@@ -63,6 +63,9 @@ import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 import { PricingStudio } from "@/components/booking/PricingStudio";
 import { PresenceBar } from "@/components/booking/PresenceBar";
 import { useBookingRealtime } from "@/hooks/useBookingRealtime";
+import { SaveAsRecipeDialog } from "@/components/recipes/SaveAsRecipeDialog";
+import { RecipeLibraryDialog } from "@/components/recipes/RecipeLibraryDialog";
+import { BookOpen, Library } from "lucide-react";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -123,6 +126,8 @@ export default function BookingDetailPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showSaveRecipe, setShowSaveRecipe] = useState(false);
+  const [showRecipeLibrary, setShowRecipeLibrary] = useState(false);
 
   // ─── Realtime presence & cache sync ───
   const { members: presenceMembers } = useBookingRealtime(id);
@@ -774,6 +779,13 @@ export default function BookingDetailPage() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => duplicateBooking.mutate()} disabled={duplicateBooking.isPending}>
                   <Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ الحجز" : "Duplicate Booking"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowSaveRecipe(true)}>
+                  <BookOpen className="w-4 h-4 me-2" />{isArabic ? "حفظ كوصفة" : "Save as Recipe"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowRecipeLibrary(true)}>
+                  <Library className="w-4 h-4 me-2" />{isArabic ? "مكتبة الوصفات" : "Recipe Library"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => window.print()}>
@@ -1561,6 +1573,16 @@ export default function BookingDetailPage() {
         servicesCost={servicesActiveCost || 0}
         isArabic={isArabic}
       />
+
+      <SaveAsRecipeDialog
+        open={showSaveRecipe}
+        onOpenChange={setShowSaveRecipe}
+        bookingId={id!}
+        defaultName={booking?.title || ""}
+        defaultDurationDays={booking?.total_days}
+      />
+
+      <RecipeLibraryDialog open={showRecipeLibrary} onOpenChange={setShowRecipeLibrary} />
     </div>
   );
 }

@@ -12,8 +12,9 @@ import {
   Loader2, Briefcase, ChevronRight, Clock, Plane, X,
   User, Phone, Mail, Globe, MapPin, ArrowUpDown, ArrowDown, ArrowUp,
   MoreHorizontal, Trash2, UserCheck, Download, CheckSquare,
-  ChevronLeft, ChevronsLeft, ChevronsRight,
+  ChevronLeft, ChevronsLeft, ChevronsRight, Library,
 } from "lucide-react";
+import { RecipeLibraryDialog } from "@/components/recipes/RecipeLibraryDialog";
 import { NationalitySelect } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { NoBookingsEmptyState, NoSearchResultsEmptyState } from "@/components/ui/empty-state";
@@ -97,6 +98,7 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const [showRecipeLibrary, setShowRecipeLibrary] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -394,10 +396,20 @@ export default function BookingsPage() {
             {bookings.length} {isArabic ? "حجز إجمالي" : "total bookings"}
           </p>
         </div>
-        <Button onClick={handleNewBookingClick} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <Plus className="w-4 h-4" />
-          {isArabic ? "حجز جديد" : "New Booking"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowRecipeLibrary(true)}
+            className="gap-2"
+          >
+            <Library className="w-4 h-4" />
+            {isArabic ? "من وصفة" : "From Recipe"}
+          </Button>
+          <Button onClick={handleNewBookingClick} className="gold-gradient text-accent-foreground gap-2 shadow-md hover:shadow-lg transition-shadow">
+            <Plus className="w-4 h-4" />
+            {isArabic ? "حجز جديد" : "New Booking"}
+          </Button>
+        </div>
       </motion.div>
 
       {/* ─── Pipeline Summary Bar ─── */}
@@ -1069,6 +1081,8 @@ export default function BookingsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RecipeLibraryDialog open={showRecipeLibrary} onOpenChange={setShowRecipeLibrary} />
     </div>
   );
 }

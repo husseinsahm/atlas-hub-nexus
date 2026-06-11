@@ -109,9 +109,9 @@ WHEN booking status → "confirmed"
 
 ## ترتيب التنفيذ المقترح
 
-1. Smart Pricing Engine — أعلى قيمة فورية للوكيل
-2. Live Collaboration — يحسّن UX يومياً
-3. Operations Dashboard — يفك اختناقات الفريق التشغيلي
-4. Booking Templates & Recipes
+1. ✅ Smart Pricing Engine
+2. ✅ Live Collaboration & Presence
+3. ✅ Operations Dashboard
+4. ✅ Booking Templates & Recipes
 5. Automated Workflows
 6. Client Portal 2.0
