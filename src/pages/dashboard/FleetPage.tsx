@@ -276,12 +276,12 @@ export default function FleetPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard icon={Bus} label="Total Vehicles" value={stats.total} tone="primary" />
-        <StatCard icon={BadgeCheck} label="Available" value={stats.available} tone="emerald" />
-        <StatCard icon={Gauge} label="In Use" value={stats.inUse} tone="blue" />
-        <StatCard icon={Wrench} label="Maintenance" value={stats.maintenance} tone="amber" />
-        <StatCard icon={Users} label="Drivers" value={stats.drivers} tone="primary" />
-        <StatCard icon={BadgeCheck} label="Drivers Free" value={stats.driversAvail} tone="emerald" />
+        <StatCard icon={Bus} label={t("fleet.stat.total")} value={stats.total} tone="primary" />
+        <StatCard icon={BadgeCheck} label={t("fleet.stat.available")} value={stats.available} tone="emerald" />
+        <StatCard icon={Gauge} label={t("fleet.stat.inUse")} value={stats.inUse} tone="blue" />
+        <StatCard icon={Wrench} label={t("fleet.stat.maintenance")} value={stats.maintenance} tone="amber" />
+        <StatCard icon={Users} label={t("fleet.stat.drivers")} value={stats.drivers} tone="primary" />
+        <StatCard icon={BadgeCheck} label={t("fleet.stat.driversFree")} value={stats.driversAvail} tone="emerald" />
       </div>
 
       {/* Alerts */}
