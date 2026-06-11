@@ -89,9 +89,9 @@ export function SaveAsRecipeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 overflow-hidden gap-0">
         <ModalDarkHeader
-          icon={BookOpen}
+          icon={<BookOpen className="w-5 h-5" />}
           title={isArabic ? "حفظ كوصفة" : "Save as Recipe"}
-          subtitle={
+          description={
             isArabic
               ? "خزّن هذا الحجز كقالب لإعادة الاستخدام لاحقاً"
               : "Snapshot this booking as a reusable template"

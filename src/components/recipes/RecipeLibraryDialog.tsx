@@ -102,9 +102,9 @@ export function RecipeLibraryDialog({ open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl p-0 overflow-hidden gap-0 max-h-[85vh] flex flex-col">
         <ModalDarkHeader
-          icon={Library}
+          icon={<Library className="w-5 h-5" />}
           title={isArabic ? "مكتبة الوصفات" : "Recipe Library"}
-          subtitle={
+          description={
             isArabic
               ? "ابدأ ملف حجز جديد من قالب جاهز خلال ثوانٍ"
               : "Launch a brand-new booking file from a proven template in seconds"
