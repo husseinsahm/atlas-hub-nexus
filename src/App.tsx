@@ -44,6 +44,7 @@ import DriverPortal from "./pages/shared/DriverPortal";
 import AnalyticsPage from "./pages/dashboard/AnalyticsPage";
 import BillingPage from "./pages/dashboard/BillingPage";
 import TasksPage from "./pages/dashboard/TasksPage";
+import AutomationsPage from "./pages/dashboard/AutomationsPage";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -165,6 +166,7 @@ function AppRoutes() {
         <Route path="staff" element={<TeamPage />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="automations" element={<AutomationsPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
