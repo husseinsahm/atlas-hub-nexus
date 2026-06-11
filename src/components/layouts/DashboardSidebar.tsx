@@ -79,6 +79,7 @@ const navigationGroups = [
       { title: "Bookings", translationKey: "nav.bookings", url: "/dashboard/bookings", icon: Briefcase, roles: ["company_admin", "agent", "operations", "finance"] as AppRole[] },
       { title: "Dispatch Board", translationKey: "nav.dispatch", url: "/dashboard/dispatch", icon: CalendarClock, roles: ["company_admin", "operations"] as AppRole[] },
       { title: "Fleet", translationKey: "nav.fleet", url: "/dashboard/fleet", icon: Bus, roles: ["company_admin", "operations"] as AppRole[] },
+      { title: "Fleet Reports", translationKey: "nav.fleetReports", url: "/dashboard/fleet-reports", icon: BarChart3, roles: ["company_admin", "operations", "finance"] as AppRole[] },
       { title: "Operations", translationKey: "nav.operations", url: "/dashboard/operations", icon: Compass, roles: ["company_admin", "operations"] as AppRole[] },
     ]
   },

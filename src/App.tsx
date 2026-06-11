@@ -37,6 +37,7 @@ import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import FleetPage from "./pages/dashboard/FleetPage";
 import DispatchPage from "./pages/dashboard/DispatchPage";
+import FleetReportsPage from "./pages/dashboard/FleetReportsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import SharedBooking from "./pages/shared/SharedBooking";
 import DriverPortal from "./pages/shared/DriverPortal";
@@ -144,6 +145,7 @@ function AppRoutes() {
         <Route path="operations" element={<OperationsPage />} />
         <Route path="fleet" element={<FleetPage />} />
         <Route path="dispatch" element={<DispatchPage />} />
+        <Route path="fleet-reports" element={<FleetReportsPage />} />
         
         {/* Product Management */}
         <Route path="templates" element={<TemplatesPage />} />
