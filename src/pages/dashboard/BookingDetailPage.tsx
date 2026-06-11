@@ -60,6 +60,7 @@ import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotation
 import { TravelersTab as PremiumTravelersTab } from "@/components/booking/TravelersTab";
 import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
 import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
+import { PricingStudio } from "@/components/booking/PricingStudio";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
