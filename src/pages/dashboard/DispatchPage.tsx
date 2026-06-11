@@ -535,6 +535,70 @@ function AssignmentDialog({ open, editing, defaultDate, vehicles, drivers, onClo
               <ExternalLink className="w-3.5 h-3.5 mr-2" /> Open Booking File
             </Button>
           )}
+
+          {/* Driver trip logs */}
+          {editing && (
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-slate-700 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5" /> Driver Trip Logs
+                </Label>
+                <Badge variant="outline" className="text-[10px]">{logs.length}</Badge>
+              </div>
+              {logs.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic py-3 text-center bg-muted/30 rounded-md">
+                  No logs yet from the driver portal.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {logs.map((l: any) => {
+                    const cfg: any = {
+                      check_in:  { icon: CheckCircle2, label: "Check-in",  tone: "bg-blue-50 text-blue-700 border-blue-200" },
+                      check_out: { icon: CheckCircle2, label: "Check-out / Completed", tone: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                      fuel:      { icon: Fuel,         label: "Fuel",      tone: "bg-amber-50 text-amber-700 border-amber-200" },
+                      incident:  { icon: AlertTriangle,label: "Incident",  tone: "bg-red-50 text-red-700 border-red-200" },
+                    };
+                    const c = cfg[l.event_type] || { icon: FileText, label: l.event_type, tone: "bg-slate-50 text-slate-700 border-slate-200" };
+                    const Icon = c.icon;
+                    return (
+                      <div key={l.id} className={cn("rounded-md border p-3 text-xs space-y-1.5", c.tone)}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold flex items-center gap-1.5">
+                            <Icon className="w-3.5 h-3.5" /> {c.label}
+                          </span>
+                          <span className="text-[10px] opacity-70">
+                            {format(parseISO(l.created_at), "MMM d, HH:mm")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[11px]">
+                          {l.mileage_km != null && (
+                            <div className="flex items-center gap-1"><Gauge className="w-3 h-3" /> {l.mileage_km} km</div>
+                          )}
+                          {l.fuel_amount != null && (
+                            <div className="flex items-center gap-1"><Fuel className="w-3 h-3" /> {l.fuel_amount} L</div>
+                          )}
+                          {l.fuel_cost != null && (
+                            <div>💰 {l.fuel_cost}</div>
+                          )}
+                        </div>
+                        {l.notes && <div className="text-[11px] opacity-90 whitespace-pre-wrap">{l.notes}</div>}
+                        {l.signature_data && (
+                          <div className="pt-1.5 space-y-1">
+                            <div className="flex items-center gap-1 text-[10px] font-medium opacity-80">
+                              <FileSignature className="w-3 h-3" />
+                              Customer signature{l.customer_signature_name ? ` — ${l.customer_signature_name}` : ""}
+                            </div>
+                            <img src={l.signature_data} alt="signature"
+                              className="bg-white border rounded p-1 max-h-24 object-contain" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex justify-between sm:justify-between gap-2">
