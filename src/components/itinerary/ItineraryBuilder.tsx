@@ -1217,8 +1217,8 @@ function DayCard({
                         ItemIcon={ItemIcon}
                         colorClass={colorClass}
                         onStartEdit={() => onSetEditingItemId(item.id)}
-                        onSave={(title) => {
-                          onUpdateItem(item.id, { custom_title: title });
+                        onSave={(updates) => {
+                          onUpdateItem(item.id, updates);
                           onSetEditingItemId(null);
                         }}
                         onCancel={() => onSetEditingItemId(null)}
@@ -1324,37 +1324,87 @@ function DayCard({
 function DayItemRow({ item, index, isEditing, isArabic, ItemIcon, colorClass, onStartEdit, onSave, onCancel, onDelete }: {
   item: any; index: number; isEditing: boolean; isArabic: boolean;
   ItemIcon: any; colorClass: string;
-  onStartEdit: () => void; onSave: (title: string) => void; onCancel: () => void; onDelete: () => void;
+  onStartEdit: () => void; onSave: (updates: Record<string, any>) => void; onCancel: () => void; onDelete: () => void;
 }) {
   const [editTitle, setEditTitle] = useState(item.custom_title || "");
+  const [editStart, setEditStart] = useState(item.start_time || "");
+  const [editDuration, setEditDuration] = useState<string>(item.duration_minutes ? String(item.duration_minutes) : "");
+
+  const computeEnd = (start: string, dur: string) => {
+    if (!start || !dur) return null;
+    const [h, m] = start.split(":").map(Number);
+    const d = parseInt(dur, 10);
+    if (isNaN(h) || isNaN(m) || isNaN(d)) return null;
+    const total = h * 60 + m + d;
+    const eh = Math.floor((total % (24 * 60)) / 60);
+    const em = total % 60;
+    return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+  };
 
   if (isEditing) {
+    const endTime = computeEnd(editStart, editDuration);
     return (
       <motion.div
         initial={{ opacity: 0, x: -8 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex items-center gap-2 p-2.5 rounded-lg border-2 border-primary/30 bg-primary/5"
+        className="p-2.5 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-2"
       >
-        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
-          <ItemIcon className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2">
+          <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border", colorClass)}>
+            <ItemIcon className="w-3.5 h-3.5" />
+          </div>
+          <Input
+            autoFocus
+            value={editTitle}
+            onChange={e => setEditTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") onSave({ custom_title: editTitle, start_time: editStart || null, duration_minutes: editDuration ? parseInt(editDuration, 10) : null });
+              if (e.key === "Escape") onCancel();
+            }}
+            placeholder={isArabic ? "اكتب اسم الخدمة..." : "Type service name..."}
+            className="h-7 text-xs flex-1"
+          />
+          <Button size="icon" variant="ghost" className="h-6 w-6 text-primary" onClick={() => onSave({ custom_title: editTitle, start_time: editStart || null, duration_minutes: editDuration ? parseInt(editDuration, 10) : null })}>
+            <Check className="w-3.5 h-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onCancel}>
+            <X className="w-3.5 h-3.5" />
+          </Button>
         </div>
-        <Input
-          autoFocus
-          value={editTitle}
-          onChange={e => setEditTitle(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") onSave(editTitle); if (e.key === "Escape") onCancel(); }}
-          placeholder={isArabic ? "اكتب اسم الخدمة..." : "Type service name..."}
-          className="h-7 text-xs flex-1"
-        />
-        <Button size="icon" variant="ghost" className="h-6 w-6 text-primary" onClick={() => onSave(editTitle)}>
-          <Check className="w-3.5 h-3.5" />
-        </Button>
-        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onCancel}>
-          <X className="w-3.5 h-3.5" />
-        </Button>
+        <div className="flex items-center gap-2 ps-9">
+          <div className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-muted-foreground" />
+            <Input
+              type="time"
+              value={editStart}
+              onChange={e => setEditStart(e.target.value)}
+              className="h-6 text-[10px] w-[88px] px-1.5"
+              placeholder={isArabic ? "البداية" : "Start"}
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              min="0"
+              step="15"
+              value={editDuration}
+              onChange={e => setEditDuration(e.target.value)}
+              className="h-6 text-[10px] w-16 px-1.5"
+              placeholder={isArabic ? "د" : "min"}
+            />
+            <span className="text-[10px] text-muted-foreground">{isArabic ? "دقيقة" : "min"}</span>
+          </div>
+          {endTime && (
+            <Badge variant="outline" className="text-[9px]">
+              {isArabic ? "ينتهي" : "ends"} {endTime}
+            </Badge>
+          )}
+        </div>
       </motion.div>
     );
   }
+
+  const endTime = computeEnd(item.start_time || "", item.duration_minutes ? String(item.duration_minutes) : "");
 
   return (
     <motion.div
@@ -1375,10 +1425,18 @@ function DayItemRow({ item, index, isEditing, isArabic, ItemIcon, colorClass, on
             {item.custom_title || <span className="italic text-muted-foreground">{isArabic ? "اضغط لتسمية..." : "Click to name..."}</span>}
           </span>
         </div>
-        {item.start_time && (
-          <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5">
-            <Clock className="w-2.5 h-2.5" /> {item.start_time}
-          </p>
+        {(item.start_time || item.duration_minutes) && (
+          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+            {item.start_time && (
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-2.5 h-2.5" /> {item.start_time}
+                {endTime && <span className="opacity-70"> → {endTime}</span>}
+              </span>
+            )}
+            {item.duration_minutes && (
+              <span>· {item.duration_minutes} {isArabic ? "د" : "min"}</span>
+            )}
+          </div>
         )}
       </div>
       <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity shrink-0" />
@@ -1398,3 +1456,4 @@ function DayItemRow({ item, index, isEditing, isArabic, ItemIcon, colorClass, on
     </motion.div>
   );
 }
+
