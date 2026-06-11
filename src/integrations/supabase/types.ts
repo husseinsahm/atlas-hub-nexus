@@ -282,32 +282,41 @@ export type Database = {
       booking_attachments: {
         Row: {
           booking_id: string
+          category: string | null
+          client_uploader_name: string | null
           created_at: string
           file_name: string
           file_size: number | null
           file_type: string | null
           file_url: string
           id: string
+          is_client_upload: boolean
           uploaded_by: string | null
         }
         Insert: {
           booking_id: string
+          category?: string | null
+          client_uploader_name?: string | null
           created_at?: string
           file_name: string
           file_size?: number | null
           file_type?: string | null
           file_url: string
           id?: string
+          is_client_upload?: boolean
           uploaded_by?: string | null
         }
         Update: {
           booking_id?: string
+          category?: string | null
+          client_uploader_name?: string | null
           created_at?: string
           file_name?: string
           file_size?: number | null
           file_type?: string | null
           file_url?: string
           id?: string
+          is_client_upload?: boolean
           uploaded_by?: string | null
         }
         Relationships: [
@@ -462,6 +471,7 @@ export type Database = {
       }
       booking_feedback: {
         Row: {
+          booking_day_id: string | null
           booking_id: string
           client_email: string | null
           client_name: string
@@ -472,6 +482,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          booking_day_id?: string | null
           booking_id: string
           client_email?: string | null
           client_name: string
@@ -482,6 +493,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          booking_day_id?: string | null
           booking_id?: string
           client_email?: string | null
           client_name?: string
@@ -492,6 +504,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "booking_feedback_booking_day_id_fkey"
+            columns: ["booking_day_id"]
+            isOneToOne: false
+            referencedRelation: "booking_days"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "booking_feedback_booking_id_fkey"
             columns: ["booking_id"]
