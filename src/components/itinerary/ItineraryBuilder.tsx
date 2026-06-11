@@ -26,7 +26,8 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SplitViewPreview } from "@/components/itinerary/SplitViewPreview";
 import { ItineraryMapView } from "@/components/itinerary/ItineraryMapView";
-import { Columns2, Map as MapIcon } from "lucide-react";
+import { DayTimeline } from "@/components/itinerary/DayTimeline";
+import { Columns2, Map as MapIcon, LayoutList, CalendarClock } from "lucide-react";
 
 interface ItineraryDay {
   id: string;
