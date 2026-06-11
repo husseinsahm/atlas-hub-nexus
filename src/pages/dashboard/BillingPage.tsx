@@ -195,7 +195,7 @@ export default function BillingPage() {
   });
 
   const currentPlanSlug = limits.planSlug;
-  const planOrder = ["free", "starter", "professional", "enterprise"];
+  const planOrder = ["free", "pro"];
   const currentIdx = planOrder.indexOf(currentPlanSlug);
 
   const getPlanAction = (slug: string) => {
