@@ -452,6 +452,17 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
             </Button>
           )}
           {itineraryDays.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-[11px] gap-1.5 h-8"
+              onClick={() => setShowMap(true)}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              {isArabic ? "خريطة" : "Map"}
+            </Button>
+          )}
+          {itineraryDays.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
