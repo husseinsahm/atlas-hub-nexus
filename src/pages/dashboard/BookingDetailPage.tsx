@@ -1566,6 +1566,19 @@ export default function BookingDetailPage() {
         servicesCost={servicesActiveCost || 0}
         isArabic={isArabic}
       />
+
+      <SaveAsRecipeDialog
+        open={showSaveRecipe}
+        onOpenChange={setShowSaveRecipe}
+        bookingId={id!}
+        defaultName={booking?.title || ""}
+        defaultDurationDays={booking?.total_days}
+      />
+
+      <RecipeLibraryDialog open={showRecipeLibrary} onOpenChange={setShowRecipeLibrary} />
+    </div>
+  );
+}
     </div>
   );
 }
