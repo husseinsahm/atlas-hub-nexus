@@ -429,6 +429,15 @@ export default function FleetPage() {
                             <DropdownMenuItem onClick={() => setDriverDialog({ open: true, data: d })}>
                               <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
                             </DropdownMenuItem>
+                            {d.share_token && (
+                              <DropdownMenuItem onClick={() => {
+                                const url = `${window.location.origin}/driver/${d.share_token}`;
+                                navigator.clipboard.writeText(url);
+                                toast({ title: "Driver portal link copied", description: url });
+                              }}>
+                                <Link2 className="w-3.5 h-3.5 mr-2" /> Copy Portal Link
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => softDeleteDriver.mutate(d.id)}>
                               <Trash2 className="w-3.5 h-3.5 mr-2" /> Remove
