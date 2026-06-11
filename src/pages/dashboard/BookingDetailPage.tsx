@@ -749,6 +749,9 @@ export default function BookingDetailPage() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowPricing(true)}>
+                  <DollarSign className="w-4 h-4 me-2" />{isArabic ? "استوديو التسعير" : "Pricing Studio"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={generateInvoice}>
                   <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
                 </DropdownMenuItem>
