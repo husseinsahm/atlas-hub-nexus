@@ -47,6 +47,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DispatchPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const qc = useQueryClient();
