@@ -28,7 +28,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 
-// ─── Plan definitions ───
+// ─── Plan definitions (single paid plan) ───
 const PLAN_TIERS = [
   {
     slug: "free",
@@ -43,115 +43,66 @@ const PLAN_TIERS = [
     trialDays: 14,
     limits: { users: 1, branches: 0, bookings: 5 },
     features: [
+      { name: "14-day full access trial", included: true },
       { name: "Basic Itinerary Builder", included: true },
-      { name: "Client Portal", included: false },
-      { name: "Invoicing", included: false },
-      { name: "Reporting", included: false },
-      { name: "Custom Branding", included: false },
-      { name: "API Access", included: false },
-      { name: "Priority Support", included: false },
+      { name: "Up to 5 bookings", included: true },
+      { name: "1 user", included: true },
     ],
   },
   {
-    slug: "starter",
-    name: "Starter",
-    icon: Rocket,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50 dark:bg-blue-950/20",
-    borderColor: "border-blue-200 dark:border-blue-800",
-    badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    monthly: 29,
-    yearly: 290,
-    limits: { users: 3, branches: 1, bookings: 50 },
-    features: [
-      { name: "Itinerary Builder", included: true },
-      { name: "Client Portal", included: true },
-      { name: "Invoicing", included: true },
-      { name: "Basic Reporting", included: true },
-      { name: "Email Support", included: true },
-      { name: "Custom Branding", included: false },
-      { name: "API Access", included: false },
-      { name: "Advanced Analytics", included: false },
-    ],
-  },
-  {
-    slug: "professional",
-    name: "Professional",
+    slug: "pro",
+    name: "Pro",
     icon: Crown,
     color: "text-accent",
     bgColor: "bg-amber-50 dark:bg-amber-950/20",
     borderColor: "border-accent/30",
     badgeClass: "bg-accent/10 text-accent",
-    monthly: 79,
-    yearly: 790,
+    monthly: 120,
+    yearly: 1200,
     popular: true,
-    limits: { users: 10, branches: 3, bookings: 200 },
-    features: [
-      { name: "Everything in Starter", included: true },
-      { name: "Advanced Reporting & Analytics", included: true },
-      { name: "Custom Branding", included: true },
-      { name: "API Access", included: true },
-      { name: "Operations Management", included: true },
-      { name: "Custom Document Templates", included: true },
-      { name: "Priority Email & Chat Support", included: true },
-    ],
-  },
-  {
-    slug: "enterprise",
-    name: "Enterprise",
-    icon: Building,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50 dark:bg-purple-950/20",
-    borderColor: "border-purple-200 dark:border-purple-800",
-    badgeClass: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-    monthly: null,
-    yearly: null,
     limits: { users: null, branches: null, bookings: null },
     features: [
-      { name: "Everything in Professional", included: true },
-      { name: "Unlimited Everything", included: true },
-      { name: "Dedicated Account Manager", included: true },
-      { name: "Custom Integrations", included: true },
-      { name: "SLA Guarantee", included: true },
-      { name: "White-label Solution", included: true },
-      { name: "Phone Support", included: true },
-      { name: "Custom Training & Onboarding", included: true },
+      { name: "Unlimited users & branches", included: true },
+      { name: "Unlimited bookings & trips", included: true },
+      { name: "Full Itinerary Builder", included: true },
+      { name: "Client Portal & sharing", included: true },
+      { name: "Invoicing & quotations", included: true },
+      { name: "Advanced reporting & analytics", included: true },
+      { name: "Custom branding & templates", included: true },
+      { name: "Operations & fleet management", included: true },
+      { name: "API access", included: true },
+      { name: "Priority support", included: true },
     ],
   },
 ];
 
 const COMPARISON_FEATURES = [
   { category: "Core", items: [
-    { name: "Team Members", free: "1", starter: "3", professional: "10", enterprise: "Unlimited" },
-    { name: "Branches", free: "0", starter: "1", professional: "3", enterprise: "Unlimited" },
-    { name: "Bookings/month", free: "5", starter: "50", professional: "200", enterprise: "Unlimited" },
+    { name: "Team Members", free: "1", pro: "Unlimited" },
+    { name: "Branches", free: "0", pro: "Unlimited" },
+    { name: "Bookings", free: "5", pro: "Unlimited" },
   ]},
   { category: "Features", items: [
-    { name: "Itinerary Builder", free: true, starter: true, professional: true, enterprise: true },
-    { name: "Client Portal", free: false, starter: true, professional: true, enterprise: true },
-    { name: "Invoicing", free: false, starter: true, professional: true, enterprise: true },
-    { name: "Basic Reporting", free: false, starter: true, professional: true, enterprise: true },
-    { name: "Advanced Analytics", free: false, starter: false, professional: true, enterprise: true },
-    { name: "Custom Branding", free: false, starter: false, professional: true, enterprise: true },
-    { name: "API Access", free: false, starter: false, professional: true, enterprise: true },
-    { name: "Operations Management", free: false, starter: false, professional: true, enterprise: true },
-    { name: "Custom Templates", free: false, starter: false, professional: true, enterprise: true },
-    { name: "White-label", free: false, starter: false, professional: false, enterprise: true },
-    { name: "Custom Integrations", free: false, starter: false, professional: false, enterprise: true },
+    { name: "Itinerary Builder", free: true, pro: true },
+    { name: "Client Portal", free: false, pro: true },
+    { name: "Invoicing & Quotations", free: false, pro: true },
+    { name: "Advanced Analytics", free: false, pro: true },
+    { name: "Custom Branding", free: false, pro: true },
+    { name: "API Access", free: false, pro: true },
+    { name: "Operations & Fleet", free: false, pro: true },
+    { name: "Custom Templates", free: false, pro: true },
   ]},
   { category: "Support", items: [
-    { name: "Email Support", free: false, starter: true, professional: true, enterprise: true },
-    { name: "Priority Support", free: false, starter: false, professional: true, enterprise: true },
-    { name: "Phone Support", free: false, starter: false, professional: false, enterprise: true },
-    { name: "Dedicated Account Manager", free: false, starter: false, professional: false, enterprise: true },
+    { name: "Email Support", free: true, pro: true },
+    { name: "Priority Support", free: false, pro: true },
   ]},
 ];
 
 const FAQ_ITEMS = [
-  { q: "Can I switch plans anytime?", a: "Yes! You can upgrade or downgrade your plan at any time. Upgrades take effect immediately with prorated billing. Downgrades take effect at the end of your current billing period." },
-  { q: "How does billing work?", a: "We bill monthly or yearly depending on your chosen cycle. All payments are processed securely. You'll receive an invoice for each payment." },
-  { q: "What happens when I downgrade?", a: "When you downgrade, your current plan stays active until the end of the billing period. You'll need to ensure your usage is within the new plan's limits before the switch happens." },
-  { q: "Do you offer refunds?", a: "We offer a 14-day free trial so you can test everything before committing. For paid plans, we handle refund requests on a case-by-case basis. Contact support for assistance." },
+  { q: "How does the free trial work?", a: "You get 14 days of full Pro access. No credit card required to start. After the trial ends, upgrade to Pro to keep using the platform." },
+  { q: "What does Pro include?", a: "Everything — unlimited users, branches, bookings and trips, plus all features: client portal, invoicing, analytics, custom branding, API access, operations, and priority support." },
+  { q: "Can I cancel anytime?", a: "Yes. Cancel anytime from this page — your plan stays active until the end of the current billing period." },
+  { q: "Do you offer yearly billing?", a: "Yes. Yearly billing saves you 2 months ($1,200/year instead of $1,440)." },
 ];
 
 // ─── Sub-components ───
@@ -244,7 +195,7 @@ export default function BillingPage() {
   });
 
   const currentPlanSlug = limits.planSlug;
-  const planOrder = ["free", "starter", "professional", "enterprise"];
+  const planOrder = ["free", "pro"];
   const currentIdx = planOrder.indexOf(currentPlanSlug);
 
   const getPlanAction = (slug: string) => {
@@ -516,7 +467,7 @@ export default function BillingPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {limits.planSlug !== "enterprise" && (
+                  {limits.planSlug !== "pro" && (
                     <Button
                       className="bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-1.5"
                       onClick={() => {
@@ -587,7 +538,7 @@ export default function BillingPage() {
           </div>
 
           {/* Plan Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {PLAN_TIERS.map((tier, i) => {
               const action = getPlanAction(tier.slug);
               const price = billingCycle === "yearly" ? tier.yearly : tier.monthly;
@@ -692,18 +643,14 @@ export default function BillingPage() {
                           </Button>
                         );
                       }
-                      return tier.slug === "enterprise" ? (
-                        <Button variant="outline" className="w-full gap-2">
-                          <Phone className="w-4 h-4" /> Contact Sales
-                        </Button>
-                      ) : action === "current" ? (
+                      return action === "current" ? (
                         <Button disabled className="w-full">Current Plan</Button>
                       ) : action === "upgrade" ? (
                         <Button
                           className="w-full bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-2"
                           onClick={() => setUpgradeDialog(tier.slug)}
                         >
-                          <Sparkles className="w-4 h-4" /> Upgrade
+                          <Sparkles className="w-4 h-4" /> Upgrade to Pro
                         </Button>
                       ) : (
                         <Button
@@ -742,14 +689,14 @@ export default function BillingPage() {
                   {COMPARISON_FEATURES.map((cat) => (
                     <>
                       <tr key={cat.category} className="bg-muted/20">
-                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
+                        <td colSpan={3} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
                       </tr>
                       {cat.items.map((item, idx) => {
                         const rowBg = idx % 2 === 0 ? "bg-background" : "bg-muted/10";
                         return (
                           <tr key={item.name} className={cn("border-b border-border last:border-0", rowBg)}>
                             <td className={cn("px-6 py-3 text-sm text-foreground sticky inset-inline-start-0 z-10 min-w-[140px]", rowBg)}>{item.name}</td>
-                            {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
+                            {(["free", "pro"] as const).map((plan) => {
                               const val = item[plan];
                               return (
                                 <td key={plan} className="px-4 py-3 text-center">
