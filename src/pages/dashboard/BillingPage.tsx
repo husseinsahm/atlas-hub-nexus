@@ -205,7 +205,7 @@ export default function BillingPage() {
     return "downgrade";
   };
 
-  // Fetch pending upgrade requests for this company
+  // Fetch pending upgrade requests for this company (auto-polls so admin approval shows up quickly)
   const { data: pendingRequests = [], refetch: refetchRequests } = useQuery({
     queryKey: ["upgrade-requests", companyId],
     queryFn: async () => {
@@ -219,6 +219,28 @@ export default function BillingPage() {
       return data || [];
     },
     enabled: !!companyId,
+    refetchInterval: 15000,
+  });
+
+  // Fetch most recent reviewed request (last 24h) to show success/rejection banner once
+  const { data: recentReviewed } = useQuery({
+    queryKey: ["upgrade-requests-recent", companyId],
+    queryFn: async () => {
+      if (!companyId) return null;
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from("upgrade_requests")
+        .select("*, plans!upgrade_requests_requested_plan_id_fkey(name, slug)")
+        .eq("company_id", companyId)
+        .in("status", ["approved", "rejected"])
+        .gte("reviewed_at", since)
+        .order("reviewed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!companyId,
+    refetchInterval: 15000,
   });
 
   const handleUpgrade = async (targetSlug: string) => {
