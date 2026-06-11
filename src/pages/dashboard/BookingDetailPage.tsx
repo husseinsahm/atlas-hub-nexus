@@ -58,6 +58,8 @@ import { createNotification } from "@/hooks/useNotifications";
 import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
 import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotationModal";
 import { TravelersTab as PremiumTravelersTab } from "@/components/booking/TravelersTab";
+import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
+import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -512,6 +514,71 @@ export default function BookingDetailPage() {
     },
   });
 
+  // ─── Duplicate booking ───
+  const duplicateBooking = useMutation({
+    mutationFn: async () => {
+      if (!booking) throw new Error("No booking");
+      const {
+        id: _i, booking_number: _bn, created_at: _c, updated_at: _u, amount_paid: _ap,
+        status: _s, customers: _cust, ...rest
+      } = booking as any;
+      const newBooking = {
+        ...rest,
+        title: `${booking.title} (Copy)`,
+        status: "tentative",
+        amount_paid: 0,
+        created_by: user?.id,
+      };
+      const { data: created, error } = await supabase
+        .from("bookings")
+        .insert(newBooking)
+        .select("id")
+        .single();
+      if (error) throw error;
+      // Copy services
+      if (services.length > 0) {
+        const newServices = services.map((s: any) => {
+          const { id: _, booking_id: __, created_at: ___, updated_at: ____, ...rest } = s;
+          return { ...rest, booking_id: created.id, created_by: user?.id };
+        });
+        await supabase.from("booking_services").insert(newServices);
+      }
+      // Copy itinerary days + items
+      if (itineraryDays.length > 0) {
+        for (const d of itineraryDays) {
+          const { id: _, booking_id: __, created_at: ___, updated_at: ____, booking_day_items, ...dayRest } = d as any;
+          const { data: newDay } = await supabase
+            .from("booking_days")
+            .insert({ ...dayRest, booking_id: created.id })
+            .select("id")
+            .single();
+          if (newDay && booking_day_items?.length) {
+            const newItems = booking_day_items.map((i: any) => {
+              const { id: _, booking_day_id: __, created_at: ___, updated_at: ____, ...itemRest } = i;
+              return { ...itemRest, booking_day_id: newDay.id };
+            });
+            await supabase.from("booking_day_items").insert(newItems);
+          }
+        }
+      }
+      return created.id;
+    },
+    onSuccess: (newId) => {
+      toast({ title: isArabic ? "تم إنشاء نسخة من الحجز" : "Booking duplicated" });
+      navigate(`/dashboard/bookings/${newId}`);
+    },
+    onError: (e: any) => {
+      toast({ title: isArabic ? "فشل النسخ" : "Duplicate failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const generateInvoice = () => {
+    navigate(`/dashboard/invoices?createForBooking=${id}`);
+  };
+
+  const goToPayments = () => setActiveTab("financials");
+
+
   // ─── Share link generation ───
   const generateShareLink = async () => {
     if (!booking || !companyId) return;
@@ -680,10 +747,24 @@ export default function BookingDetailPage() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem><Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}</DropdownMenuItem>
-                <DropdownMenuItem><Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={generateInvoice}>
+                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowQuotationModal(true)}>
-                  <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                  <FileText className="w-4 h-4 me-2" />{isArabic ? "إنشاء عرض سعر" : "Generate Quotation"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={goToPayments}>
+                  <CreditCard className="w-4 h-4 me-2" />{isArabic ? "إضافة دفعة" : "Add Payment"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => duplicateBooking.mutate()} disabled={duplicateBooking.isPending}>
+                  <Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ الحجز" : "Duplicate Booking"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()}>
+                  <Download className="w-4 h-4 me-2" />{isArabic ? "تصدير PDF" : "Export PDF"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem><Archive className="w-4 h-4 me-2" />{isArabic ? "أرشفة" : "Archive"}</DropdownMenuItem>
@@ -736,13 +817,11 @@ export default function BookingDetailPage() {
           </div>
         </div>
 
-        {/* Quick stat pills */}
+        {/* Quick stat pills (non-financial) */}
         <div className="flex flex-wrap gap-2 mt-4">
           {[
             { icon: Calendar, label: `${booking.total_days} ${isArabic ? "يوم" : "days"}`, sub: (booking as any).arrival_date ? `${format(new Date((booking as any).arrival_date), "MMM d")} → ${(booking as any).departure_date ? format(new Date((booking as any).departure_date), "MMM d") : "..."}` : undefined, colorClass: "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40" },
             { icon: Users, label: `${booking.adults}A${booking.children > 0 ? ` · ${booking.children}C` : ""}`, sub: `${travelers.length} ${isArabic ? "مسجل" : "registered"}`, colorClass: "text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/40" },
-            { icon: DollarSign, label: `${Number(booking.selling_price || 0).toLocaleString()} ${booking.currency}`, sub: isArabic ? "سعر البيع" : "Selling price", colorClass: "text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40" },
-            ...(balance > 0 ? [{ icon: CreditCard, label: `${balance.toLocaleString()} ${booking.currency}`, sub: isArabic ? "متبقي" : "remaining", colorClass: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40" }] : []),
           ].map((pill, idx) => (
             <div key={idx} className="flex items-center gap-2 rounded-lg bg-background border border-border px-3 py-2 text-xs">
               <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", pill.colorClass)}>
@@ -755,7 +834,21 @@ export default function BookingDetailPage() {
             </div>
           ))}
         </div>
+
+        {/* Financial Summary Panel — always visible */}
+        <div className="mt-4">
+          <FinancialSummaryPanel
+            bookingId={booking.id}
+            sellingPrice={Number(booking.selling_price || 0)}
+            totalCost={Number(booking.total_cost || 0)}
+            servicesActiveCost={servicesActiveCost}
+            currency={booking.currency}
+            isArabic={isArabic}
+            onClick={goToPayments}
+          />
+        </div>
       </motion.div>
+
 
       {/* ─── Tab Navigation ─── */}
       <div className="sticky top-0 z-10 -mx-6 px-6 bg-muted/40 backdrop-blur-md border-b border-border">
@@ -1354,14 +1447,13 @@ export default function BookingDetailPage() {
         </Card>
       )}
 
-      {/* ─── TAB: Timeline ─── */}
+      {/* ─── TAB: Timeline (unified) ─── */}
       {activeTab === "timeline" && (
-        <TimelineTab
-          activities={activities}
+        <UnifiedTimeline
+          bookingId={booking.id}
+          companyId={booking.company_id}
           isArabic={isArabic}
           getProfileName={getProfileName}
-          onAddComment={(text: string) => addComment.mutate(text)}
-          isAddingComment={addComment.isPending}
         />
       )}
 

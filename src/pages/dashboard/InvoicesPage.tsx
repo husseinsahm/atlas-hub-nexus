@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -267,6 +267,20 @@ export default function InvoicesPage() {
       if (bk.currency) setFormCurrency(bk.currency);
     }
   };
+
+  // Open create dialog pre-filled when ?createForBooking=<id> is in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bId = params.get("createForBooking");
+    if (bId && bookings.length > 0 && !showCreate) {
+      handleBookingSelect(bId);
+      setShowCreate(true);
+      // Clean the URL so refresh doesn't re-open it
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookings]);
+
 
   // Computed status including overdue detection
   const getDisplayStatus = (inv: any): InvoiceStatus => {
