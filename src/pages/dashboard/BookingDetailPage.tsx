@@ -120,6 +120,7 @@ export default function BookingDetailPage() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
