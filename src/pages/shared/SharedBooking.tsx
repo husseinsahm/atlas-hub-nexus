@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { ClientDocumentUpload } from "@/components/portal/ClientDocumentUpload";
+import { PortalQRCode } from "@/components/portal/PortalQRCode";
 
 /* ====== TYPES ====== */
 interface BookingDay {
@@ -116,6 +118,7 @@ export default function SharedBooking() {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"comment" | "approval" | "change_request">("comment");
+  const [feedbackDayId, setFeedbackDayId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -300,6 +303,7 @@ export default function SharedBooking() {
       // 1. Save the feedback
       const { error } = await supabase.from("booking_feedback").insert({
         booking_id: booking!.id,
+        booking_day_id: feedbackDayId,
         feedback_type: feedbackType,
         client_name: clientName.trim(),
         client_email: clientEmail.trim() || null,
