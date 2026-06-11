@@ -365,6 +365,7 @@ export default function SharedBooking() {
       setShowSuccessDialog(true);
       setFeedbackMessage("");
       setFeedbackType("comment");
+      setFeedbackDayId(null);
       setFeedbackOpen(false);
     },
     onError: (e: any) => {
@@ -913,7 +914,7 @@ export default function SharedBooking() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
             <button
-              onClick={() => { setFeedbackType("approval"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("approval"); setFeedbackOpen(true); }}
               className={cn(
                 "rounded-xl border-2 p-5 text-center transition-all duration-200 hover:shadow-md group",
                 hasApproval ? "border-emerald-300 bg-emerald-50/50" : "border-border hover:border-emerald-300 bg-card"
@@ -927,7 +928,7 @@ export default function SharedBooking() {
             </button>
 
             <button
-              onClick={() => { setFeedbackType("change_request"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("change_request"); setFeedbackOpen(true); }}
               className="rounded-xl border-2 border-border hover:border-amber-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
             >
               <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -938,7 +939,7 @@ export default function SharedBooking() {
             </button>
 
             <button
-              onClick={() => { setFeedbackType("comment"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("comment"); setFeedbackOpen(true); }}
               className="rounded-xl border-2 border-border hover:border-blue-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
             >
               <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
