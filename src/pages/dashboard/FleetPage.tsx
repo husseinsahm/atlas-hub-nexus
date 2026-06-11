@@ -298,6 +298,9 @@ export default function FleetPage() {
           <TabsList>
             <TabsTrigger value="vehicles"><Bus className="w-4 h-4 mr-2" />Vehicles</TabsTrigger>
             <TabsTrigger value="drivers"><Users className="w-4 h-4 mr-2" />Drivers</TabsTrigger>
+            <TabsTrigger value="maintenance"><Wrench className="w-4 h-4 mr-2" />Maintenance</TabsTrigger>
+            <TabsTrigger value="documents"><BadgeCheck className="w-4 h-4 mr-2" />Documents</TabsTrigger>
+            <TabsTrigger value="expenses"><Fuel className="w-4 h-4 mr-2" />Expenses</TabsTrigger>
           </TabsList>
           <div className="relative max-w-xs w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
