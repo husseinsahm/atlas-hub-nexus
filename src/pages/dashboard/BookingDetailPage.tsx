@@ -58,6 +58,8 @@ import { createNotification } from "@/hooks/useNotifications";
 import { ShareLinkSettingsModal } from "@/components/booking/ShareLinkSettingsModal";
 import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotationModal";
 import { TravelersTab as PremiumTravelersTab } from "@/components/booking/TravelersTab";
+import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
+import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
