@@ -500,6 +500,24 @@ export default function FleetPage() {
             </div>
           )}
         </TabsContent>
+
+        {/* MAINTENANCE TAB */}
+        <TabsContent value="maintenance" className="mt-5">
+          <MaintenanceTab companyId={companyId!} vehicles={vehicles} search={search}
+            onEdit={(m) => setMaintDialog({ open: true, data: m })} />
+        </TabsContent>
+
+        {/* DOCUMENTS TAB */}
+        <TabsContent value="documents" className="mt-5">
+          <DocumentsTab companyId={companyId!} vehicles={vehicles} search={search}
+            onEdit={(d) => setDocDialog({ open: true, data: d })} />
+        </TabsContent>
+
+        {/* EXPENSES TAB */}
+        <TabsContent value="expenses" className="mt-5">
+          <ExpensesTab companyId={companyId!} vehicles={vehicles} search={search}
+            onEdit={(e) => setExpDialog({ open: true, data: e })} />
+        </TabsContent>
       </Tabs>
 
       {/* Vehicle Dialog */}
@@ -519,6 +537,17 @@ export default function FleetPage() {
         onSave={(d) => saveDriver.mutate(d)}
         loading={saveDriver.isPending}
       />
+
+      {/* Maintenance / Documents / Expenses Dialogs */}
+      <MaintenanceDialog open={maintDialog.open} initial={maintDialog.data}
+        vehicles={vehicles} companyId={companyId!} userId={user?.id}
+        onClose={() => setMaintDialog({ open: false })} />
+      <DocumentDialog open={docDialog.open} initial={docDialog.data}
+        vehicles={vehicles} companyId={companyId!} userId={user?.id}
+        onClose={() => setDocDialog({ open: false })} />
+      <ExpenseDialog open={expDialog.open} initial={expDialog.data}
+        vehicles={vehicles} companyId={companyId!} userId={user?.id}
+        onClose={() => setExpDialog({ open: false })} />
     </div>
   );
 }
