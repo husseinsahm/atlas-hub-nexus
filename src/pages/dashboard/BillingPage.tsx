@@ -467,7 +467,7 @@ export default function BillingPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {limits.planSlug !== "enterprise" && (
+                  {limits.planSlug !== "pro" && (
                     <Button
                       className="bg-gradient-to-r from-accent to-amber-500 text-white border-0 gap-1.5"
                       onClick={() => {
