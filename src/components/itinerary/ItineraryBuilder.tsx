@@ -843,6 +843,7 @@ function DayCard({
   const [localNotes, setLocalNotes] = useState(day.internal_notes || "");
   const [editingTitle, setEditingTitle] = useState(false);
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "timeline">("list");
 
   const items = (day.booking_day_items || []).sort((a: any, b: any) => a.sort_order - b.sort_order);
   const itemsTotal = items.reduce((sum: number, i: any) => sum + Number(i.total_price || 0), 0);
