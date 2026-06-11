@@ -841,7 +841,21 @@ export default function BookingDetailPage() {
         </div>
 
         {/* Financial Summary Panel — always visible */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {isArabic ? "الملخص المالي" : "Financial Summary"}
+            </h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px] gap-1.5 border-accent/30 text-accent hover:bg-accent/10"
+              onClick={() => setShowPricing(true)}
+            >
+              <DollarSign className="w-3 h-3" />
+              {isArabic ? "استوديو التسعير" : "Pricing Studio"}
+            </Button>
+          </div>
           <FinancialSummaryPanel
             bookingId={booking.id}
             sellingPrice={Number(booking.selling_price || 0)}
