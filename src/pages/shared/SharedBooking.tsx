@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { ClientDocumentUpload } from "@/components/portal/ClientDocumentUpload";
+import { PortalQRCode } from "@/components/portal/PortalQRCode";
 
 /* ====== TYPES ====== */
 interface BookingDay {
@@ -116,6 +118,7 @@ export default function SharedBooking() {
   const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"comment" | "approval" | "change_request">("comment");
+  const [feedbackDayId, setFeedbackDayId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -300,6 +303,7 @@ export default function SharedBooking() {
       // 1. Save the feedback
       const { error } = await supabase.from("booking_feedback").insert({
         booking_id: booking!.id,
+        booking_day_id: feedbackDayId,
         feedback_type: feedbackType,
         client_name: clientName.trim(),
         client_email: clientEmail.trim() || null,
@@ -361,6 +365,7 @@ export default function SharedBooking() {
       setShowSuccessDialog(true);
       setFeedbackMessage("");
       setFeedbackType("comment");
+      setFeedbackDayId(null);
       setFeedbackOpen(false);
     },
     onError: (e: any) => {
@@ -811,6 +816,41 @@ export default function SharedBooking() {
                               })}
                             </div>
                           )}
+
+                          {/* Per-day approval / change request buttons */}
+                          <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium text-muted-foreground me-auto">
+                              {lang === "ar" ? `يومك رقم ${day.day_number} — رأيك يهمنا` : `Your feedback on day ${day.day_number}`}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFeedbackDayId(day.id);
+                                setFeedbackType("approval");
+                                setFeedbackOpen(true);
+                              }}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 me-1.5" />
+                              {lang === "ar" ? "موافق على هذا اليوم" : "Approve this day"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-amber-500/40 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFeedbackDayId(day.id);
+                                setFeedbackType("change_request");
+                                setFeedbackOpen(true);
+                              }}
+                            >
+                              <RefreshCw className="w-3.5 h-3.5 me-1.5" />
+                              {lang === "ar" ? "طلب تعديل" : "Request changes"}
+                            </Button>
+                          </div>
                         </div>
                       </motion.div>
                     )}
@@ -820,6 +860,25 @@ export default function SharedBooking() {
             );
           })}
         </div>
+
+        {/* ===== TRIP WALLET ===== */}
+        {token && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4"
+          >
+            <ClientDocumentUpload
+              token={token}
+              isRtl={isRtl}
+              isArabic={lang === "ar"}
+              defaultUploaderName={clientName}
+            />
+            <PortalQRCode url={typeof window !== "undefined" ? window.location.href : ""} isArabic={lang === "ar"} />
+          </motion.div>
+        )}
+
 
         {/* ===== PRICING ===== */}
         {sellingPrice > 0 && (
@@ -874,7 +933,7 @@ export default function SharedBooking() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8">
             <button
-              onClick={() => { setFeedbackType("approval"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("approval"); setFeedbackOpen(true); }}
               className={cn(
                 "rounded-xl border-2 p-5 text-center transition-all duration-200 hover:shadow-md group",
                 hasApproval ? "border-emerald-300 bg-emerald-50/50" : "border-border hover:border-emerald-300 bg-card"
@@ -888,7 +947,7 @@ export default function SharedBooking() {
             </button>
 
             <button
-              onClick={() => { setFeedbackType("change_request"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("change_request"); setFeedbackOpen(true); }}
               className="rounded-xl border-2 border-border hover:border-amber-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
             >
               <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -899,7 +958,7 @@ export default function SharedBooking() {
             </button>
 
             <button
-              onClick={() => { setFeedbackType("comment"); setFeedbackOpen(true); }}
+              onClick={() => { setFeedbackDayId(null); setFeedbackType("comment"); setFeedbackOpen(true); }}
               className="rounded-xl border-2 border-border hover:border-blue-300 bg-card p-5 text-center transition-all duration-200 hover:shadow-md group"
             >
               <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
