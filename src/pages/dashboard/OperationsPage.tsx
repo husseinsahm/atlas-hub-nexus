@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TodayMovementsTab } from "@/components/operations/TodayMovementsTab";
+import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isWithinInterval, addDays, subDays } from "date-fns";
 
