@@ -689,14 +689,14 @@ export default function BillingPage() {
                   {COMPARISON_FEATURES.map((cat) => (
                     <>
                       <tr key={cat.category} className="bg-muted/20">
-                        <td colSpan={5} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
+                        <td colSpan={3} className="px-6 py-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider sticky inset-inline-start-0 bg-muted/20 z-10">{cat.category}</td>
                       </tr>
                       {cat.items.map((item, idx) => {
                         const rowBg = idx % 2 === 0 ? "bg-background" : "bg-muted/10";
                         return (
                           <tr key={item.name} className={cn("border-b border-border last:border-0", rowBg)}>
                             <td className={cn("px-6 py-3 text-sm text-foreground sticky inset-inline-start-0 z-10 min-w-[140px]", rowBg)}>{item.name}</td>
-                            {(["free", "starter", "professional", "enterprise"] as const).map((plan) => {
+                            {(["free", "pro"] as const).map((plan) => {
                               const val = item[plan];
                               return (
                                 <td key={plan} className="px-4 py-3 text-center">
