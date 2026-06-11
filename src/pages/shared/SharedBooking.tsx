@@ -861,6 +861,25 @@ export default function SharedBooking() {
           })}
         </div>
 
+        {/* ===== TRIP WALLET ===== */}
+        {token && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4"
+          >
+            <ClientDocumentUpload
+              token={token}
+              isRtl={isRtl}
+              isArabic={lang === "ar"}
+              defaultUploaderName={clientName}
+            />
+            <PortalQRCode url={typeof window !== "undefined" ? window.location.href : ""} isArabic={lang === "ar"} />
+          </motion.div>
+        )}
+
+
         {/* ===== PRICING ===== */}
         {sellingPrice > 0 && (
           <motion.div
