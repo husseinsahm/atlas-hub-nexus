@@ -1213,12 +1213,48 @@ function DayCard({
                 </div>
               )}
 
-              {/* Day items list */}
+              {/* Day items */}
               <div className="px-4 py-3 space-y-2">
+                {items.length > 0 && (
+                  <div className="flex items-center justify-end mb-1">
+                    <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("list")}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-colors",
+                          viewMode === "list" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <LayoutList className="w-3 h-3" />
+                        {isArabic ? "قائمة" : "List"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("timeline")}
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-md transition-colors",
+                          viewMode === "timeline" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        <CalendarClock className="w-3 h-3" />
+                        {isArabic ? "جدول زمني" : "Timeline"}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {items.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-4">
                     {isArabic ? "لا توجد عناصر - أضف نشاط أو خدمة من الأزرار أدناه" : "No items yet — use the buttons below to add services to this day"}
                   </p>
+                ) : viewMode === "timeline" ? (
+                  <DayTimeline
+                    items={items}
+                    isArabic={isArabic}
+                    onUpdateItem={onUpdateItem}
+                    onEditItem={(id) => onSetEditingItemId(id)}
+                    onDeleteItem={onDeleteItem}
+                  />
                 ) : (
                   items.map((item: any, i: number) => {
                     const ItemIcon = getCategoryIcon(item.category);
