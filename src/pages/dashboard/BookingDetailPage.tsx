@@ -781,6 +781,13 @@ export default function BookingDetailPage() {
                   <Copy className="w-4 h-4 me-2" />{isArabic ? "نسخ الحجز" : "Duplicate Booking"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowSaveRecipe(true)}>
+                  <BookOpen className="w-4 h-4 me-2" />{isArabic ? "حفظ كوصفة" : "Save as Recipe"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowRecipeLibrary(true)}>
+                  <Library className="w-4 h-4 me-2" />{isArabic ? "مكتبة الوصفات" : "Recipe Library"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => window.print()}>
                   <Printer className="w-4 h-4 me-2" />{isArabic ? "طباعة" : "Print"}
                 </DropdownMenuItem>
