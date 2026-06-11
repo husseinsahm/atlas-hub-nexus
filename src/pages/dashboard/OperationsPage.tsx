@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TodayMovementsTab } from "@/components/operations/TodayMovementsTab";
+import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, isWithinInterval, addDays, subDays } from "date-fns";
 
@@ -52,7 +54,7 @@ export default function OperationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("upcoming");
-  const [activeTab, setActiveTab] = useState("bookings");
+  const [activeTab, setActiveTab] = useState("today");
 
   // Fetch confirmed/in_operation bookings
   const { data: bookings = [], isLoading } = useQuery({
@@ -258,6 +260,10 @@ export default function OperationsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/50">
+          <TabsTrigger value="today" className="gap-2">
+            <Zap className="w-4 h-4" />
+            {isArabic ? "اليوم" : "Today"}
+          </TabsTrigger>
           <TabsTrigger value="bookings" className="gap-2">
             <Briefcase className="w-4 h-4" />
             {isArabic ? "الحجوزات" : "Bookings"}
@@ -270,6 +276,11 @@ export default function OperationsPage() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="today" className="mt-4">
+          {companyId && <TodayMovementsTab companyId={companyId} isArabic={isArabic} />}
+        </TabsContent>
+
 
         <TabsContent value="bookings" className="mt-4 space-y-4">
           {/* Filters */}
