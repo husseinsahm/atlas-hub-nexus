@@ -394,6 +394,18 @@ function AssignmentDialog({ open, editing, defaultDate, vehicles, drivers, onClo
     enabled: !!companyId && open,
   });
 
+  const { data: logs = [] } = useQuery({
+    queryKey: ["assignment-logs", editing?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("driver_trip_logs")
+        .select("*")
+        .eq("assignment_id", editing!.id)
+        .order("created_at", { ascending: true });
+      return data || [];
+    },
+    enabled: !!editing?.id && open,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const payload: any = {
