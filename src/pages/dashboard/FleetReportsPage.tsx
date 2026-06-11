@@ -34,6 +34,7 @@ function fmtMoney(n: number, c = "USD") {
 
 export default function FleetReportsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const companyId = user?.activeMembership?.companyId;
   const [period, setPeriod] = useState<Period>("month");
   const { from, to } = useMemo(() => periodRange(period), [period]);
