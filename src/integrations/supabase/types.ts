@@ -1267,6 +1267,82 @@ export type Database = {
           },
         ]
       }
+      driver_trip_logs: {
+        Row: {
+          assignment_id: string
+          company_id: string
+          created_at: string
+          currency: string | null
+          customer_signature_name: string | null
+          driver_id: string
+          event_at: string
+          event_type: string
+          fuel_amount: number | null
+          fuel_cost: number | null
+          id: string
+          mileage_km: number | null
+          notes: string | null
+          photo_url: string | null
+          signature_data: string | null
+        }
+        Insert: {
+          assignment_id: string
+          company_id: string
+          created_at?: string
+          currency?: string | null
+          customer_signature_name?: string | null
+          driver_id: string
+          event_at?: string
+          event_type: string
+          fuel_amount?: number | null
+          fuel_cost?: number | null
+          id?: string
+          mileage_km?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          signature_data?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          company_id?: string
+          created_at?: string
+          currency?: string | null
+          customer_signature_name?: string | null
+          driver_id?: string
+          event_at?: string
+          event_type?: string
+          fuel_amount?: number | null
+          fuel_cost?: number | null
+          id?: string
+          mileage_km?: number | null
+          notes?: string | null
+          photo_url?: string | null
+          signature_data?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_trip_logs_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "service_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_trip_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_trip_logs_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           avatar_url: string | null
@@ -1289,6 +1365,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           rating: number | null
+          share_token: string | null
           status: Database["public"]["Enums"]["driver_status"]
           total_trips: number | null
           updated_at: string
@@ -1315,6 +1392,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           rating?: number | null
+          share_token?: string | null
           status?: Database["public"]["Enums"]["driver_status"]
           total_trips?: number | null
           updated_at?: string
@@ -1341,6 +1419,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           rating?: number | null
+          share_token?: string | null
           status?: Database["public"]["Enums"]["driver_status"]
           total_trips?: number | null
           updated_at?: string
@@ -3487,9 +3566,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      driver_update_assignment: {
+        Args: {
+          _actual_end?: string
+          _actual_start?: string
+          _assignment_id: string
+          _new_status: string
+          _token: string
+        }
+        Returns: boolean
+      }
       get_company_role: {
         Args: { _company_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_driver_assignments: {
+        Args: { _from: string; _to: string; _token: string }
+        Returns: {
+          actual_end: string
+          actual_start: string
+          booking_id: string
+          booking_number: string
+          booking_title: string
+          dropoff_location: string
+          id: string
+          notes: string
+          passenger_count: number
+          pickup_location: string
+          scheduled_end: string
+          scheduled_start: string
+          status: string
+          vehicle_id: string
+          vehicle_name: string
+          vehicle_plate: string
+        }[]
+      }
+      get_driver_by_token: {
+        Args: { _token: string }
+        Returns: {
+          avatar_url: string
+          company_id: string
+          full_name: string
+          id: string
+          phone: string
+          rating: number
+          status: Database["public"]["Enums"]["driver_status"]
+          total_trips: number
+        }[]
       }
       has_role: {
         Args: {

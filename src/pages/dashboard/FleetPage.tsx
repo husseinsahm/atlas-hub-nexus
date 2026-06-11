@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, Bus, Car, Ship, Truck, Loader2, Pencil, Trash2,
   MoreHorizontal, Users, Gauge, AlertTriangle, Wrench, Fuel,
-  Calendar, Phone, Star, BadgeCheck, ChevronRight, Anchor,
+  Calendar, Phone, Star, BadgeCheck, ChevronRight, Anchor, Link2, Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,7 @@ interface Driver {
   id: string; full_name: string; phone: string | null; email: string | null;
   license_number: string | null; license_expiry: string | null;
   status: DriverStatus; rating: number; total_trips: number; avatar_url: string | null;
-  daily_rate: number; currency: string;
+  daily_rate: number; currency: string; share_token: string | null;
 }
 
 export default function FleetPage() {
@@ -429,6 +429,15 @@ export default function FleetPage() {
                             <DropdownMenuItem onClick={() => setDriverDialog({ open: true, data: d })}>
                               <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
                             </DropdownMenuItem>
+                            {d.share_token && (
+                              <DropdownMenuItem onClick={() => {
+                                const url = `${window.location.origin}/driver/${d.share_token}`;
+                                navigator.clipboard.writeText(url);
+                                toast({ title: "Driver portal link copied", description: url });
+                              }}>
+                                <Link2 className="w-3.5 h-3.5 mr-2" /> Copy Portal Link
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => softDeleteDriver.mutate(d.id)}>
                               <Trash2 className="w-3.5 h-3.5 mr-2" /> Remove
