@@ -1,118 +1,117 @@
+# خطة المرحلة الثانية — Booking Files & Itineraries
 
-# خطة تحسين Booking Files و Itineraries
+الست بنود الأولى خلصت ✅ (Financial Summary, Quick Actions, Unified Timeline, Split View, Map View, Day Scheduling).
+دلوقت ننتقل لطبقة أعمق: تسعير ذكي، تعاون لحظي، وأتمتة عمليات يومية.
 
-## 1. Booking File — Financial Summary Panel
+## 1. Smart Pricing Engine
 
-بانل ثابت في أعلى صفحة الحجز يعرض الأرقام المهمة بنظرة واحدة:
+شريط تسعير ديناميكي أسفل الـ Itinerary Builder + modal "Pricing Studio":
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Total Price    Total Cost    Profit       Paid   Due  │
-│   $12,500       $8,200       $4,300 (34%) $5,000 $7,500│
-│                                            [▓▓▓░░░░] 40%│
+│ Pax: [2 Adults] [1 Child]   Markup: [25% ▼]   Rounding │
+│ Per-Person: $1,250  ·  Total: $3,125  ·  Margin: 28%   │
+│ [Apply to Booking]  [Save as Quote]                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
-- Total Price = مجموع الـ booking_services.selling_price
-- Total Cost = مجموع cost_price
-- Profit = الفرق + هامش %
-- Paid = مجموع payment_records
-- Due = price - paid مع progress bar وlozenge ملوّن (أحمر لو متأخر، أصفر لو جزئي، أخضر لو متكامل)
-- العملة من company_settings
+- Per-pax pricing (adult/child/infant) مع splits تلقائية
+- Markup presets (10%, 20%, 30%, custom) + rounding rules (5, 10, 50, 100)
+- Group discount tiers (مثلاً ≥6 pax → -8%)
+- Live comparison: cost vs selling vs margin %
+- زر "Apply" يكتب على booking_services.selling_price ويحدّث الـ FinancialSummaryPanel
 
-## 2. Booking File — Quick Actions Toolbar
+## 2. Live Collaboration & Presence
 
-شريط أزرار في الـ header بدل ما الـ actions متفرقة:
+داخل صفحة الحجز:
 
-- **Send to Client** → ينشئ share token و ينسخ الرابط
-- **Generate Invoice** → ينشئ فاتورة بالأرقام الجاهزة
-- **Add Payment** → modal دفعة جديدة
-- **Duplicate Booking** → نسخة كاملة بـ status=draft
-- **Print/PDF** → PDF كامل للحجز
-- **More** dropdown: Cancel / Archive / Export
+- **Presence bar** أعلى الصفحة تعرض المستخدمين الحاليين (avatars + ping)
+- **Realtime updates** لأي تعديل (status, items, payments) بدون refresh
+- **Comment threads** على مستوى الـ day أو الـ item (مش الحجز كله بس)
+- **@mentions** بتولّد notification للعضو
+- Optimistic UI مع conflict resolution لو اتنين عدّلوا نفس الـ item
 
-## 3. Booking File — Unified Timeline Tab
+التنفيذ: Supabase Realtime channels على `bookings:id={id}` + broadcast للـ presence.
 
-Tab جديد "Activity" يدمج كل الأحداث في خط زمني واحد:
+## 3. Booking Templates & Recipes
 
-- Activities (status changes, assignments)
-- Internal comments
-- Payment records  
-- Driver trip logs (check-in/out)
-- File attachments المضافة
-- Email/share events
+تحويل أي حجز ناجح لـ "Recipe" قابلة لإعادة الاستخدام:
 
-كل event بـ icon + لون + timestamp نسبي + actor. فلتر بنوع الحدث.
+- زر **"Save as Recipe"** في BookingQuickActions
+- يستخرج: الأيام + الـ items + الـ pricing structure (بدون بيانات العميل)
+- **Recipe Library** في الـ sidebar تظهر آخر recipes مستخدمة
+- "New Booking from Recipe" → ينشئ حجز كامل في ثواني
+- Versioning للـ recipes (v1, v2, ...) عشان التعديلات ما تكسرش الحجوزات القديمة
 
-## 4. Itinerary — Split View Preview
+## 4. Automated Workflows (Triggers)
 
-في TripBuilderPage و ItineraryBuilder، شاشة مقسومة:
+محرّك بسيط للأتمتة في settings → Automations:
 
 ```
-┌────────────────┬────────────────┐
-│  Builder       │  Live Preview  │
-│  (edit days)   │  (client view) │
-│                │                │
-│  Day 1 ▼       │  [Hero image]  │
-│   + Service    │  Day 1: Cairo  │
-│   + Service    │   Pyramids tour│
-│  Day 2 ▼       │   ...          │
-└────────────────┴────────────────┘
-  Cost: $4,200 │ Selling: $6,500 (real-time)
+WHEN booking status → "confirmed"
+  DO: create invoice (50% deposit)
+  DO: send email to client
+  DO: assign CRM task "Collect deposit" to agent
 ```
 
-- Toggle لإخفاء/إظهار الـ preview
-- Cost roll-up bar ثابتة أسفل الشاشة تتحدث فوراً مع كل تغيير
-- Preview بنفس شكل client portal
+- Triggers جاهزة: status change, payment received, X days before arrival, X days overdue
+- Actions: create invoice, send email, create task, change status, notify role
+- لكل شركة workflows مخصصة + 5 templates جاهزة (Confirmation flow, Pre-arrival, Post-trip feedback, ...)
 
-## 5. Itinerary — Day Scheduling
+## 5. Client Portal 2.0
 
-تحسين trip_day_items و booking_day_items:
+تحسينات على البوابة الموجودة:
 
-- حقل `start_time` و `duration_minutes` لكل item
-- عرض اليوم كـ timeline عمودي بالساعات (8:00 AM → 10:00 PM)
-- Drag للـ items داخل اليوم يحدّث الوقت تلقائياً
-- Conflict detection (تداخل أوقات)
-- Auto-calculate يوم end time من آخر activity
+- **Approve / Request Changes** buttons على كل يوم (مش الحجز كله)
+- **Payment portal** مدمج (إذا فيه Stripe/Paddle مفعّل) — العميل يدفع الـ deposit مباشرة
+- **Document vault** — العميل يرفع الباسبور/الفيزا والوكالة تستلمها في booking_attachments
+- **Trip Wallet** PWA-ready: vouchers, contacts الطوارئ, خريطة offline لكل يوم
+- QR code للوكيل أو الـ guide في كل يوم
 
-## 6. Itinerary — Map View
+## 6. Operations Dashboard
 
-استخدام Google Maps connector (متاح) لعرض:
+صفحة جديدة `/dashboard/operations` للفريق التشغيلي:
 
-- خريطة لكل يوم تعرض stops بالترتيب مع خطوط بينها
-- Geocoding للـ locations عبر الـ gateway
-- Distance/duration بين stops (Routes API)
-- زر "View on Map" في كل day item
+- **Today's Movements** — pickups, drop-offs, check-ins, departures مرتبة بالساعة
+- **Driver/Guide assignments** view مع حالة كل assignment
+- **Service alerts**: حجوزات بدون transfer مؤكد، فنادق بدون رقم تأكيد، إلخ
+- **Map view** لكل الحركات النهارده على Google Maps
+- Filters: branch, day range, service type
 
 ## التفاصيل التقنية
 
 **Database migrations:**
-- إضافة `start_time TIME, duration_minutes INT, latitude NUMERIC, longitude NUMERIC` إلى `trip_day_items` و `booking_day_items`
-- إضافة `location_address TEXT, place_id TEXT` للـ items
-- View: `booking_financial_summary` تجمّع الأرقام (price, cost, paid, due) في query واحد
+- `pricing_rules` table (company_id, markup_pct, rounding, group_tiers jsonb)
+- `booking_recipes` (company_id, name, structure jsonb, version, parent_id)
+- `automations` (company_id, trigger_type, trigger_config jsonb, actions jsonb[], is_active)
+- `automation_runs` (audit log للأتمتة)
+- إضافة `pax_breakdown jsonb` و `markup_pct numeric` للـ bookings
+- Index على `service_assignments(scheduled_start)` لـ Operations Dashboard
+
+**Realtime:**
+- تفعيل Realtime على `bookings`, `booking_day_items`, `booking_activities`
+- Helper hook `useBookingPresence(bookingId)` يدير الـ presence channel
+- Helper `useBookingRealtime(bookingId)` يحدّث react-query cache تلقائياً
+
+**Edge functions:**
+- `run-automation` (يستقبل event ويشغل actions)
+- `client-payment-intent` (لو فيه Stripe مفعّل)
 
 **Components جديدة:**
-- `src/components/booking/FinancialSummaryPanel.tsx`
-- `src/components/booking/BookingQuickActions.tsx`  
-- `src/components/booking/UnifiedTimeline.tsx`
-- `src/components/itinerary/SplitViewBuilder.tsx`
-- `src/components/itinerary/DayTimeline.tsx`
-- `src/components/itinerary/ItineraryMapView.tsx`
-
-**Connectors المطلوبة:**
-- Google Maps Platform (للـ geocoding + map rendering + routes)
-
-**Files كبيرة سيتم تعديلها:**
-- `BookingDetailPage.tsx` (2080 سطر) — إضافة Financial Panel + Quick Actions + Timeline tab
-- `TripBuilderPage.tsx` (2043 سطر) — Split view + day timeline + map toggle
-- `ItineraryBuilder.tsx` (1377 سطر) — start_time fields في items
+- `src/components/booking/PricingStudio.tsx`
+- `src/components/booking/PresenceBar.tsx`
+- `src/components/booking/ItemCommentThread.tsx`
+- `src/components/recipes/RecipeLibrary.tsx`
+- `src/pages/dashboard/AutomationsPage.tsx`
+- `src/pages/dashboard/OperationsPage.tsx`
+- `src/components/portal/PaymentBlock.tsx`
+- `src/components/portal/DocumentUpload.tsx`
 
 ## ترتيب التنفيذ المقترح
 
-1. Financial Summary + Quick Actions (الأسرع والأعلى قيمة)
-2. Unified Timeline (يعتمد على بيانات موجودة)
-3. Day scheduling (migration + UI)
-4. Split View Preview
-5. Map View (يحتاج Google Maps connector)
-
-ممكن نبدأ بالأول والتاني في batch واحد لأنهم frontend بحت بدون migrations.
+1. Smart Pricing Engine — أعلى قيمة فورية للوكيل
+2. Live Collaboration — يحسّن UX يومياً
+3. Operations Dashboard — يفك اختناقات الفريق التشغيلي
+4. Booking Templates & Recipes
+5. Automated Workflows
+6. Client Portal 2.0

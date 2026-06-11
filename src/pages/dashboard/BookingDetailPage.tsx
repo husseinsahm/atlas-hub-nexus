@@ -60,6 +60,7 @@ import { GenerateQuotationModal } from "@/components/quotation/GenerateQuotation
 import { TravelersTab as PremiumTravelersTab } from "@/components/booking/TravelersTab";
 import { FinancialSummaryPanel } from "@/components/booking/FinancialSummaryPanel";
 import { UnifiedTimeline } from "@/components/booking/UnifiedTimeline";
+import { PricingStudio } from "@/components/booking/PricingStudio";
 
 type BookingStatus = "tentative" | "confirmed" | "in_operation" | "completed" | "cancelled";
 
@@ -119,6 +120,7 @@ export default function BookingDetailPage() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   // ─── Fetch booking ───
   const { data: booking, isLoading } = useQuery({
@@ -747,6 +749,9 @@ export default function BookingDetailPage() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowPricing(true)}>
+                  <DollarSign className="w-4 h-4 me-2" />{isArabic ? "استوديو التسعير" : "Pricing Studio"}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={generateInvoice}>
                   <Receipt className="w-4 h-4 me-2" />{isArabic ? "إنشاء فاتورة" : "Generate Invoice"}
                 </DropdownMenuItem>
@@ -836,7 +841,21 @@ export default function BookingDetailPage() {
         </div>
 
         {/* Financial Summary Panel — always visible */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {isArabic ? "الملخص المالي" : "Financial Summary"}
+            </h3>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px] gap-1.5 border-accent/30 text-accent hover:bg-accent/10"
+              onClick={() => setShowPricing(true)}
+            >
+              <DollarSign className="w-3 h-3" />
+              {isArabic ? "استوديو التسعير" : "Pricing Studio"}
+            </Button>
+          </div>
           <FinancialSummaryPanel
             bookingId={booking.id}
             sellingPrice={Number(booking.selling_price || 0)}
@@ -1522,6 +1541,14 @@ export default function BookingDetailPage() {
         bookingId={id}
         customerId={booking?.customer_id || undefined}
         leadId={booking?.lead_id || undefined}
+      />
+
+      <PricingStudio
+        open={showPricing}
+        onOpenChange={setShowPricing}
+        booking={booking}
+        servicesCost={servicesActiveCost || 0}
+        isArabic={isArabic}
       />
     </div>
   );

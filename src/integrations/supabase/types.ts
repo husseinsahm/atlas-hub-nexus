@@ -664,12 +664,16 @@ export type Database = {
           departure_date: string | null
           description: string | null
           end_date: string | null
+          group_discount_pct: number | null
           id: string
           internal_notes: string | null
           itinerary_notes: string | null
           lead_id: string | null
+          markup_pct: number | null
           operations_notes: string | null
+          pax_breakdown: Json | null
           payment_status: string
+          rounding_step: number | null
           selling_price: number | null
           service_notes: string | null
           source: string | null
@@ -699,12 +703,16 @@ export type Database = {
           departure_date?: string | null
           description?: string | null
           end_date?: string | null
+          group_discount_pct?: number | null
           id?: string
           internal_notes?: string | null
           itinerary_notes?: string | null
           lead_id?: string | null
+          markup_pct?: number | null
           operations_notes?: string | null
+          pax_breakdown?: Json | null
           payment_status?: string
+          rounding_step?: number | null
           selling_price?: number | null
           service_notes?: string | null
           source?: string | null
@@ -734,12 +742,16 @@ export type Database = {
           departure_date?: string | null
           description?: string | null
           end_date?: string | null
+          group_discount_pct?: number | null
           id?: string
           internal_notes?: string | null
           itinerary_notes?: string | null
           lead_id?: string | null
+          markup_pct?: number | null
           operations_notes?: string | null
+          pax_breakdown?: Json | null
           payment_status?: string
+          rounding_step?: number | null
           selling_price?: number | null
           service_notes?: string | null
           source?: string | null
