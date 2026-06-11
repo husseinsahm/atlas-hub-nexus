@@ -251,6 +251,21 @@ export default function FleetPage() {
               <Plus className="w-4 h-4 mr-2" /> New Driver
             </Button>
           )}
+          {tab === "maintenance" && (
+            <Button onClick={() => setMaintDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
+              <Plus className="w-4 h-4 mr-2" /> Log Maintenance
+            </Button>
+          )}
+          {tab === "documents" && (
+            <Button onClick={() => setDocDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
+              <Plus className="w-4 h-4 mr-2" /> Add Document
+            </Button>
+          )}
+          {tab === "expenses" && (
+            <Button onClick={() => setExpDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
+              <Plus className="w-4 h-4 mr-2" /> Log Expense
+            </Button>
+          )}
         </div>
       </div>
 
