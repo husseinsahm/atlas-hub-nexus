@@ -140,6 +140,8 @@ function AppRoutes() {
         
         {/* Operations */}
         <Route path="operations" element={<OperationsPage />} />
+        <Route path="fleet" element={<FleetPage />} />
+        <Route path="dispatch" element={<DispatchPage />} />
         
         {/* Product Management */}
         <Route path="templates" element={<TemplatesPage />} />
