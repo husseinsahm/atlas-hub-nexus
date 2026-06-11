@@ -260,6 +260,10 @@ export default function OperationsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted/50">
+          <TabsTrigger value="today" className="gap-2">
+            <Zap className="w-4 h-4" />
+            {isArabic ? "اليوم" : "Today"}
+          </TabsTrigger>
           <TabsTrigger value="bookings" className="gap-2">
             <Briefcase className="w-4 h-4" />
             {isArabic ? "الحجوزات" : "Bookings"}
@@ -272,6 +276,11 @@ export default function OperationsPage() {
             )}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="today" className="mt-4">
+          {companyId && <TodayMovementsTab companyId={companyId} isArabic={isArabic} />}
+        </TabsContent>
+
 
         <TabsContent value="bookings" className="mt-4 space-y-4">
           {/* Filters */}
