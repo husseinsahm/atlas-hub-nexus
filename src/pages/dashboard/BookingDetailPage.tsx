@@ -514,6 +514,71 @@ export default function BookingDetailPage() {
     },
   });
 
+  // ─── Duplicate booking ───
+  const duplicateBooking = useMutation({
+    mutationFn: async () => {
+      if (!booking) throw new Error("No booking");
+      const {
+        id: _i, booking_number: _bn, created_at: _c, updated_at: _u, amount_paid: _ap,
+        status: _s, customers: _cust, ...rest
+      } = booking as any;
+      const newBooking = {
+        ...rest,
+        title: `${booking.title} (Copy)`,
+        status: "tentative",
+        amount_paid: 0,
+        created_by: user?.id,
+      };
+      const { data: created, error } = await supabase
+        .from("bookings")
+        .insert(newBooking)
+        .select("id")
+        .single();
+      if (error) throw error;
+      // Copy services
+      if (services.length > 0) {
+        const newServices = services.map((s: any) => {
+          const { id: _, booking_id: __, created_at: ___, updated_at: ____, ...rest } = s;
+          return { ...rest, booking_id: created.id, created_by: user?.id };
+        });
+        await supabase.from("booking_services").insert(newServices);
+      }
+      // Copy itinerary days + items
+      if (itineraryDays.length > 0) {
+        for (const d of itineraryDays) {
+          const { id: _, booking_id: __, created_at: ___, updated_at: ____, booking_day_items, ...dayRest } = d as any;
+          const { data: newDay } = await supabase
+            .from("booking_days")
+            .insert({ ...dayRest, booking_id: created.id })
+            .select("id")
+            .single();
+          if (newDay && booking_day_items?.length) {
+            const newItems = booking_day_items.map((i: any) => {
+              const { id: _, booking_day_id: __, created_at: ___, updated_at: ____, ...itemRest } = i;
+              return { ...itemRest, booking_day_id: newDay.id };
+            });
+            await supabase.from("booking_day_items").insert(newItems);
+          }
+        }
+      }
+      return created.id;
+    },
+    onSuccess: (newId) => {
+      toast({ title: isArabic ? "تم إنشاء نسخة من الحجز" : "Booking duplicated" });
+      navigate(`/dashboard/bookings/${newId}`);
+    },
+    onError: (e: any) => {
+      toast({ title: isArabic ? "فشل النسخ" : "Duplicate failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const generateInvoice = () => {
+    navigate(`/dashboard/invoices?createForBooking=${id}`);
+  };
+
+  const goToPayments = () => setActiveTab("financials");
+
+
   // ─── Share link generation ───
   const generateShareLink = async () => {
     if (!booking || !companyId) return;
