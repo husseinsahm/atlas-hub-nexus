@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, Bus, Car, Ship, Truck, Loader2, Pencil, Trash2,
   MoreHorizontal, Users, Gauge, AlertTriangle, Wrench, Fuel,
-  Calendar, Phone, Star, BadgeCheck, ChevronRight, Anchor,
+  Calendar, Phone, Star, BadgeCheck, ChevronRight, Anchor, Link2, Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
