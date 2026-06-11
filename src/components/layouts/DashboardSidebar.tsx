@@ -23,6 +23,8 @@ import {
   ChevronsRight,
   Shield,
   ClipboardList,
+  Bus,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sidebar,
