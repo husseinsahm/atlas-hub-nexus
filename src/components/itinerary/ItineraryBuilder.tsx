@@ -25,7 +25,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SplitViewPreview } from "@/components/itinerary/SplitViewPreview";
-import { Columns2 } from "lucide-react";
+import { ItineraryMapView } from "@/components/itinerary/ItineraryMapView";
+import { Columns2, Map as MapIcon } from "lucide-react";
 
 interface ItineraryDay {
   id: string;
@@ -102,6 +103,7 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
   const [librarySearch, setLibrarySearch] = useState("");
   const [showTemplateImport, setShowTemplateImport] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   // Fetch library items for the company
   const { data: libraryItems = [] } = useQuery({
@@ -450,6 +452,17 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
             </Button>
           )}
           {itineraryDays.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-[11px] gap-1.5 h-8"
+              onClick={() => setShowMap(true)}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              {isArabic ? "خريطة" : "Map"}
+            </Button>
+          )}
+          {itineraryDays.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -644,6 +657,8 @@ export function ItineraryBuilder({ bookingId, companyId, itineraryDays, booking,
         <SplitViewPreview booking={booking} itineraryDays={itineraryDays} isArabic={isArabic} />
       )}
       </div>
+
+      <ItineraryMapView open={showMap} onOpenChange={setShowMap} itineraryDays={itineraryDays} isArabic={isArabic} />
 
 
 
