@@ -113,5 +113,5 @@ WHEN booking status → "confirmed"
 2. ✅ Live Collaboration & Presence
 3. ✅ Operations Dashboard
 4. ✅ Booking Templates & Recipes
-5. Automated Workflows
+5. ✅ Automated Workflows
 6. Client Portal 2.0
