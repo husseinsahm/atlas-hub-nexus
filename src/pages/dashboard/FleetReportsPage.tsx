@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ function fmtMoney(n: number, c = "USD") {
 
 export default function FleetReportsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const companyId = user?.activeMembership?.companyId;
   const [period, setPeriod] = useState<Period>("month");
   const { from, to } = useMemo(() => periodRange(period), [period]);
@@ -167,26 +169,26 @@ export default function FleetReportsPage() {
     <div className="p-4 md:p-6 space-y-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-slate-900">Fleet Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">Utilization, driver performance and trip profitability</p>
+          <h1 className="text-2xl font-serif font-bold text-slate-900">{t("reports.title")}</h1>
+          <p className="text-sm text-slate-500 mt-1">{t("reports.subtitle")}</p>
         </div>
         <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">This Month</SelectItem>
-            <SelectItem value="year">This Year</SelectItem>
+            <SelectItem value="week">{t("reports.period.week")}</SelectItem>
+            <SelectItem value="month">{t("reports.period.month")}</SelectItem>
+            <SelectItem value="year">{t("reports.period.year")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <KpiCard icon={Activity} label="Trips" value={String(kpis.totalTrips)} tone="blue" />
-        <KpiCard icon={Bus} label="Avg Utilization" value={`${kpis.avgUtil.toFixed(1)}%`} tone="violet" />
-        <KpiCard icon={DollarSign} label="Revenue" value={fmtMoney(kpis.totalRevenue)} tone="emerald" />
-        <KpiCard icon={TrendingDown} label="Fleet Costs" value={fmtMoney(kpis.totalCost)} tone="amber" />
-        <KpiCard icon={TrendingUp} label="Net Profit" value={fmtMoney(kpis.totalProfit)} tone={kpis.totalProfit >= 0 ? "emerald" : "red"} />
+        <KpiCard icon={Activity} label={t("reports.kpi.trips")} value={String(kpis.totalTrips)} tone="blue" />
+        <KpiCard icon={Bus} label={t("reports.kpi.utilization")} value={`${kpis.avgUtil.toFixed(1)}%`} tone="violet" />
+        <KpiCard icon={DollarSign} label={t("reports.kpi.revenue")} value={fmtMoney(kpis.totalRevenue)} tone="emerald" />
+        <KpiCard icon={TrendingDown} label={t("reports.kpi.costs")} value={fmtMoney(kpis.totalCost)} tone="amber" />
+        <KpiCard icon={TrendingUp} label={t("reports.kpi.profit")} value={fmtMoney(kpis.totalProfit)} tone={kpis.totalProfit >= 0 ? "emerald" : "red"} />
       </div>
 
       {loadingA && (
@@ -197,10 +199,10 @@ export default function FleetReportsPage() {
 
       <Tabs defaultValue="vehicles">
         <TabsList>
-          <TabsTrigger value="vehicles">Vehicle Utilization</TabsTrigger>
-          <TabsTrigger value="drivers">Driver Performance</TabsTrigger>
-          <TabsTrigger value="profit">Trip Profitability</TabsTrigger>
-          <TabsTrigger value="expenses">Expense Breakdown</TabsTrigger>
+          <TabsTrigger value="vehicles">{t("reports.tab.vehicles")}</TabsTrigger>
+          <TabsTrigger value="drivers">{t("reports.tab.drivers")}</TabsTrigger>
+          <TabsTrigger value="profit">{t("reports.tab.profit")}</TabsTrigger>
+          <TabsTrigger value="expenses">{t("reports.tab.expenses")}</TabsTrigger>
         </TabsList>
 
         {/* Vehicles */}

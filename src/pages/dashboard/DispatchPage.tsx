@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function DispatchPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -172,26 +174,26 @@ export default function DispatchPage() {
             <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center">
               <Compass className="w-5 h-5 text-accent-foreground" />
             </div>
-            Dispatch Board
+            {t("dispatch.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Assign vehicles and drivers to trips. Conflicts are flagged automatically.
+            {t("dispatch.subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            <Button size="sm" variant={view === "day" ? "default" : "ghost"} onClick={() => setView("day")}>Day</Button>
-            <Button size="sm" variant={view === "week" ? "default" : "ghost"} onClick={() => setView("week")}>Week</Button>
+            <Button size="sm" variant={view === "day" ? "default" : "ghost"} onClick={() => setView("day")}>{t("dispatch.day")}</Button>
+            <Button size="sm" variant={view === "week" ? "default" : "ghost"} onClick={() => setView("week")}>{t("dispatch.week")}</Button>
           </div>
           <Select value={resource} onValueChange={v => setResource(v as any)}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="vehicle">By Vehicle</SelectItem>
-              <SelectItem value="driver">By Driver</SelectItem>
+              <SelectItem value="vehicle">{t("dispatch.byVehicle")}</SelectItem>
+              <SelectItem value="driver">{t("dispatch.byDriver")}</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={() => { setEditing(null); setCreateOpen(true); }} className="gold-gradient text-accent-foreground">
-            <Plus className="w-4 h-4 mr-2" />Assign
+            <Plus className="w-4 h-4 mr-2" />{t("dispatch.assign")}
           </Button>
         </div>
       </div>
@@ -212,15 +214,15 @@ export default function DispatchPage() {
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setAnchor(new Date())}>Today</Button>
+        <Button size="sm" variant="outline" onClick={() => setAnchor(new Date())}>{t("dispatch.today")}</Button>
       </div>
 
       {/* Conflict warning */}
       {conflicts.size > 0 && (
         <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200 text-sm text-red-800">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span className="font-medium">{conflicts.size / 2} scheduling conflict{conflicts.size > 2 ? "s" : ""} detected</span>
-          <span className="text-red-600">— same resource booked at overlapping times.</span>
+          <span className="font-medium">{conflicts.size / 2} {t("dispatch.conflicts")}</span>
+          <span className="text-red-600">{t("dispatch.conflictHint")}</span>
         </div>
       )}
 

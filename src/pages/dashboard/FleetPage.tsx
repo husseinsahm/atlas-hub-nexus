@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,7 @@ interface Driver {
 
 export default function FleetPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const qc = useQueryClient();
   const companyId = user?.activeMembership?.companyId;
@@ -237,36 +239,36 @@ export default function FleetPage() {
             <div className="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center">
               <Bus className="w-5 h-5 text-accent-foreground" />
             </div>
-            Fleet Management
+            {t("fleet.title")}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage vehicles, drivers, maintenance and documents
+            {t("fleet.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           {tab === "vehicles" && (
             <Button onClick={() => setVehicleDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> New Vehicle
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.newVehicle")}
             </Button>
           )}
           {tab === "drivers" && (
             <Button onClick={() => setDriverDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> New Driver
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.newDriver")}
             </Button>
           )}
           {tab === "maintenance" && (
             <Button onClick={() => setMaintDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Log Maintenance
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.logMaintenance")}
             </Button>
           )}
           {tab === "documents" && (
             <Button onClick={() => setDocDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Add Document
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.addDocument")}
             </Button>
           )}
           {tab === "expenses" && (
             <Button onClick={() => setExpDialog({ open: true, data: {} })} className="gold-gradient text-accent-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Log Expense
+              <Plus className="w-4 h-4 mr-2" /> {t("fleet.logExpense")}
             </Button>
           )}
         </div>
@@ -274,12 +276,12 @@ export default function FleetPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <StatCard icon={Bus} label="Total Vehicles" value={stats.total} tone="primary" />
-        <StatCard icon={BadgeCheck} label="Available" value={stats.available} tone="emerald" />
-        <StatCard icon={Gauge} label="In Use" value={stats.inUse} tone="blue" />
-        <StatCard icon={Wrench} label="Maintenance" value={stats.maintenance} tone="amber" />
-        <StatCard icon={Users} label="Drivers" value={stats.drivers} tone="primary" />
-        <StatCard icon={BadgeCheck} label="Drivers Free" value={stats.driversAvail} tone="emerald" />
+        <StatCard icon={Bus} label={t("fleet.stat.total")} value={stats.total} tone="primary" />
+        <StatCard icon={BadgeCheck} label={t("fleet.stat.available")} value={stats.available} tone="emerald" />
+        <StatCard icon={Gauge} label={t("fleet.stat.inUse")} value={stats.inUse} tone="blue" />
+        <StatCard icon={Wrench} label={t("fleet.stat.maintenance")} value={stats.maintenance} tone="amber" />
+        <StatCard icon={Users} label={t("fleet.stat.drivers")} value={stats.drivers} tone="primary" />
+        <StatCard icon={BadgeCheck} label={t("fleet.stat.driversFree")} value={stats.driversAvail} tone="emerald" />
       </div>
 
       {/* Alerts */}
@@ -314,15 +316,15 @@ export default function FleetPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <TabsList>
-            <TabsTrigger value="vehicles"><Bus className="w-4 h-4 mr-2" />Vehicles</TabsTrigger>
-            <TabsTrigger value="drivers"><Users className="w-4 h-4 mr-2" />Drivers</TabsTrigger>
-            <TabsTrigger value="maintenance"><Wrench className="w-4 h-4 mr-2" />Maintenance</TabsTrigger>
-            <TabsTrigger value="documents"><BadgeCheck className="w-4 h-4 mr-2" />Documents</TabsTrigger>
-            <TabsTrigger value="expenses"><Fuel className="w-4 h-4 mr-2" />Expenses</TabsTrigger>
+            <TabsTrigger value="vehicles"><Bus className="w-4 h-4 mr-2" />{t("fleet.tab.vehicles")}</TabsTrigger>
+            <TabsTrigger value="drivers"><Users className="w-4 h-4 mr-2" />{t("fleet.tab.drivers")}</TabsTrigger>
+            <TabsTrigger value="maintenance"><Wrench className="w-4 h-4 mr-2" />{t("fleet.tab.maintenance")}</TabsTrigger>
+            <TabsTrigger value="documents"><BadgeCheck className="w-4 h-4 mr-2" />{t("fleet.tab.documents")}</TabsTrigger>
+            <TabsTrigger value="expenses"><Fuel className="w-4 h-4 mr-2" />{t("fleet.tab.expenses")}</TabsTrigger>
           </TabsList>
           <div className="relative max-w-xs w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+            <Input placeholder={t("fleet.search")} value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
           </div>
         </div>
 
