@@ -37,6 +37,7 @@ import QuotationDetailPage from "./pages/dashboard/QuotationDetailPage";
 import OperationsPage from "./pages/dashboard/OperationsPage";
 import FleetPage from "./pages/dashboard/FleetPage";
 import DispatchPage from "./pages/dashboard/DispatchPage";
+import FleetReportsPage from "./pages/dashboard/FleetReportsPage";
 import SharedTrip from "./pages/shared/SharedTrip";
 import SharedBooking from "./pages/shared/SharedBooking";
 import DriverPortal from "./pages/shared/DriverPortal";
