@@ -152,14 +152,15 @@ export function UnifiedTimeline({ bookingId, companyId, isArabic, getProfileName
       list.push({
         id: `d-${l.id}`,
         kind: "driver",
-        title: typeMap[l.log_type] || l.log_type,
+        title: typeMap[l.event_type] || l.event_type,
         description: [
-          l.odometer ? `${l.odometer} km` : null,
-          l.fuel_liters ? `${l.fuel_liters} L` : null,
-          l.cost ? `${l.cost} ${l.currency || ""}` : null,
+          l.mileage_km ? `${l.mileage_km} km` : null,
+          l.fuel_amount ? `${l.fuel_amount} L` : null,
+          l.fuel_cost ? `${l.fuel_cost} ${l.currency || ""}` : null,
+          l.customer_signature_name ? `${isArabic ? "توقيع" : "Signed by"}: ${l.customer_signature_name}` : null,
           l.notes,
         ].filter(Boolean).join(" · "),
-        created_at: l.created_at,
+        created_at: l.event_at || l.created_at,
         actor: null,
       });
     });
