@@ -268,6 +268,20 @@ export default function InvoicesPage() {
     }
   };
 
+  // Open create dialog pre-filled when ?createForBooking=<id> is in the URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bId = params.get("createForBooking");
+    if (bId && bookings.length > 0 && !showCreate) {
+      handleBookingSelect(bId);
+      setShowCreate(true);
+      // Clean the URL so refresh doesn't re-open it
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookings]);
+
+
   // Computed status including overdue detection
   const getDisplayStatus = (inv: any): InvoiceStatus => {
     if (inv.status === "sent" && inv.due_date && isPast(new Date(inv.due_date))) return "overdue";
