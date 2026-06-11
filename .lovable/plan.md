@@ -1,78 +1,118 @@
-# خطة تطوير شركة السياحة (أسطول + تشغيل متقدم)
 
-بناءً على فحص النظام الحالي: عندك Booking Files + Operations + Services + Tasks، لكن **لا يوجد إدارة أسطول (Fleet)** ولا **جدولة موارد (Dispatch)** ولا **متابعة سائقين** — وهذه أهم نقاط الضعف لشركة عندها أتوبيسات/سيارات/مراكب.
+# خطة تحسين Booking Files و Itineraries
 
----
+## 1. Booking File — Financial Summary Panel
 
-## 1) ما يحتاج تطوير (موجود لكن ناقص)
+بانل ثابت في أعلى صفحة الحجز يعرض الأرقام المهمة بنظرة واحدة:
 
-| الموجود | المشكلة | التحسين |
-|---|---|---|
-| `OperationsPage` | يعرض الخدمات كقائمة فقط | إضافة **Dispatch Board** بتقويم يومي/أسبوعي (Timeline view) لكل مركبة وسائق |
-| `booking_services` | حقول مورد نصية فقط (supplier_name) | ربط فعلي بـ `vehicles` و `drivers` بدل النص الحر |
-| Tasks | عامة | إضافة نوع **Operations Task** (تأكيد سائق، فحص مركبة، تسليم وقود) |
-| Notifications | للموظفين فقط | إشعارات WhatsApp/SMS للسائق والعميل قبل الرحلة بـ 24 ساعة |
-| تقارير | محدودة | تقرير **استغلال الأسطول** (Utilization %) لكل مركبة شهرياً |
-
----
-
-## 2) ما يحتاج يُضاف (وحدات جديدة)
-
-### أ‌. وحدة الأسطول (Fleet Management) — **الأولوية القصوى**
-- جدول `vehicles`: نوع (Bus/Car/Golden Boat)، رقم لوحة، سعة ركاب، حالة (متاح/صيانة/مؤجر)، صور، أوراق (رخصة، تأمين، فحص) مع تنبيهات انتهاء.
-- جدول `drivers`: بيانات السائق، رخصة القيادة وتاريخ انتهائها، التقييم، الحالة.
-- جدول `vehicle_maintenance`: سجل صيانة + جدولة الصيانة الدورية بالكيلومتر/التاريخ.
-- جدول `vehicle_expenses`: وقود، صيانة، غرامات → يدخل في تكلفة الرحلة.
-
-### ب‌. وحدة الجدولة والإسناد (Dispatch & Assignment)
-- جدول `service_assignments`: يربط `booking_service` بـ `vehicle_id` + `driver_id` + توقيت فعلي.
-- **Dispatch Board** بصري (Gantt/Timeline) يكشف التعارضات تلقائياً (نفس المركبة في وقتين).
-- Drag & drop لإسناد رحلة لسائق/مركبة.
-- تنبيه لو سائق مسند لرحلتين متداخلتين.
-
-### ج‌. بوابة السائق (Driver Portal / Mobile-friendly)
-- صفحة برابط آمن (token) للسائق يشوف فيها رحلاته اليومية، يعمل Check-in/Check-out، يرفع صور (عداد الكيلومترات، إيصال وقود)، يضع توقيع العميل بعد الرحلة.
-
-### د‌. تتبع الرحلة (Trip Execution)
-- حالات تشغيلية: `scheduled → en_route → picked_up → in_progress → completed → invoiced`
-- Timestamps فعلية vs مخططة → تقرير الالتزام بالمواعيد.
-- حقل GPS موقع آخر (اختياري لو في تكامل مستقبلي).
-
-### هـ. التكاملات المالية
-- ربط `vehicle_expenses` و `driver_payouts` بصفحة Finance للبوكينج.
-- حساب ربحية الرحلة الفعلي بعد خصم تكاليف الأسطول والسائق.
-
-### و. تقارير تشغيلية جديدة
-- استغلال كل مركبة (أيام مؤجرة / إجمالي أيام).
-- أداء كل سائق (عدد رحلات، تأخير، تقييم العميل).
-- تكلفة تشغيل لكل مركبة (وقود + صيانة + سائق).
-- توقعات الصيانة القادمة.
-
----
-
-## 3) ترتيب التنفيذ المقترح (Phases)
-
-```text
-المرحلة 1 (أساس):  Fleet + Drivers CRUD + ربطها بـ booking_services
-المرحلة 2 (تشغيل): Dispatch Board + كشف التعارضات + Assignments
-المرحلة 3 (سائق):  Driver Portal + Check-in/out + توقيع العميل
-المرحلة 4 (صيانة): Maintenance + Documents Expiry alerts
-المرحلة 5 (مالي):  Vehicle expenses + ربحية فعلية للرحلة
-المرحلة 6 (تقارير): Utilization + Driver performance dashboards
+```
+┌─────────────────────────────────────────────────────────┐
+│  Total Price    Total Cost    Profit       Paid   Due  │
+│   $12,500       $8,200       $4,300 (34%) $5,000 $7,500│
+│                                            [▓▓▓░░░░] 40%│
+└─────────────────────────────────────────────────────────┘
 ```
 
----
+- Total Price = مجموع الـ booking_services.selling_price
+- Total Cost = مجموع cost_price
+- Profit = الفرق + هامش %
+- Paid = مجموع payment_records
+- Due = price - paid مع progress bar وlozenge ملوّن (أحمر لو متأخر، أصفر لو جزئي، أخضر لو متكامل)
+- العملة من company_settings
 
-## 4) تفاصيل تقنية مختصرة
+## 2. Booking File — Quick Actions Toolbar
 
-- جداول جديدة في `public`: `vehicles`, `drivers`, `vehicle_documents`, `vehicle_maintenance`, `vehicle_expenses`, `service_assignments`, `driver_trip_logs`.
-- كلها multi-tenant بـ `company_id` + RLS (نفس النمط الحالي).
-- Dispatch Board: مكتبة `@dnd-kit` (موجودة غالباً) + تايملاين مخصص.
-- Driver Portal: route عام مثل `/driver/:token` بدون تسجيل دخول كامل (نفس فكرة Shared Booking).
-- إشعارات WhatsApp/SMS: عبر Edge Function + مزود خارجي (Twilio أو WhatsApp Cloud API) — يحتاج اتصال connector.
+شريط أزرار في الـ header بدل ما الـ actions متفرقة:
 
----
+- **Send to Client** → ينشئ share token و ينسخ الرابط
+- **Generate Invoice** → ينشئ فاتورة بالأرقام الجاهزة
+- **Add Payment** → modal دفعة جديدة
+- **Duplicate Booking** → نسخة كاملة بـ status=draft
+- **Print/PDF** → PDF كامل للحجز
+- **More** dropdown: Cancel / Archive / Export
 
-## سؤال قبل التنفيذ
-ابدأ بأي مرحلة؟ أنصح بالبدء بـ **المرحلة 1 + 2** (الأسطول + Dispatch Board) لأنها أكبر قيمة فورية. وافق لأبدأ بهم، أو حدد أولوية مختلفة.
+## 3. Booking File — Unified Timeline Tab
 
+Tab جديد "Activity" يدمج كل الأحداث في خط زمني واحد:
+
+- Activities (status changes, assignments)
+- Internal comments
+- Payment records  
+- Driver trip logs (check-in/out)
+- File attachments المضافة
+- Email/share events
+
+كل event بـ icon + لون + timestamp نسبي + actor. فلتر بنوع الحدث.
+
+## 4. Itinerary — Split View Preview
+
+في TripBuilderPage و ItineraryBuilder، شاشة مقسومة:
+
+```
+┌────────────────┬────────────────┐
+│  Builder       │  Live Preview  │
+│  (edit days)   │  (client view) │
+│                │                │
+│  Day 1 ▼       │  [Hero image]  │
+│   + Service    │  Day 1: Cairo  │
+│   + Service    │   Pyramids tour│
+│  Day 2 ▼       │   ...          │
+└────────────────┴────────────────┘
+  Cost: $4,200 │ Selling: $6,500 (real-time)
+```
+
+- Toggle لإخفاء/إظهار الـ preview
+- Cost roll-up bar ثابتة أسفل الشاشة تتحدث فوراً مع كل تغيير
+- Preview بنفس شكل client portal
+
+## 5. Itinerary — Day Scheduling
+
+تحسين trip_day_items و booking_day_items:
+
+- حقل `start_time` و `duration_minutes` لكل item
+- عرض اليوم كـ timeline عمودي بالساعات (8:00 AM → 10:00 PM)
+- Drag للـ items داخل اليوم يحدّث الوقت تلقائياً
+- Conflict detection (تداخل أوقات)
+- Auto-calculate يوم end time من آخر activity
+
+## 6. Itinerary — Map View
+
+استخدام Google Maps connector (متاح) لعرض:
+
+- خريطة لكل يوم تعرض stops بالترتيب مع خطوط بينها
+- Geocoding للـ locations عبر الـ gateway
+- Distance/duration بين stops (Routes API)
+- زر "View on Map" في كل day item
+
+## التفاصيل التقنية
+
+**Database migrations:**
+- إضافة `start_time TIME, duration_minutes INT, latitude NUMERIC, longitude NUMERIC` إلى `trip_day_items` و `booking_day_items`
+- إضافة `location_address TEXT, place_id TEXT` للـ items
+- View: `booking_financial_summary` تجمّع الأرقام (price, cost, paid, due) في query واحد
+
+**Components جديدة:**
+- `src/components/booking/FinancialSummaryPanel.tsx`
+- `src/components/booking/BookingQuickActions.tsx`  
+- `src/components/booking/UnifiedTimeline.tsx`
+- `src/components/itinerary/SplitViewBuilder.tsx`
+- `src/components/itinerary/DayTimeline.tsx`
+- `src/components/itinerary/ItineraryMapView.tsx`
+
+**Connectors المطلوبة:**
+- Google Maps Platform (للـ geocoding + map rendering + routes)
+
+**Files كبيرة سيتم تعديلها:**
+- `BookingDetailPage.tsx` (2080 سطر) — إضافة Financial Panel + Quick Actions + Timeline tab
+- `TripBuilderPage.tsx` (2043 سطر) — Split view + day timeline + map toggle
+- `ItineraryBuilder.tsx` (1377 سطر) — start_time fields في items
+
+## ترتيب التنفيذ المقترح
+
+1. Financial Summary + Quick Actions (الأسرع والأعلى قيمة)
+2. Unified Timeline (يعتمد على بيانات موجودة)
+3. Day scheduling (migration + UI)
+4. Split View Preview
+5. Map View (يحتاج Google Maps connector)
+
+ممكن نبدأ بالأول والتاني في batch واحد لأنهم frontend بحت بدون migrations.
